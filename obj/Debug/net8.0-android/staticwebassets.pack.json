@@ -1,0 +1,49 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\obj\\Debug\\net8.0-android\\scopedcss\\bundle\\ZIVA-Prototype.styles.css",
+      "PackagePath": "staticwebassets\\ZIVA-Prototype.styles.css"
+    },
+    {
+      "Id": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\css\\app.css",
+      "PackagePath": "staticwebassets\\css\\app.css"
+    },
+    {
+      "Id": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\css\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\css\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\css\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\css\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\css\\site.css",
+      "PackagePath": "staticwebassets\\css\\site.css"
+    },
+    {
+      "Id": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\index.html",
+      "PackagePath": "staticwebassets\\index.html"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0-android\\staticwebassets\\msbuild.ZIVA-Prototype.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0-android\\staticwebassets\\msbuild.build.ZIVA-Prototype.props",
+      "PackagePath": "build\\ZIVA-Prototype.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0-android\\staticwebassets\\msbuild.buildMultiTargeting.ZIVA-Prototype.props",
+      "PackagePath": "buildMultiTargeting\\ZIVA-Prototype.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0-android\\staticwebassets\\msbuild.buildTransitive.ZIVA-Prototype.props",
+      "PackagePath": "buildTransitive\\ZIVA-Prototype.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

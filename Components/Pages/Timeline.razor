@@ -1,0 +1,75 @@
+﻿@page "/"
+@inject IJSRuntime JS
+
+@code {
+    private int viewportWidth;
+    private int startOffset = 200;
+    private int spacing = 180;
+    private int visibleTimestamps = 0;
+    private DotNetObjectReference<Timeline>? selfRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateViewportWidthAsync(); // ← Sofort Viewport holen
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            selfRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("registerResizeHandler", selfRef);
+        }
+    }
+
+    [JSInvokable("OnResize")]
+    public async Task OnResizeAsync()
+    {
+        await UpdateViewportWidthAsync();
+        StateHasChanged();
+    }
+
+    private async Task UpdateViewportWidthAsync() // Anzahl der abgebildeten Zeitstempel bestimmen
+    {
+        viewportWidth = await JS.InvokeAsync<int>("getViewportWidth");
+        visibleTimestamps = Math.Max(0, (viewportWidth - startOffset) / (spacing + 20));
+
+    }
+
+    public void Dispose()
+    {
+        selfRef?.Dispose();
+    }
+}
+
+
+
+
+<div class="timeline-container">
+
+    <!-- Zeitstempel ganz oben -->
+    @if (visibleTimestamps > 0)
+    {
+        for (var i = 0; i < visibleTimestamps; i++)
+        {
+            var position = startOffset + i * spacing;
+
+            <div class="timestamp" style="left:@($"{position}px")">
+                <span>@DateTime.Now.AddMinutes(i * 10).ToString("yyyy-MM-dd HH:mm")</span>
+            </div>
+            <div class="line" style="left:@($"{position}px")"></div>
+        }
+    }
+
+    <!-- Oberer Bereich: Verlauf Zeitstrahl -->
+    <div class="timeline-area timeline-area-top">
+        <div class="timeline-label">Verlauf</div>
+        <div class="timeline"></div>
+    </div>
+
+    <!-- Unterer Bereich: Analyse Zeitstrahl -->
+    <div class="timeline-area timeline-area-bottom">
+        <div class="timeline-label">Analyse</div>
+        <div class="timeline"></div>
+    </div>
+</div>

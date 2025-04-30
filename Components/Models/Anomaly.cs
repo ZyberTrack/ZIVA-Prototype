@@ -1,0 +1,1 @@
+// Modell zur Anomalie-Darstellung
