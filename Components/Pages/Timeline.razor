@@ -1,16 +1,29 @@
 ﻿@page "/"
 @inject IJSRuntime JS
+@implements IDisposable
 
 @code {
     private int viewportWidth;
-    private int startOffset = 200;
+    private int startOffset = 70;
     private int spacing = 180;
     private int visibleTimestamps = 0;
+    private int scrollIndex = 0;
+    private int renderBuffer = 2;
     private DotNetObjectReference<Timeline>? selfRef;
+
+    private List<TimestampEntry> visibleEntries = new();
+
+    public class TimestampEntry
+    {
+        public int Index { get; set; }
+        public DateTime Time { get; set; }
+        public int Position { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        await UpdateViewportWidthAsync(); // ← Sofort Viewport holen
+        await UpdateViewportWidthAsync();
+        UpdateVisibleEntries();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -19,6 +32,8 @@
         {
             selfRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("registerResizeHandler", selfRef);
+            await JS.InvokeVoidAsync("registerScrollHandler", selfRef);
+            await JS.InvokeVoidAsync("registerDragHandler", selfRef);
         }
     }
 
@@ -26,14 +41,63 @@
     public async Task OnResizeAsync()
     {
         await UpdateViewportWidthAsync();
+        UpdateVisibleEntries();
         StateHasChanged();
     }
 
-    private async Task UpdateViewportWidthAsync() // Anzahl der abgebildeten Zeitstempel bestimmen
+    private async Task UpdateViewportWidthAsync()
     {
         viewportWidth = await JS.InvokeAsync<int>("getViewportWidth");
         visibleTimestamps = Math.Max(0, (viewportWidth - startOffset) / (spacing + 20));
+    }
 
+    private void UpdateVisibleEntries()
+    {
+        int renderStart = Math.Max(0, scrollIndex - renderBuffer);
+        int renderEnd = scrollIndex + visibleTimestamps + renderBuffer;
+
+        // Entferne nicht mehr sichtbare Einträge
+        visibleEntries.RemoveAll(e => e.Index < renderStart || e.Index >= renderEnd);
+
+        for (int i = renderStart; i < renderEnd; i++)
+        {
+            if (!visibleEntries.Any(e => e.Index == i))
+            {
+                var time = DateTime.Now.AddMinutes(i * 10);
+                visibleEntries.Add(new TimestampEntry
+                    {
+                        Index = i,
+                        Time = time,
+                        Position = 0 // Placeholder – wird unten gesetzt
+                    });
+            }
+        }
+
+        RecalculatePositions();
+    }
+
+    private void RecalculatePositions()
+    {
+        foreach (var entry in visibleEntries)
+        {
+            entry.Position = startOffset + (entry.Index - scrollIndex) * spacing;
+        }
+    }
+
+    [JSInvokable("OnScroll")]
+    public Task OnScrollAsync(string direction)
+    {
+        if (direction == "right")
+            scrollIndex++;
+        else if (direction == "left" && scrollIndex > 0)
+            scrollIndex--;
+
+        int maxScroll = 100;
+        scrollIndex = Math.Min(scrollIndex, maxScroll);
+
+        UpdateVisibleEntries();
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     public void Dispose()
@@ -42,34 +106,49 @@
     }
 }
 
-
-
-
-<div class="timeline-container">
-
-    <!-- Zeitstempel ganz oben -->
-    @if (visibleTimestamps > 0)
-    {
-        for (var i = 0; i < visibleTimestamps; i++)
-        {
-            var position = startOffset + i * spacing;
-
-            <div class="timestamp" style="left:@($"{position}px")">
-                <span>@DateTime.Now.AddMinutes(i * 10).ToString("yyyy-MM-dd HH:mm")</span>
-            </div>
-            <div class="line" style="left:@($"{position}px")"></div>
-        }
-    }
-
-    <!-- Oberer Bereich: Verlauf Zeitstrahl -->
-    <div class="timeline-area timeline-area-top">
-        <div class="timeline-label">Verlauf</div>
-        <div class="timeline"></div>
+<!-- RAZOR MARKUP -->
+<div class="timeline-wrapper">
+    <div class="legend-area">
+        <div class="timeline-area-static timeline-area-top">
+            <div class="timeline-label">Verlauf-Zeitachse</div>
+            <div class="timeline"></div>
+        </div>
+        <div class="timeline-area-static timeline-area-bottom">
+            <div class="timeline-label">Analyse-Zeitachse</div>
+            <div class="timeline"></div>
+        </div>
     </div>
 
-    <!-- Unterer Bereich: Analyse Zeitstrahl -->
-    <div class="timeline-area timeline-area-bottom">
-        <div class="timeline-label">Analyse</div>
-        <div class="timeline"></div>
+    <div class="timeless-area">
+        <div class="timeline-area-static">
+            <div class="timeline-label">Zeitstempel Unbekannt</div>
+            <div class="timeline"></div>
+        </div>
+        <div class="timeline-area-static">
+            <div class="timeline"></div>
+        </div>
     </div>
+
+
+    <div class="timeline-container">
+        <!-- NEU: Wrapper für bewegliche Inhalte -->
+        <div class="movable-layer" style="transform: translateX(@(scrollIndex * -spacing)px)">
+            @foreach (var entry in visibleEntries)
+            {
+                <div @key="entry.Index" class="timestamp" style="left:@($"{entry.Position}px")">
+                        <span>@entry.Time.ToString("yyyy-MM-dd HH:mm")</span>
+                </div>
+                <div class="line" style="left:@($"{entry.Position}px")"></div>
+            }
+        </div>
+
+        <div class="timeline-area-scroll timeline-area-top">
+           <div class="timeline"></div>
+        </div>
+
+        <div class="timeline-area-scroll timeline-area-bottom">
+           <div class="timeline"></div>
+        </div>
+            
+     </div>
 </div>

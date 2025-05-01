@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "IJg10/BjNtsTeNjSMxlXDpbOa0I5aQGggBxb6V1eEmM=",
+  "Hash": "X6Rxdm6qT//d6zkbPvnVXl/N66EMh+7jLnz3DJL8AR0=",
   "Source": "ZIVA-Prototype",
   "BasePath": "/",
   "Mode": "Root",
@@ -167,6 +167,44 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\index.html"
+    },
+    {
+      "Identity": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\js\\drag-drop-handler.js",
+      "SourceId": "ZIVA-Prototype",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\",
+      "BasePath": "/",
+      "RelativePath": "js/drag-drop-handler.js",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\js\\drag-drop-handler.js"
+    },
+    {
+      "Identity": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\js\\scroll-handler.js",
+      "SourceId": "ZIVA-Prototype",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\",
+      "BasePath": "/",
+      "RelativePath": "js/scroll-handler.js",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\js\\scroll-handler.js"
     }
   ]
 }

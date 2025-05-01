@@ -66,3 +66,6 @@ wwwroot\css\bootstrap\bootstrap.min.css.map
 wwwroot\css\site.css
 wwwroot\favicon.png
 wwwroot\index.html
+wwwroot\js\drag-drop-handler.js
+wwwroot\js\scroll-handler.js
+wwwroot\js\scroll-handler.js

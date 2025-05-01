@@ -58,6 +58,14 @@
     </ItemGroup>
 
     <ItemGroup>
+      <MauiAsset Include="wwwroot\js\scroll-handler.js" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="wwwroot\js\scroll-handler.js" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
