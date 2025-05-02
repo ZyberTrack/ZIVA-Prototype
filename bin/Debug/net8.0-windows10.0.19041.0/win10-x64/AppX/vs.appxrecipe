@@ -29,25 +29,25 @@
     <AppXManifest Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\bin\Debug\net8.0-windows10.0.19041.0\win10-x64\AppxManifest.xml">
       <PackagePath>AppxManifest.xml</PackagePath>
       <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
-      <Modified>2025-05-02T10:37:27.922</Modified>
+      <Modified>2025-05-02T11:32:03.577</Modified>
     </AppXManifest>
   </ItemGroup>
   <ItemGroup>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\bin\Debug\net8.0-windows10.0.19041.0\win10-x64\resources.pri">
       <PackagePath>resources.pri</PackagePath>
-      <Modified>2025-05-02T08:38:09.719</Modified>
+      <Modified>2025-05-02T10:55:17.733</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\bin\Debug\net8.0-windows10.0.19041.0\win10-x64\ZIVA-Prototype.runtimeconfig.json">
       <PackagePath>ZIVA-Prototype.runtimeconfig.json</PackagePath>
-      <Modified>2025-05-02T08:38:09.574</Modified>
+      <Modified>2025-05-02T10:55:17.578</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\bin\Debug\net8.0-windows10.0.19041.0\win10-x64\ZIVA-Prototype.dll">
       <PackagePath>ZIVA-Prototype.dll</PackagePath>
-      <Modified>2025-05-02T10:37:27.724</Modified>
+      <Modified>2025-05-02T11:32:03.415</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\apphost.exe">
       <PackagePath>ZIVA-Prototype.exe</PackagePath>
-      <Modified>2025-05-02T10:37:27.726</Modified>
+      <Modified>2025-05-02T11:32:03.419</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\Resources\Raw\AboutAssets.txt">
       <PackagePath>AboutAssets.txt</PackagePath>
@@ -55,7 +55,7 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\css\app.css">
       <PackagePath>wwwroot\css\app.css</PackagePath>
-      <Modified>2025-05-02T08:39:34.905</Modified>
+      <Modified>2025-05-02T10:44:38.589</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\css\bootstrap\bootstrap.min.css">
       <PackagePath>wwwroot\css\bootstrap\bootstrap.min.css</PackagePath>
@@ -67,7 +67,7 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\css\site.css">
       <PackagePath>wwwroot\css\site.css</PackagePath>
-      <Modified>2025-05-02T10:22:59.794</Modified>
+      <Modified>2025-05-02T10:44:38.589</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\favicon.png">
       <PackagePath>wwwroot\favicon.png</PackagePath>
@@ -75,15 +75,19 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\index.html">
       <PackagePath>wwwroot\index.html</PackagePath>
-      <Modified>2025-05-01T16:17:39.259</Modified>
+      <Modified>2025-05-02T10:53:30.760</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\js\drag-drop-handler.js">
       <PackagePath>wwwroot\js\drag-drop-handler.js</PackagePath>
-      <Modified>2025-05-02T09:59:17.907</Modified>
+      <Modified>2025-05-02T10:44:38.590</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\js\scroll-handler.js">
       <PackagePath>wwwroot\js\scroll-handler.js</PackagePath>
-      <Modified>2025-05-02T09:57:36.100</Modified>
+      <Modified>2025-05-02T10:44:38.590</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\js\timeinterval-zoom-handler.js">
+      <PackagePath>wwwroot\js\timeinterval-zoom-handler.js</PackagePath>
+      <Modified>2025-05-02T10:53:01.572</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\resizetizer\sp\splashSplashScreen.scale-100.png">
       <PackagePath>splashSplashScreen.scale-100.png</PackagePath>
@@ -315,7 +319,7 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\bin\Debug\net8.0-windows10.0.19041.0\win10-x64\ZIVA-Prototype.deps.json">
       <PackagePath>ZIVA-Prototype.deps.json</PackagePath>
-      <Modified>2025-05-02T08:38:09.490</Modified>
+      <Modified>2025-05-02T10:55:17.487</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.windows.sdk.net.ref\10.0.19041.34\lib\net6.0\Microsoft.Windows.SDK.NET.dll">
       <PackagePath>Microsoft.Windows.SDK.NET.dll</PackagePath>

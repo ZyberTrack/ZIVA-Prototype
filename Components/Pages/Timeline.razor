@@ -3,6 +3,9 @@
 @implements IDisposable
 
 @code {
+
+    private bool isZooming = false; // Flag to indicate if zooming is in progress
+
     private int viewportWidth;
     private int startOffset = 70;
     private int spacing = 180;
@@ -11,6 +14,34 @@
     private int renderBuffer = 5;
     private int lastScrollIndex = int.MinValue;
     private int movableLayerWidth = 0;
+    // Intelligent Zoom
+    private readonly int[] zoomLevelsInSeconds = new[]
+    {
+    10,      // 10 Sekunden
+    30,      // 30 Sekunden
+    60,      // 1 Minute
+    300,     // 5 Minuten
+    600,     // 10 Minuten
+    1200,    // 20 Minuten
+    1800,    // 30 Minuten
+    3600,    // 1 Stunde
+    7200,    // 2 Stunden
+    86400,   // 24 Stunden (1 Tag)
+    172800,  // 48 Stunden (2 Tage)
+    259200,  // 72 Stunden (3 Tage)
+    604800,  // 1 Woche (7 Tage)
+    1209600, // 2 Wochen (14 Tage)
+    2419200, // 1 Monat (30 Tage)
+    5184000, // 2 Monate (60 Tage)
+    7776000, // 3 Monate (90 Tage)
+    10368000,// 4 Monate (120 Tage)
+    15552000,// 6 Monate (180 Tage)
+    31104000,// 1 Jahr (365 Tage)
+    };
+
+    private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
+
+    private int CurrentIntervalInSeconds => zoomLevelsInSeconds[currentZoomIndex];
     private readonly DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
 
     private DotNetObjectReference<Timeline>? selfRef;
@@ -38,6 +69,7 @@
             await JS.InvokeVoidAsync("registerResizeHandler", selfRef);
             await JS.InvokeVoidAsync("registerScrollHandler", selfRef);
             await JS.InvokeVoidAsync("registerDragHandler", selfRef);
+            await JS.InvokeVoidAsync("registerZoomHandler", selfRef);
         }
     }
 
@@ -110,7 +142,7 @@
         return new TimestampEntry
             {
                 Index = index,
-                Time = baseTime.AddMinutes(index * 10), // kann auch negativ sein
+                Time = baseTime.AddSeconds(index * CurrentIntervalInSeconds), // kann auch negativ sein - intervall in Sekunden
                 Position = 0
             };
     }
@@ -135,6 +167,28 @@
         StateHasChanged();
         return Task.CompletedTask;
     }
+
+    [JSInvokable("OnZoom")]
+    public async Task OnZoomAsync(string direction)
+    {
+        isZooming = true; // Flag setzen, um anzuzeigen, dass ein Zoom-Vorgang stattfindet
+
+        if (direction == "in" && currentZoomIndex > 0)
+            currentZoomIndex--;
+        else if (direction == "out" && currentZoomIndex < zoomLevelsInSeconds.Length - 1)
+            currentZoomIndex++;
+
+        // Sichtbare Einträge neu berechnen
+        visibleEntries.Clear();
+        UpdateVisibleEntries();
+        StateHasChanged();
+
+        // Optional kleine Pause, damit JS keine Scrolls mehr sendet
+        await Task.Delay(50); // 50 ms genügt meist
+
+        isZooming = false; // Flag zurücksetzen, wenn der Zoom-Vorgang abgeschlossen ist
+    }
+
 
     public void Dispose()
     {
@@ -183,7 +237,16 @@
                 @foreach (var entry in visibleEntries)
                 {
                     <div @key="entry.Index" class="timestamp" style="left:@($"{entry.Position}px")">
-                        <span>@entry.Time.ToString("yyyy-MM-dd HH:mm")</span>
+                        <span>
+                            @entry.Time.ToString(
+                                     CurrentIntervalInSeconds < 60 ? "yyyy-MM-dd HH:mm:ss" :      // Sekunden bis Minuten
+                                     CurrentIntervalInSeconds < 3600 ? "yyyy-MM-dd HH:mm" :        // Minuten bis Stunden
+                                     CurrentIntervalInSeconds < 86400 ? "yyyy-MM-dd HH:mm" :       // Stunden bis 24 Stunden
+                                     CurrentIntervalInSeconds < 2592000 ? "yyyy-MM-dd" :            // Ab 30 Tagen auf "yyyy-MM-dd"
+                                     CurrentIntervalInSeconds < 5184000 ? "yyyy-MM" :               // Ab 2 Monaten auf "yyyy-MM"
+                                     "yyyy-MM"                                                       // Ab 1 Jahr auf "yyyy-MM"
+                                     )
+                        </span>
                     </div>
                     <div class="line" style="left:@($"{entry.Position}px")"></div>
                 }

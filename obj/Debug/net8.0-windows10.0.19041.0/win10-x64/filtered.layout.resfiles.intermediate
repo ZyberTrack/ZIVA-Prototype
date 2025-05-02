@@ -113,3 +113,4 @@ wwwroot\index.html
 wwwroot\js\drag-drop-handler.js
 wwwroot\js\scroll-handler.js
 wwwroot\js\scroll-handler.js
+wwwroot\js\timeinterval-zoom-handler.js

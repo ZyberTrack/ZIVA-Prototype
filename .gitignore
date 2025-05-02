@@ -1,0 +1,79 @@
+## .NET-specific files
+# User-specific files
+.vs
+.vscode
+.idea
+.DS_Store
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# User-specific files for Rider
+.idea/
+
+# User-specific files for Visual Studio for Mac
+.vscode/
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Dd]ist/
+[Dd]ist/Publish/
+[Dd]eploy/
+
+# For builds, if using the .NET SDK-style project format
+bin/
+obj/
+
+# ASP.NET temporary files
+appsettings.Development.json
+
+# .NET Core SDK files
+project.lock.json
+project.fragment.lock.json
+
+# NUnit/Visual Studio test result files
+TestResults/
+
+# JetBrains Rider
+.idea/
+
+# macOS Finder specific files
+.DS_Store
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# .NET Core logs
+*.log
+
+# Microsoft Visual Studio for Mac
+.vscode/
+
+# MAUI specific generated files
+.maui/
+
+# Xamarin-specific files
+Xamarin/
+
+# Android-specific files
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+
+# iOS-specific files
+**/bin/
+**/obj/
+
+# .NET SDK versioning
+global.json
+
+# AppCenter Build outputs
+appcenter-output/

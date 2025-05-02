@@ -64,6 +64,9 @@
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\js\scroll-handler.js">
       <PackagePath>wwwroot\js\scroll-handler.js</PackagePath>
     </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\js\timeinterval-zoom-handler.js">
+      <PackagePath>wwwroot\js\timeinterval-zoom-handler.js</PackagePath>
+    </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\resizetizer\sp\splashSplashScreen.scale-100.png">
       <PackagePath>splashSplashScreen.scale-100.png</PackagePath>
     </AppxPackagedFile>
