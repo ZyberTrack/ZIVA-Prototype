@@ -87,6 +87,10 @@
               "target": "Package",
               "version": "[8.0.8, )",
               "autoReferenced": true
+            },
+            "Radzen.Blazor": {
+              "target": "Package",
+              "version": "[6.6.4, )"
             }
           },
           "imports": [
@@ -134,6 +138,10 @@
               "target": "Package",
               "version": "[8.0.8, )",
               "autoReferenced": true
+            },
+            "Radzen.Blazor": {
+              "target": "Package",
+              "version": "[6.6.4, )"
             }
           },
           "imports": [
@@ -181,6 +189,10 @@
               "target": "Package",
               "version": "[8.0.8, )",
               "autoReferenced": true
+            },
+            "Radzen.Blazor": {
+              "target": "Package",
+              "version": "[6.6.4, )"
             }
           },
           "imports": [
@@ -223,6 +235,10 @@
             "Microsoft.Maui.Controls.Compatibility": {
               "target": "Package",
               "version": "[8.0.82, )"
+            },
+            "Radzen.Blazor": {
+              "target": "Package",
+              "version": "[6.6.4, )"
             }
           },
           "imports": [

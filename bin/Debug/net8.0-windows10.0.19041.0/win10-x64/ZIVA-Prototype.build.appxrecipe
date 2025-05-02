@@ -265,6 +265,12 @@
     <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.aspnetcore.metadata\8.0.0\lib\net8.0\Microsoft.AspNetCore.Metadata.dll">
       <PackagePath>Microsoft.AspNetCore.Metadata.dll</PackagePath>
     </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\Microsoft.CodeAnalysis.dll">
+      <PackagePath>Microsoft.CodeAnalysis.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\Microsoft.CodeAnalysis.CSharp.dll">
+      <PackagePath>Microsoft.CodeAnalysis.CSharp.dll</PackagePath>
+    </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.extensions.configuration\8.0.0\lib\net8.0\Microsoft.Extensions.Configuration.dll">
       <PackagePath>Microsoft.Extensions.Configuration.dll</PackagePath>
     </AppxPackagedFile>
@@ -391,8 +397,89 @@
     <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.windowsappsdk\1.5.240627000\lib\net6.0-windows10.0.18362.0\Microsoft.WindowsAppRuntime.Bootstrap.Net.dll">
       <PackagePath>Microsoft.WindowsAppRuntime.Bootstrap.Net.dll</PackagePath>
     </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\lib\net8.0\Radzen.Blazor.dll">
+      <PackagePath>Radzen.Blazor.dll</PackagePath>
+    </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\system.io.pipelines\8.0.0\lib\net8.0\System.IO.Pipelines.dll">
       <PackagePath>System.IO.Pipelines.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\cs\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>cs\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\de\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>de\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\es\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>es\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\fr\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>fr\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\it\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>it\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\ja\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>ja\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\ko\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>ko\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\pl\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>pl\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\pt-BR\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>pt-BR\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\ru\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>ru\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\tr\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>tr\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\zh-Hans\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>zh-Hans\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.common\4.8.0\lib\net7.0\zh-Hant\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>zh-Hant\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\cs\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>cs\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\de\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>de\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\es\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>es\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\fr\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>fr\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\it\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>it\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\ja\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>ja\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\ko\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>ko\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\pl\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>pl\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\pt-BR\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>pt-BR\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\ru\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>ru\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\tr\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>tr\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\zh-Hans\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>zh-Hans\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\zh-Hant\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>zh-Hant\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.maui.controls.core\8.0.82\lib\net8.0-windows10.0.19041\ar\Microsoft.Maui.Controls.resources.dll">
       <PackagePath>ar\Microsoft.Maui.Controls.resources.dll</PackagePath>
@@ -510,6 +597,138 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.maui.core\8.0.82\lib\net8.0-windows10.0.19041\Microsoft.Maui.pri">
       <PackagePath>Microsoft.Maui.pri</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\dark.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\dark.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\dark-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\dark-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\dark-wcag.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\dark-wcag.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\default.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\default.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\default-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\default-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\default-wcag.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\default-wcag.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\fluent.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\fluent.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\fluent-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\fluent-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\fluent-dark.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\fluent-dark.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\fluent-dark-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\fluent-dark-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\humanistic.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\humanistic.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\humanistic-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\humanistic-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\humanistic-dark.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\humanistic-dark.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\humanistic-dark-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\humanistic-dark-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\humanistic-dark-wcag.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\humanistic-dark-wcag.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\humanistic-wcag.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\humanistic-wcag.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\material.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\material.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\material3.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\material3.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\material3-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\material3-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\material3-dark.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\material3-dark.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\material3-dark-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\material3-dark-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\material-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\material-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\material-dark.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\material-dark.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\material-dark-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\material-dark-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\material-dark-wcag.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\material-dark-wcag.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\material-wcag.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\material-wcag.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\software.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\software.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\software-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\software-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\software-dark.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\software-dark.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\software-dark-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\software-dark-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\software-dark-wcag.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\software-dark-wcag.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\software-wcag.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\software-wcag.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\standard.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\standard.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\standard-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\standard-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\standard-dark.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\standard-dark.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\standard-dark-base.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\standard-dark-base.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\standard-dark-wcag.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\standard-dark-wcag.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\css\standard-wcag.css">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\css\standard-wcag.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\fonts\MaterialSymbolsOutlined.woff2">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\fonts\MaterialSymbolsOutlined.woff2</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\fonts\RobotoFlex.woff2">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\fonts\RobotoFlex.woff2</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\fonts\SourceSans3VF-Italic.ttf.woff2">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\fonts\SourceSans3VF-Italic.ttf.woff2</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\fonts\SourceSans3VF-Upright.ttf.woff2">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\fonts\SourceSans3VF-Upright.ttf.woff2</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\Radzen.Blazor.js">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\Radzen.Blazor.js</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\radzen.blazor\6.6.4\staticwebassets\Radzen.Blazor.min.js">
+      <PackagePath>wwwroot\_content\Radzen.Blazor\Radzen.Blazor.min.js</PackagePath>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\scopedcss\bundle\ZIVA-Prototype.styles.css">
       <PackagePath>wwwroot\ZIVA-Prototype.styles.css</PackagePath>

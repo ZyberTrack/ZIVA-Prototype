@@ -8,7 +8,11 @@
     private int spacing = 180;
     private int visibleTimestamps = 0;
     private int scrollIndex = 0;
-    private int renderBuffer = 2;
+    private int renderBuffer = 5;
+    private int lastScrollIndex = int.MinValue;
+    private int movableLayerWidth = 0;
+    private readonly DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
+
     private DotNetObjectReference<Timeline>? selfRef;
 
     private List<TimestampEntry> visibleEntries = new();
@@ -37,7 +41,7 @@
         }
     }
 
-    [JSInvokable("OnResize")]
+    [JSInvokable("OnResize")] // Elemente werden Visuell dem Fenster angepasst
     public async Task OnResizeAsync()
     {
         await UpdateViewportWidthAsync();
@@ -53,28 +57,80 @@
 
     private void UpdateVisibleEntries()
     {
-        int renderStart = Math.Max(0, scrollIndex - renderBuffer);
+        int renderStart = scrollIndex - renderBuffer;
         int renderEnd = scrollIndex + visibleTimestamps + renderBuffer;
 
-        // Entferne nicht mehr sichtbare Einträge
-        visibleEntries.RemoveAll(e => e.Index < renderStart || e.Index >= renderEnd);
-
-        for (int i = renderStart; i < renderEnd; i++)
+        if (lastScrollIndex == int.MinValue)
         {
-            if (!visibleEntries.Any(e => e.Index == i))
+            // Erste Initialisierung
+            for (int i = renderStart; i < renderEnd; i++)
             {
-                var time = DateTime.Now.AddMinutes(i * 10);
-                visibleEntries.Add(new TimestampEntry
-                    {
-                        Index = i,
-                        Time = time,
-                        Position = 0 // Placeholder – wird unten gesetzt
-                    });
+                visibleEntries.Add(CreateEntry(i));
+            }
+        }
+        else if (scrollIndex > lastScrollIndex)
+        {
+            // Nach rechts gescrollt
+            // Entferne links
+            visibleEntries.RemoveAll(e => e.Index < renderStart);
+
+            // Füge rechts neue Einträge hinzu
+            for (int i = lastScrollIndex + visibleTimestamps + renderBuffer; i < renderEnd; i++)
+            {
+                if (!visibleEntries.Any(e => e.Index == i))
+                    visibleEntries.Add(CreateEntry(i));
+            }
+        }
+        else if (scrollIndex < lastScrollIndex)
+        {
+            // Nach links gescrollt
+            // Entferne rechts
+            visibleEntries.RemoveAll(e => e.Index >= renderEnd);
+
+            // Füge links neue Einträge hinzu
+            for (int i = renderStart; i < lastScrollIndex - renderBuffer; i++)
+            {
+                if (!visibleEntries.Any(e => e.Index == i))
+                    visibleEntries.Insert(0, CreateEntry(i));
+            }
+        }
+        else
+        {
+            // Keine Scrollbewegung, aber eventuell Initialisierung oder Resize
+            if (visibleEntries.Count == 0)
+            {
+                for (int i = renderStart; i < renderEnd; i++)
+                {
+                    visibleEntries.Add(CreateEntry(i));
+                }
             }
         }
 
+        // breite von movable-layer festlegen
+        if (visibleEntries.Count > 0)
+        {
+            int minIndex = visibleEntries.Min(e => e.Index);
+            int maxIndex = visibleEntries.Max(e => e.Index);
+            movableLayerWidth = (maxIndex - minIndex + 1) * spacing + startOffset;
+        }
+
+
         RecalculatePositions();
+        lastScrollIndex = scrollIndex;
     }
+
+
+    private TimestampEntry CreateEntry(int index)
+    {
+        return new TimestampEntry
+            {
+                Index = index,
+                Time = baseTime.AddMinutes(index * 10), // kann auch negativ sein
+                Position = 0
+            };
+    }
+
+
 
     private void RecalculatePositions()
     {
@@ -89,11 +145,8 @@
     {
         if (direction == "right")
             scrollIndex++;
-        else if (direction == "left" && scrollIndex > 0)
+        else if (direction == "left")
             scrollIndex--;
-
-        int maxScroll = 100;
-        scrollIndex = Math.Min(scrollIndex, maxScroll);
 
         UpdateVisibleEntries();
         StateHasChanged();
@@ -119,6 +172,16 @@
         </div>
     </div>
 
+    <div class="timeline-static">
+        <div class="timeline-area-scroll timeline-area-top">
+            <div class="timeline"></div>
+        </div>
+
+        <div class="timeline-area-scroll timeline-area-bottom">
+            <div class="timeline"></div>
+        </div>
+    </div>
+
     <div class="timeless-area">
         <div class="timeline-area-static">
             <div class="timeline-label">Zeitstempel Unbekannt</div>
@@ -131,24 +194,17 @@
 
 
     <div class="timeline-container">
-        <!-- NEU: Wrapper für bewegliche Inhalte -->
-        <div class="movable-layer" style="transform: translateX(@(scrollIndex * -spacing)px)">
-            @foreach (var entry in visibleEntries)
-            {
-                <div @key="entry.Index" class="timestamp" style="left:@($"{entry.Position}px")">
+        <!-- Externer Container mit fixer Breite & overflow -->
+        <div class="scroll-wrapper">
+            <div class="movable-layer" style="width:@(movableLayerWidth)px; position: relative;">
+                @foreach (var entry in visibleEntries)
+                {
+                    <div @key="entry.Index" class="timestamp" style="left:@($"{entry.Position}px")">
                         <span>@entry.Time.ToString("yyyy-MM-dd HH:mm")</span>
-                </div>
-                <div class="line" style="left:@($"{entry.Position}px")"></div>
-            }
+                    </div>
+                    <div class="line" style="left:@($"{entry.Position}px")"></div>
+                }
+            </div>
         </div>
-
-        <div class="timeline-area-scroll timeline-area-top">
-           <div class="timeline"></div>
-        </div>
-
-        <div class="timeline-area-scroll timeline-area-bottom">
-           <div class="timeline"></div>
-        </div>
-            
-     </div>
+    </div>
 </div>

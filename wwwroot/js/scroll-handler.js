@@ -1,5 +1,5 @@
 window.registerScrollHandler = function (dotNetHelper) {
-    const container = document.querySelector('.timeline-scrollable');
+    const container = document.querySelector('.scroll-wrapper');
     if (!container) {
         console.warn('timeline-scrollable container not found!');
         return;
