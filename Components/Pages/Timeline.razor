@@ -1,16 +1,33 @@
 ﻿@page "/"
 @inject IJSRuntime JS
+@implements IDisposable
 
 @code {
     private int viewportWidth;
-    private int startOffset = 200;
+    private int startOffset = 70;
     private int spacing = 180;
     private int visibleTimestamps = 0;
+    private int scrollIndex = 0;
+    private int renderBuffer = 5;
+    private int lastScrollIndex = int.MinValue;
+    private int movableLayerWidth = 0;
+    private readonly DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
+
     private DotNetObjectReference<Timeline>? selfRef;
+
+    private List<TimestampEntry> visibleEntries = new();
+
+    public class TimestampEntry
+    {
+        public int Index { get; set; }
+        public DateTime Time { get; set; }
+        public int Position { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        await UpdateViewportWidthAsync(); // ← Sofort Viewport holen
+        await UpdateViewportWidthAsync();
+        UpdateVisibleEntries();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -19,21 +36,104 @@
         {
             selfRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("registerResizeHandler", selfRef);
+            await JS.InvokeVoidAsync("registerScrollHandler", selfRef);
+            await JS.InvokeVoidAsync("registerDragHandler", selfRef);
         }
     }
 
-    [JSInvokable("OnResize")]
+    [JSInvokable("OnResize")] // Elemente werden Visuell dem Fenster angepasst
     public async Task OnResizeAsync()
     {
         await UpdateViewportWidthAsync();
+        UpdateVisibleEntries();
         StateHasChanged();
     }
 
-    private async Task UpdateViewportWidthAsync() // Anzahl der abgebildeten Zeitstempel bestimmen
+    private async Task UpdateViewportWidthAsync()
     {
         viewportWidth = await JS.InvokeAsync<int>("getViewportWidth");
-        visibleTimestamps = Math.Max(0, (viewportWidth - startOffset) / (spacing + 20));
+        visibleTimestamps = Math.Max(0, (viewportWidth - startOffset));
+    }
 
+    private void UpdateVisibleEntries()
+    {
+        // Berechnung des Start- und Endbereichs der sichtbaren Einträge
+        int renderStart = scrollIndex - renderBuffer;
+        int renderEnd = scrollIndex + visibleTimestamps + renderBuffer;
+
+        int currentMin = visibleEntries.Count > 0 ? visibleEntries.Min(e => e.Index) : int.MaxValue;
+        int currentMax = visibleEntries.Count > 0 ? visibleEntries.Max(e => e.Index) : int.MinValue;
+
+        // Wenn noch keine sichtbaren Einträge vorhanden sind, Initialisierung mit der Standardanzahl an Einträgen
+        if (visibleEntries.Count == 0)
+        {
+            // Initialisiere mit einer Anzahl von Einträgen, die den gesamten sichtbaren Bereich abdecken
+            for (int i = renderStart; i < renderEnd; i++)
+            {
+                visibleEntries.Add(CreateEntry(i));
+            }
+        }
+        else
+        {
+            // Füge neue Einträge nach links hinzu, falls nötig
+            if (renderStart < currentMin)
+            {
+                for (int i = renderStart; i < currentMin; i++)
+                {
+                    visibleEntries.Insert(0, CreateEntry(i));
+                }
+            }
+
+            // Füge neue Einträge nach rechts hinzu, falls nötig
+            if (renderEnd > currentMax)
+            {
+                for (int i = currentMax + 1; i <= renderEnd; i++)
+                {
+                    visibleEntries.Add(CreateEntry(i));
+                }
+            }
+        }
+
+        // Neue Breite des scrollbaren Layers berechnen
+        int minIndex = visibleEntries.Min(e => e.Index);
+        int maxIndex = visibleEntries.Max(e => e.Index);
+        movableLayerWidth = (maxIndex - minIndex + 1) * spacing + startOffset;
+
+        RecalculatePositions();
+        lastScrollIndex = scrollIndex;
+    }
+
+
+
+    private TimestampEntry CreateEntry(int index)
+    {
+        return new TimestampEntry
+            {
+                Index = index,
+                Time = baseTime.AddMinutes(index * 10), // kann auch negativ sein
+                Position = 0
+            };
+    }
+
+    private void RecalculatePositions()
+    {
+        foreach (var entry in visibleEntries)
+        {
+            entry.Position = startOffset + (entry.Index - scrollIndex) * spacing;
+        }
+    }
+
+    [JSInvokable("OnScroll")]
+    public Task OnScrollAsync(string direction)
+    {
+        if (direction == "right")
+            scrollIndex++;
+        else if (direction == "left")
+            scrollIndex--;
+
+        UpdateVisibleEntries();
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     public void Dispose()
@@ -42,34 +142,52 @@
     }
 }
 
-
-
-
-<div class="timeline-container">
-
-    <!-- Zeitstempel ganz oben -->
-    @if (visibleTimestamps > 0)
-    {
-        for (var i = 0; i < visibleTimestamps; i++)
-        {
-            var position = startOffset + i * spacing;
-
-            <div class="timestamp" style="left:@($"{position}px")">
-                <span>@DateTime.Now.AddMinutes(i * 10).ToString("yyyy-MM-dd HH:mm")</span>
-            </div>
-            <div class="line" style="left:@($"{position}px")"></div>
-        }
-    }
-
-    <!-- Oberer Bereich: Verlauf Zeitstrahl -->
-    <div class="timeline-area timeline-area-top">
-        <div class="timeline-label">Verlauf</div>
-        <div class="timeline"></div>
+<!-- RAZOR MARKUP -->
+<div class="timeline-wrapper">
+    <div class="legend-area">
+        <div class="timeline-area-static timeline-area-top">
+            <div class="timeline-label">Verlauf-Zeitachse</div>
+            <div class="timeline"></div>
+        </div>
+        <div class="timeline-area-static timeline-area-bottom">
+            <div class="timeline-label">Analyse-Zeitachse</div>
+            <div class="timeline"></div>
+        </div>
     </div>
 
-    <!-- Unterer Bereich: Analyse Zeitstrahl -->
-    <div class="timeline-area timeline-area-bottom">
-        <div class="timeline-label">Analyse</div>
-        <div class="timeline"></div>
+    <div class="timeline-static">
+        <div class="timeline-area-scroll timeline-area-top">
+            <div class="timeline"></div>
+        </div>
+
+        <div class="timeline-area-scroll timeline-area-bottom">
+            <div class="timeline"></div>
+        </div>
+    </div>
+
+    <div class="timeless-area">
+        <div class="timeline-area-static">
+            <div class="timeline-label">Zeitstempel Unbekannt</div>
+            <div class="timeline"></div>
+        </div>
+        <div class="timeline-area-static">
+            <div class="timeline"></div>
+        </div>
+    </div>
+
+
+    <div class="timeline-container">
+        <!-- Externer Container mit fixer Breite & overflow -->
+        <div class="scroll-wrapper scroll-wrapper-timeline">
+            <div class="movable-layer" style="width:@(movableLayerWidth)px; position: relative;">
+                @foreach (var entry in visibleEntries)
+                {
+                    <div @key="entry.Index" class="timestamp" style="left:@($"{entry.Position}px")">
+                        <span>@entry.Time.ToString("yyyy-MM-dd HH:mm")</span>
+                    </div>
+                    <div class="line" style="left:@($"{entry.Position}px")"></div>
+                }
+            </div>
+        </div>
     </div>
 </div>
