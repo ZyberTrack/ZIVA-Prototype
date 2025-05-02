@@ -52,72 +52,57 @@
     private async Task UpdateViewportWidthAsync()
     {
         viewportWidth = await JS.InvokeAsync<int>("getViewportWidth");
-        visibleTimestamps = Math.Max(0, (viewportWidth - startOffset) / (spacing + 20));
+        visibleTimestamps = Math.Max(0, (viewportWidth - startOffset));
     }
 
     private void UpdateVisibleEntries()
     {
+        // Berechnung des Start- und Endbereichs der sichtbaren Einträge
         int renderStart = scrollIndex - renderBuffer;
         int renderEnd = scrollIndex + visibleTimestamps + renderBuffer;
 
-        if (lastScrollIndex == int.MinValue)
+        int currentMin = visibleEntries.Count > 0 ? visibleEntries.Min(e => e.Index) : int.MaxValue;
+        int currentMax = visibleEntries.Count > 0 ? visibleEntries.Max(e => e.Index) : int.MinValue;
+
+        // Wenn noch keine sichtbaren Einträge vorhanden sind, Initialisierung mit der Standardanzahl an Einträgen
+        if (visibleEntries.Count == 0)
         {
-            // Erste Initialisierung
+            // Initialisiere mit einer Anzahl von Einträgen, die den gesamten sichtbaren Bereich abdecken
             for (int i = renderStart; i < renderEnd; i++)
             {
                 visibleEntries.Add(CreateEntry(i));
             }
         }
-        else if (scrollIndex > lastScrollIndex)
-        {
-            // Nach rechts gescrollt
-            // Entferne links
-            visibleEntries.RemoveAll(e => e.Index < renderStart);
-
-            // Füge rechts neue Einträge hinzu
-            for (int i = lastScrollIndex + visibleTimestamps + renderBuffer; i < renderEnd; i++)
-            {
-                if (!visibleEntries.Any(e => e.Index == i))
-                    visibleEntries.Add(CreateEntry(i));
-            }
-        }
-        else if (scrollIndex < lastScrollIndex)
-        {
-            // Nach links gescrollt
-            // Entferne rechts
-            visibleEntries.RemoveAll(e => e.Index >= renderEnd);
-
-            // Füge links neue Einträge hinzu
-            for (int i = renderStart; i < lastScrollIndex - renderBuffer; i++)
-            {
-                if (!visibleEntries.Any(e => e.Index == i))
-                    visibleEntries.Insert(0, CreateEntry(i));
-            }
-        }
         else
         {
-            // Keine Scrollbewegung, aber eventuell Initialisierung oder Resize
-            if (visibleEntries.Count == 0)
+            // Füge neue Einträge nach links hinzu, falls nötig
+            if (renderStart < currentMin)
             {
-                for (int i = renderStart; i < renderEnd; i++)
+                for (int i = renderStart; i < currentMin; i++)
+                {
+                    visibleEntries.Insert(0, CreateEntry(i));
+                }
+            }
+
+            // Füge neue Einträge nach rechts hinzu, falls nötig
+            if (renderEnd > currentMax)
+            {
+                for (int i = currentMax + 1; i <= renderEnd; i++)
                 {
                     visibleEntries.Add(CreateEntry(i));
                 }
             }
         }
 
-        // breite von movable-layer festlegen
-        if (visibleEntries.Count > 0)
-        {
-            int minIndex = visibleEntries.Min(e => e.Index);
-            int maxIndex = visibleEntries.Max(e => e.Index);
-            movableLayerWidth = (maxIndex - minIndex + 1) * spacing + startOffset;
-        }
-
+        // Neue Breite des scrollbaren Layers berechnen
+        int minIndex = visibleEntries.Min(e => e.Index);
+        int maxIndex = visibleEntries.Max(e => e.Index);
+        movableLayerWidth = (maxIndex - minIndex + 1) * spacing + startOffset;
 
         RecalculatePositions();
         lastScrollIndex = scrollIndex;
     }
+
 
 
     private TimestampEntry CreateEntry(int index)
@@ -129,8 +114,6 @@
                 Position = 0
             };
     }
-
-
 
     private void RecalculatePositions()
     {
@@ -195,7 +178,7 @@
 
     <div class="timeline-container">
         <!-- Externer Container mit fixer Breite & overflow -->
-        <div class="scroll-wrapper">
+        <div class="scroll-wrapper scroll-wrapper-timeline">
             <div class="movable-layer" style="width:@(movableLayerWidth)px; position: relative;">
                 @foreach (var entry in visibleEntries)
                 {
