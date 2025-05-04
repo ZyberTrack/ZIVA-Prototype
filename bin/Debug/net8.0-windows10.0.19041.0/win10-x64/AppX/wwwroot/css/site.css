@@ -156,3 +156,20 @@
     justify-content: flex-start;
 }
 
+/* --- Zeitachsen-Elemente --- */
+.browser-marker {
+    position: absolute;
+    top: 50px;
+    transform: translateX(-50%);
+    z-index: 15;
+    background-color: lightblue;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+

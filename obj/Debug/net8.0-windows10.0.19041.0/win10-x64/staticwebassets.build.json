@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "17TIAFRpNA6DBcVhyPf1Pd0cyeeEIX+H27Nh8LJNXDM=",
+  "Hash": "LK6/RXBqJgtHmVVTVVM2VEo7PzsTiGp08ZBu0BKQWvg=",
   "Source": "ZIVA-Prototype",
   "BasePath": "/",
   "Mode": "Root",
@@ -1041,6 +1041,25 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\js\\scroll-handler.js"
+    },
+    {
+      "Identity": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\js\\timeinterval-zoom-handler.js",
+      "SourceId": "ZIVA-Prototype",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\",
+      "BasePath": "/",
+      "RelativePath": "js/timeinterval-zoom-handler.js",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\js\\timeinterval-zoom-handler.js"
     }
   ]
 }

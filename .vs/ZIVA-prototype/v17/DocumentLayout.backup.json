@@ -7,20 +7,59 @@
       "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:components\\pages\\timeline.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\wwwroot\\css\\site.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
-      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:wwwroot\\css\\site.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\wwwroot\\js\\timeinterval-zoom-handler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:wwwroot\\js\\timeinterval-zoom-handler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\wwwroot\\css\\app.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
-      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:wwwroot\\css\\app.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\wwwroot\\index.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:wwwroot\\index.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\components\\routes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:components\\routes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\wwwroot\\index.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:wwwroot\\index.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\mainpage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:mainpage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\mauiprogram.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:mauiprogram.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\mainpage.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:mainpage.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\components\\pages\\data_import.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:components\\pages\\data_import.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\components\\models\\timelinestateservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:components\\models\\timelinestateservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\components\\models\\historyentry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:components\\models\\historyentry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\ziva-prototype.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:ziva-prototype.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\dotnet\\sdk\\8.0.400\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.Shared.targets||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\wwwroot\\css\\site.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:wwwroot\\css\\site.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|c:\\users\\vikto\\documents\\github\\ziva-prototype\\wwwroot\\css\\app.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{BB4B4F86-9410-45C4-9595-7324A2124458}|ZIVA-Prototype.csproj|solutionrelative:wwwroot\\css\\app.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
     }
   ],
   "DocumentGroupContainers": [
@@ -30,8 +69,137 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 10,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "App.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\App.xaml.cs",
+              "RelativeDocumentMoniker": "App.xaml.cs",
+              "ToolTip": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\App.xaml.cs",
+              "RelativeToolTip": "App.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-04T08:55:38.847Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "MainPage.xaml",
+              "DocumentMoniker": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\MainPage.xaml",
+              "RelativeDocumentMoniker": "MainPage.xaml",
+              "ToolTip": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\MainPage.xaml",
+              "RelativeToolTip": "MainPage.xaml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-05-04T08:55:30.909Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "timeinterval-zoom-handler.js",
+              "DocumentMoniker": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\js\\timeinterval-zoom-handler.js",
+              "RelativeDocumentMoniker": "wwwroot\\js\\timeinterval-zoom-handler.js",
+              "ToolTip": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\js\\timeinterval-zoom-handler.js",
+              "RelativeToolTip": "wwwroot\\js\\timeinterval-zoom-handler.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-05-04T08:55:14.995Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "Microsoft.NET.Sdk.DefaultItems.Shared.targets",
+              "DocumentMoniker": "C:\\Program Files\\dotnet\\sdk\\8.0.400\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.Shared.targets",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\dotnet\\sdk\\8.0.400\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.Shared.targets",
+              "ToolTip": "C:\\Program Files\\dotnet\\sdk\\8.0.400\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.Shared.targets",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\dotnet\\sdk\\8.0.400\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.Shared.targets",
+              "ViewState": "AgIAAIwAAAAAAAAAAAAUwL0AAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003801|",
+              "WhenOpened": "2025-05-04T08:38:55.916Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "ZIVA-Prototype.csproj",
+              "DocumentMoniker": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\ZIVA-Prototype.csproj",
+              "RelativeDocumentMoniker": "ZIVA-Prototype.csproj",
+              "ToolTip": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\ZIVA-Prototype.csproj",
+              "RelativeToolTip": "ZIVA-Prototype.csproj",
+              "ViewState": "AgIAADAAAAAAAAAAAAAAAEoAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-05-04T08:37:46.562Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "MainPage.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\MainPage.xaml.cs",
+              "RelativeDocumentMoniker": "MainPage.xaml.cs",
+              "ToolTip": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\MainPage.xaml.cs",
+              "RelativeToolTip": "MainPage.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-04T08:15:46.667Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "MauiProgram.cs",
+              "DocumentMoniker": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\MauiProgram.cs",
+              "RelativeDocumentMoniker": "MauiProgram.cs",
+              "ToolTip": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\MauiProgram.cs",
+              "RelativeToolTip": "MauiProgram.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-04T08:14:12.347Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "TimelineStateService.cs",
+              "DocumentMoniker": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\Components\\Models\\TimelineStateService.cs",
+              "RelativeDocumentMoniker": "Components\\Models\\TimelineStateService.cs",
+              "ToolTip": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\Components\\Models\\TimelineStateService.cs",
+              "RelativeToolTip": "Components\\Models\\TimelineStateService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-04T08:12:22.463Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "HistoryEntry.cs",
+              "DocumentMoniker": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\Components\\Models\\HistoryEntry.cs",
+              "RelativeDocumentMoniker": "Components\\Models\\HistoryEntry.cs",
+              "ToolTip": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\Components\\Models\\HistoryEntry.cs",
+              "RelativeToolTip": "Components\\Models\\HistoryEntry.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-04T08:03:06.943Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Data_import.razor",
+              "DocumentMoniker": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\Components\\Pages\\Data_import.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\Data_import.razor",
+              "ToolTip": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\Components\\Pages\\Data_import.razor",
+              "RelativeToolTip": "Components\\Pages\\Data_import.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-05-04T07:59:50.261Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -40,20 +208,20 @@
               "RelativeDocumentMoniker": "Components\\Pages\\Timeline.razor",
               "ToolTip": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\Components\\Pages\\Timeline.razor",
               "RelativeToolTip": "Components\\Pages\\Timeline.razor",
-              "ViewState": "AgIAAGIAAAAAAAAAAAAAAFEAAAARAAAAAAAAAA==",
+              "ViewState": "AgIAAPwAAAAAAAAAAAAAABYBAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2025-04-30T11:47:12.362Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 13,
               "Title": "site.css",
               "DocumentMoniker": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\css\\site.css",
               "RelativeDocumentMoniker": "wwwroot\\css\\site.css",
               "ToolTip": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\css\\site.css",
               "RelativeToolTip": "wwwroot\\css\\site.css",
-              "ViewState": "AgIAACoAAAAAAAAAAAAAAEMAAAARAAAAAAAAAA==",
+              "ViewState": "AgIAAIYAAAAAAAAAAIBJwJ4AAAAhAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
               "WhenOpened": "2025-04-30T12:37:17.543Z",
               "EditorCaption": ""
@@ -73,26 +241,26 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 14,
               "Title": "app.css",
               "DocumentMoniker": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\css\\app.css",
               "RelativeDocumentMoniker": "wwwroot\\css\\app.css",
               "ToolTip": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\css\\app.css",
               "RelativeToolTip": "wwwroot\\css\\app.css",
-              "ViewState": "AgIAACQAAAAAAAAAAIBJwEkAAAAWAAAAAAAAAA==",
+              "ViewState": "AgIAAB4AAAAAAAAAACBjwEkAAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
               "WhenOpened": "2025-04-30T14:16:17.755Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 2,
               "Title": "index.html",
               "DocumentMoniker": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\index.html",
               "RelativeDocumentMoniker": "wwwroot\\index.html",
               "ToolTip": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\index.html",
               "RelativeToolTip": "wwwroot\\index.html",
-              "ViewState": "AgIAAAMAAAAAAAAAAIBZwB8AAAAUAAAAAAAAAA==",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAACAAAAA7AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
               "WhenOpened": "2025-04-30T13:32:23.381Z",
               "EditorCaption": ""

@@ -1,7 +1,44 @@
 ﻿@page "/data_import"
+@using ZIVA_Prototype.Components.Models
+@inject HistoryImportService ImportService
+@inject TimelineStateService State
+@using Microsoft.Maui.Storage
 
-<h3>data_import</h3>
+<h3>Import</h3>
+
+<!-- Button zum Auswählen der Datei und Importieren -->
+<button @onclick="ImportDb">Importieren</button>
 
 @code {
+    private async Task ImportDb()
+    {
+        // Öffne den Dateimanager und lasse den Benutzer eine Datei auswählen
+        var filePath = await SelectFileAsync();
 
+        if (!string.IsNullOrEmpty(filePath))
+        {
+            // Falls eine Datei ausgewählt wurde, lade sie
+            var entries = ImportService.LoadFromHistoryDatabase(filePath);
+            State.SetBrowserEntries(entries);
+        }
+        else
+        {
+            // Fehlerbehandlung, falls keine Datei ausgewählt wurde
+            Console.WriteLine("Keine Datei ausgewählt.");
+        }
+    }
+
+    private async Task<string?> SelectFileAsync()
+    {
+        // Öffne den Dateimanager
+        var fileResult = await FilePicker.Default.PickAsync();
+
+        if (fileResult != null)
+        {
+            // Rückgabe des Pfades der ausgewählten Datei
+            return fileResult.FullPath;
+        }
+
+        return null; // Falls keine Datei ausgewählt wurde
+    }
 }
