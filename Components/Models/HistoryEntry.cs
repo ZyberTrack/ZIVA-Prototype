@@ -1,7 +1,5 @@
-
 using Microsoft.Data.Sqlite;
-
-
+using System;
 
 namespace ZIVA_Prototype.Components.Models
 {
@@ -10,6 +8,8 @@ namespace ZIVA_Prototype.Components.Models
         public string Url { get; set; } = string.Empty;
         public DateTime VisitTime { get; set; }
         public string? Title { get; set; }
+        public string? ReferrerUrl { get; set; }
+        public string? ReferrerTitle { get; set; }
     }
 
     public class HistoryImportService
@@ -23,28 +23,40 @@ namespace ZIVA_Prototype.Components.Models
 
             var command = connection.CreateCommand();
             command.CommandText = @"
-            SELECT url, title, last_visit_time
-            FROM urls
-            ORDER BY last_visit_time ASC
-        ";
+                SELECT
+                    v.id AS visit_id,
+                    datetime(v.visit_time / 1000000 + strftime('%s', '1601-01-01'), 'unixepoch', 'localtime') AS datetime_local,
+                    u.url AS current_url,
+                    u.title AS current_title,
+                    v.transition,
+                    v.from_visit,
+                    f.url AS referrer_url,
+                    f.title AS referrer_title
+                FROM visits v
+                LEFT JOIN urls u ON v.url = u.id
+                LEFT JOIN visits vf ON v.from_visit = vf.id
+                LEFT JOIN urls f ON vf.url = f.id
+                ORDER BY v.visit_time DESC;
+            ";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                var url = reader.GetString(0);
-                var title = reader.IsDBNull(1) ? null : reader.GetString(1);
-                var lastVisitRaw = reader.GetInt64(2);
+                var url = reader.GetString(reader.GetOrdinal("current_url"));
+                var title = reader.IsDBNull(reader.GetOrdinal("current_title")) ? null : reader.GetString(reader.GetOrdinal("current_title"));
+                var visitTimeRaw = reader.GetString(reader.GetOrdinal("datetime_local"));
+                var referrerUrl = reader.IsDBNull(reader.GetOrdinal("referrer_url")) ? null : reader.GetString(reader.GetOrdinal("referrer_url"));
+                var referrerTitle = reader.IsDBNull(reader.GetOrdinal("referrer_title")) ? null : reader.GetString(reader.GetOrdinal("referrer_title"));
 
-                // Chrome-Zeit (Microseconds seit 1601) zu DateTime
-                var visitTime = DateTimeOffset.FromUnixTimeSeconds(0)
-                    .AddYears(369) // Differenz zwischen 1601 und 1970
-                    .AddMilliseconds(lastVisitRaw / 1000 / 10).DateTime;
+                var visitTime = DateTime.Parse(visitTimeRaw);
 
                 entries.Add(new BrowserHistoryEntry
                 {
                     Url = url,
                     Title = title,
-                    VisitTime = visitTime
+                    VisitTime = visitTime,
+                    ReferrerUrl = referrerUrl,
+                    ReferrerTitle = referrerTitle
                 });
             }
 

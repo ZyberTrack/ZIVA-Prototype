@@ -2,22 +2,24 @@
 @inject IJSRuntime JS
 @implements IDisposable
 @using ZIVA_Prototype.Components.Models
-@inject TimelineStateService State
+@inject TimelineStateService State // Verwaltet States mehrerer Importierter Datenbanken
 @inject HistoryImportService Importer
 
 @code {
 
     private bool isZooming = false; // Flag to indicate if zooming is in progress
+    private BrowserHistoryEntry? selectedEntry; // Aktuell ausgewählte Browser Artefakt Entry
+
 
     private int viewportWidth;
     private int startOffset = 70;
-    private int spacing = 180;
+    private int spacing = 250;
     private int visibleTimestamps = 0;
     private int scrollIndex = 0;
     private int renderBuffer = 5;
     private int lastScrollIndex = int.MinValue;
     private int movableLayerWidth = 0;
-    private readonly DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
+    private DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
 
     // Intelligent Zoom
     private readonly int[] zoomLevelsInSeconds = new[]
@@ -42,10 +44,14 @@
     10368000,// 4 Monate (120 Tage)
     15552000,// 6 Monate (180 Tage)
     31104000,// 1 Jahr (365 Tage)
+    63072000,// 2 Jahre
     };
 
     private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
     private int CurrentIntervalInSeconds => zoomLevelsInSeconds[currentZoomIndex];
+    private double SecondsPerPixel = double.MaxValue; //Anzeige Intervall in Sekunden pro Pixel für Timeline Einträge
+
+
 
     private DotNetObjectReference<Timeline>? selfRef;
 
@@ -56,14 +62,6 @@
         public int Index { get; set; }
         public DateTime Time { get; set; }
         public int Position { get; set; }
-    }
-
-    public class TimelineHistoryEntry
-    {
-        public DateTime Time { get; set; }
-        public string Url { get; set; }
-        public int Position { get; set; }
-        public string? Title { get; set; }
     }
 
     private async Task LoadFromDatabase()
@@ -81,6 +79,10 @@
             Console.WriteLine("Datei nicht gefunden: " + filePath);
         }
 
+        await JS.InvokeVoidAsync("alert", $"Importiert: {State.BrowserEntries.Count} Einträge");
+        await JS.InvokeVoidAsync("alert", $"Erste URL: {State.BrowserEntries.FirstOrDefault()?.Url}");
+
+
         await Task.CompletedTask; // um async-Konformität zu behalten
     }
 
@@ -88,8 +90,15 @@
     protected override async Task OnInitializedAsync()
     {
         await UpdateViewportWidthAsync();
-        UpdateVisibleEntries();
         await LoadFromDatabase();
+
+        // Basiszeitpunkt auf frühesten Besuchszeitpunkt setzen
+        if (State.BrowserEntries.Any())
+        {
+            baseTime = State.BrowserEntries.Min(e => e.VisitTime);
+        }
+
+        UpdateVisibleEntries();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -123,6 +132,9 @@
         // Berechnung des Start- und Endbereichs der sichtbaren Einträge
         int renderStart = scrollIndex - renderBuffer;
         int renderEnd = scrollIndex + visibleTimestamps + renderBuffer;
+
+        // Berechnung von SecondsPerPixel basierend auf dem aktuellen Zoom-Level und der Sichtbreite
+        SecondsPerPixel = (double)CurrentIntervalInSeconds / viewportWidth;
 
         int currentMin = visibleEntries.Count > 0 ? visibleEntries.Min(e => e.Index) : int.MaxValue;
         int currentMax = visibleEntries.Count > 0 ? visibleEntries.Max(e => e.Index) : int.MinValue;
@@ -273,8 +285,8 @@
                                      CurrentIntervalInSeconds < 3600 ? "yyyy-MM-dd HH:mm" :        // Minuten bis Stunden
                                      CurrentIntervalInSeconds < 86400 ? "yyyy-MM-dd HH:mm" :       // Stunden bis 24 Stunden
                                      CurrentIntervalInSeconds < 2592000 ? "yyyy-MM-dd" :            // Ab 30 Tagen auf "yyyy-MM-dd"
-                                     CurrentIntervalInSeconds < 5184000 ? "yyyy-MM" :               // Ab 2 Monaten auf "yyyy-MM"
-                                     "yyyy-MM"                                                       // Ab 1 Jahr auf "yyyy-MM"
+                                     CurrentIntervalInSeconds < 31536000 ? "yyyy-MM" :               // Ab 2 Monaten auf "yyyy-MM"
+                                     "yyyy"                                                       // Ab 1 Jahr auf "yyyy-MM"
                                      )
                         </span>
                     </div>
@@ -283,16 +295,28 @@
 
                 @foreach (var data in State.BrowserEntries)
                 {
-                    var timeDiff = (data.VisitTime - baseTime).TotalMinutes;
-                    var index = (int)(timeDiff / 10.0);
-                    var pos = startOffset + (index - scrollIndex) * spacing;
+                    var secondsSinceBase = (data.VisitTime - baseTime).TotalSeconds; // Sekunden seit dem Basiszeitpunkt
+                    var pos = startOffset + (secondsSinceBase / SecondsPerPixel) - scrollIndex * spacing; // Berücksichtigung des Scroll-Index
 
-                    if (pos > -50 && pos < viewportWidth + 50) // sichtbar?
+                    if (pos > -50 && pos < viewportWidth + 50) // Sichtbarkeit prüfen
                     {
-                        <div class="browser-marker" style="left:@($"{pos}px")">
-                            <span>@data.Url</span>
+                        <div class="history-marker"
+                             style="left: calc(@($"{pos}px - 5px"))"
+                             data-url="@data.Url"
+                             @onclick="() => selectedEntry = data">
                         </div>
                     }
+                }
+                @if (selectedEntry != null)
+                {
+                    <div class="entry-details">
+                        <p><strong>Besuchszeit:</strong> @selectedEntry.VisitTime</p>
+                        <p><strong>URL:</strong> @selectedEntry.Url</p>
+                        @if (!string.IsNullOrEmpty(selectedEntry.Title))
+                        {
+                            <p><strong>Titel:</strong> @selectedEntry.Title</p>
+                        }
+                    </div>
                 }
             </div>
         </div>

@@ -1,19 +1,17 @@
-window.registerScrollHandler = function (dotNetHelper) {
-    const container = document.querySelector('.scroll-wrapper-timeline');
-    if (!container) {
-        console.warn('timeline-scrollable container not found!');
-        return;
-    }
+window.registerScrollHandler = function (dotNetRef) {
+    const scrollWrapper = document.querySelector('.scroll-wrapper-timeline');
 
-    container.addEventListener('wheel', function (e) {
-        if (e.deltaY === 0) return;
+    if (!scrollWrapper) return;
 
-        e.preventDefault(); // Damit nicht vertikal gescrollt wird
-
-        // Scroll horizontal um den deltaY-Wert
-        container.scrollLeft += e.deltaY;
-
-        const direction = e.deltaY > 0 ? 'right' : 'left';
-        dotNetHelper.invokeMethodAsync('OnScroll', direction);
-    }, { passive: false }); // Wichtig für preventDefault()
+    scrollWrapper.addEventListener('wheel', function (e) {
+        if (e.ctrlKey) {
+            // Zoom statt Scroll
+            e.preventDefault(); // Verhindert normales Scrollen
+            dotNetRef.invokeMethodAsync("OnZoom", e.deltaY < 0 ? "in" : "out");
+        } else {
+            // Nur scrollen, wenn STRG nicht gedrückt
+            e.preventDefault();
+            dotNetRef.invokeMethodAsync("OnScroll", e.deltaY < 0 ? "left" : "right");
+        }
+    }, { passive: false });
 };
