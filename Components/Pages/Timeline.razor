@@ -7,8 +7,24 @@
 
 @code {
 
+
+    //
+    // TIMELINE ARTEFAKTE WERDEN POSITIONSMÄSSIG FALSCH ANGEZEIGT!!!
+    //
+
     private bool isZooming = false; // Flag to indicate if zooming is in progress
     private BrowserHistoryEntry? selectedEntry; // Aktuell ausgewählte Browser Artefakt Entry
+
+
+    [JSInvokable("OnScrollPositionChanged")]
+    public Task OnScrollPositionChanged(int scrollLeft)
+    {
+        // Berechne neuen scrollIndex basierend auf scrollLeft
+        scrollIndex = (int)Math.Round((scrollLeft - startOffset) / (double)spacing);
+        UpdateVisibleEntries();
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
 
 
     private int viewportWidth;
@@ -47,9 +63,11 @@
     63072000,// 2 Jahre
     };
 
-    private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
+    private int currentZoomIndex = 3; // Start bei 10 Minuten (600 Sekunden)
     private int CurrentIntervalInSeconds => zoomLevelsInSeconds[currentZoomIndex];
-    private double SecondsPerPixel = double.MaxValue; //Anzeige Intervall in Sekunden pro Pixel für Timeline Einträge
+    private double PixelsPerSecond => viewportWidth / (double)CurrentIntervalInSeconds; //Anzeige Intervall in Pixel pro Sekunden für Timeline Einträge
+    private DateTime currentViewportStartTime => baseTime.AddSeconds(scrollIndex * CurrentIntervalInSeconds); //Zugriff basierend auf dem aktuellen Zoomlevel, aktuellen Scrollindex den Startzeitpunkt der Ansicht berechnet.
+
 
 
 
@@ -79,6 +97,7 @@
             Console.WriteLine("Datei nicht gefunden: " + filePath);
         }
 
+        // Debugging
         await JS.InvokeVoidAsync("alert", $"Importiert: {State.BrowserEntries.Count} Einträge");
         await JS.InvokeVoidAsync("alert", $"Erste URL: {State.BrowserEntries.FirstOrDefault()?.Url}");
 
@@ -107,7 +126,7 @@
         {
             selfRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("registerResizeHandler", selfRef);
-            await JS.InvokeVoidAsync("registerScrollHandler", selfRef);
+            await JS.InvokeVoidAsync("timelineInterop.registerScrollHandler", selfRef);
             await JS.InvokeVoidAsync("registerDragHandler", selfRef);
             await JS.InvokeVoidAsync("registerZoomHandler", selfRef);
         }
@@ -123,7 +142,7 @@
 
     private async Task UpdateViewportWidthAsync()
     {
-        viewportWidth = await JS.InvokeAsync<int>("getViewportWidth");
+        viewportWidth = Math.Max(await JS.InvokeAsync<int>("getViewportWidth"), 300); // Minimum
         visibleTimestamps = Math.Max(0, (viewportWidth - startOffset));
     }
 
@@ -132,9 +151,6 @@
         // Berechnung des Start- und Endbereichs der sichtbaren Einträge
         int renderStart = scrollIndex - renderBuffer;
         int renderEnd = scrollIndex + visibleTimestamps + renderBuffer;
-
-        // Berechnung von SecondsPerPixel basierend auf dem aktuellen Zoom-Level und der Sichtbreite
-        SecondsPerPixel = (double)CurrentIntervalInSeconds / viewportWidth;
 
         int currentMin = visibleEntries.Count > 0 ? visibleEntries.Min(e => e.Index) : int.MaxValue;
         int currentMax = visibleEntries.Count > 0 ? visibleEntries.Max(e => e.Index) : int.MinValue;
@@ -170,12 +186,18 @@
         }
 
         // Neue Breite des scrollbaren Layers berechnen
-        int minIndex = visibleEntries.Min(e => e.Index);
-        int maxIndex = visibleEntries.Max(e => e.Index);
-        movableLayerWidth = (maxIndex - minIndex + 1) * spacing + startOffset;
+        int entryCount = renderEnd - renderStart + 1;
+        movableLayerWidth = entryCount * spacing + startOffset;
 
         RecalculatePositions();
         lastScrollIndex = scrollIndex;
+
+
+        // Entferne Einträge links außerhalb des sichtbaren Bereichs
+        visibleEntries.RemoveAll(e => e.Index < renderStart);
+
+        // Entferne Einträge rechts außerhalb des sichtbaren Bereichs
+        visibleEntries.RemoveAll(e => e.Index > renderEnd);
     }
 
 
@@ -202,9 +224,9 @@
     public Task OnScrollAsync(string direction)
     {
         if (direction == "right")
-            scrollIndex++;
+            scrollIndex += (int)(viewportWidth / spacing / 10);
         else if (direction == "left")
-            scrollIndex--;
+            scrollIndex -= (int)(viewportWidth / spacing / 10);
 
         UpdateVisibleEntries();
         StateHasChanged();
@@ -221,6 +243,7 @@
         else if (direction == "out" && currentZoomIndex < zoomLevelsInSeconds.Length - 1)
             currentZoomIndex++;
 
+
         // Sichtbare Einträge neu berechnen
         visibleEntries.Clear();
         UpdateVisibleEntries();
@@ -231,6 +254,7 @@
 
         isZooming = false; // Flag zurücksetzen, wenn der Zoom-Vorgang abgeschlossen ist
     }
+
 
     public void Dispose()
     {
@@ -274,7 +298,7 @@
 
     <div class="timeline-container">
         <!-- Externer Container mit fixer Breite & overflow -->
-        <div class="scroll-wrapper scroll-wrapper-timeline">
+        <div id="scroll-container" class="scroll-wrapper scroll-wrapper-timeline">
             <div class="movable-layer" style="width:@(movableLayerWidth)px; position: relative;">
                 @foreach (var entry in visibleEntries)
                 {
@@ -293,10 +317,25 @@
                     <div class="line" style="left:@($"{entry.Position}px")"></div>
                 }
 
+
+
+
                 @foreach (var data in State.BrowserEntries)
                 {
-                    var secondsSinceBase = (data.VisitTime - baseTime).TotalSeconds; // Sekunden seit dem Basiszeitpunkt
-                    var pos = startOffset + (secondsSinceBase / SecondsPerPixel) - scrollIndex * spacing; // Berücksichtigung des Scroll-Index
+                    var timeOffsetSeconds = (data.VisitTime - currentViewportStartTime).TotalSeconds; // Sekunden seit dem Render Startzeitpunkt
+                    var pos = startOffset + timeOffsetSeconds * PixelsPerSecond;
+
+                    
+                    <!-- Debugging Informationen -->
+                    <div style="margin-left: 260px; background-color: white;">
+                        <pre>
+                            Pos: @pos
+                                SecondsSinceBase: @timeOffsetSeconds
+                            VisitTime: @data.VisitTime
+                        </pre>
+                    </div>
+
+
 
                     if (pos > -50 && pos < viewportWidth + 50) // Sichtbarkeit prüfen
                     {

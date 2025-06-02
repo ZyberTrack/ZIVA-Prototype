@@ -80,10 +80,11 @@
 						2. ~~Zeitstrahl scrollen können - fixen -> liegt das an der fläche der ebene?~~
 							1. ~~Zeitstrahl mit Maus ziehen -> verschieben können~~
 							2. ~~Zoomen soll den dargestellten Zeitintervall festlegen~~
-							3. startpunkt der Zeitline 1-2h vor ersten datensatz aus export
+							3. Zeitachsen Artefakt Positionsdarstellung FIXEN!!!
+							4. startpunkt der Zeitline 1-2h vor ersten datensatz aus export
 								1. ~~Dynamisches darstellen der Daten in echtzeit anhand der Daten~~
 								2. ~~endlos scrollen ermöglichen~~
-							4. ~~Listen aus datenbanken werden nach Zeitstempel sortiert.~~
+							5. ~~Listen aus datenbanken werden nach Zeitstempel sortiert.~~
 					2. ~~Zeitlose Artefakte Bereich auf Zeitstrahl darstellen~~
 					3. Objekte oder Symbole für Artefakt Darstellung und farben selektion festlegen
 						1. Farben per URL Zufällig festlegen

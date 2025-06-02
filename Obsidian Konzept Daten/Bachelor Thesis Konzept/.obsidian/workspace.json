@@ -139,20 +139,6 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "5_Approach/02-Konzept der Visualisierung/02-Validierung/User-Test_1/01-UT1-Protokolle.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "01-UT1-Protokolle"
-            }
-          },
-          {
-            "id": "d5017025cf112038",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
                 "file": "To Do.md",
                 "mode": "source",
                 "source": false
@@ -190,7 +176,7 @@
             }
           }
         ],
-        "currentTab": 12
+        "currentTab": 9
       },
       {
         "id": "745eb307d49be806",
@@ -415,16 +401,17 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "f13f3d9505a61481",
+  "active": "b4b7959ea73fb8b8",
   "lastOpenFiles": [
+    "5_Approach/02-Konzept der Visualisierung/02-Validierung/User-Test_1/01-UT1-Protokolle.md",
+    "To Do.md",
+    "5_Approach/03-Implementation/01-Implementationsplan.md",
+    "3_Related Work/Stoffsammlung.md",
     "Austausch mit Robert Luh.md",
     "3_Related Work/Related Work.md",
-    "To Do.md",
     "5_Approach/02-Konzept der Visualisierung/02-Validierung/01-User-Test-1.md",
     "5_Approach/02-Konzept der Visualisierung/02-Validierung/User-Test_1/Resultate aus dem USER- TEST 1.md",
-    "5_Approach/02-Konzept der Visualisierung/02-Validierung/User-Test_1/01-UT1-Protokolle.md",
     "5_Approach/03-Implementation/02-timeline Funktionen.md",
-    "5_Approach/03-Implementation/01-Implementationsplan.md",
     "STRUCKTURIERUNG.md",
     "IDEEN FÜR DIE ARTEBEIT.md",
     "1_Introduction/Ziele der Arbeit.md",
@@ -443,7 +430,6 @@
     "gfx/USER-TEST-1_ Ansicht mit Ausgeklapter Google Domäne Summary.png",
     "gfx/USER-TEST-1_ Kompakte Ansicht.png",
     "5_Approach/02-Konzept der Visualisierung/02-Validierung/User-Test_1",
-    "3_Related Work/Stoffsammlung.md",
     "3_Related Work/Eigene Tool Analyze.md",
     "5_Approach/01-Setup/03-Use-Cases Begründen.md",
     "e_Exposé/Template Exposé LATEX.md",
