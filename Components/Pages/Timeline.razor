@@ -9,22 +9,11 @@
 
 
     //
-    // TIMELINE ARTEFAKTE WERDEN POSITIONSMÄSSIG FALSCH ANGEZEIGT!!!
+    // TIMELINE ARTEFAKTE WERDEN POSITIONSMÄSSIG FALSCH ANGEZEIGT!!! -> bereits besser, aber nicht korrekt! Offset falsch? Artefakte verschwinden random bei unterschiedlichem zoom level
     //
 
     private bool isZooming = false; // Flag to indicate if zooming is in progress
     private BrowserHistoryEntry? selectedEntry; // Aktuell ausgewählte Browser Artefakt Entry
-
-
-    [JSInvokable("OnScrollPositionChanged")]
-    public Task OnScrollPositionChanged(int scrollLeft)
-    {
-        // Berechne neuen scrollIndex basierend auf scrollLeft
-        scrollIndex = (int)Math.Round((scrollLeft - startOffset) / (double)spacing);
-        UpdateVisibleEntries();
-        StateHasChanged();
-        return Task.CompletedTask;
-    }
 
 
     private int viewportWidth;
@@ -63,11 +52,10 @@
     63072000,// 2 Jahre
     };
 
-    private int currentZoomIndex = 3; // Start bei 10 Minuten (600 Sekunden)
+    private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
     private int CurrentIntervalInSeconds => zoomLevelsInSeconds[currentZoomIndex];
-    private double PixelsPerSecond => viewportWidth / (double)CurrentIntervalInSeconds; //Anzeige Intervall in Pixel pro Sekunden für Timeline Einträge
-    private DateTime currentViewportStartTime => baseTime.AddSeconds(scrollIndex * CurrentIntervalInSeconds); //Zugriff basierend auf dem aktuellen Zoomlevel, aktuellen Scrollindex den Startzeitpunkt der Ansicht berechnet.
-
+    private double PixelsPerSecond => spacing / (double)zoomLevelsInSeconds[currentZoomIndex]; //Anzeige Intervall in Pixel pro Sekunden für Timeline Einträge
+    private DateTime currentViewportStartTime => baseTime.AddSeconds(scrollIndex * zoomLevelsInSeconds[currentZoomIndex]); //Startzeit des aktuellen Zoom levels und der ansicht.
 
 
 
@@ -86,7 +74,7 @@
     {
         var filePath = Path.Combine(FileSystem.AppDataDirectory, "history.sqlite");
 
-        // Beispiel: sicherstellen, dass die Datei existiert
+        // sicherstellen, dass die Datei existiert
         if (File.Exists(filePath))
         {
             var entries = Importer.LoadFromHistoryDatabase(filePath);
@@ -216,7 +204,7 @@
     {
         foreach (var entry in visibleEntries)
         {
-            entry.Position = startOffset + (entry.Index - scrollIndex) * spacing;
+            entry.Position = startOffset + (entry.Index - scrollIndex) * spacing; // Position der Grafischen timestamps
         }
     }
 
@@ -323,15 +311,21 @@
                 @foreach (var data in State.BrowserEntries)
                 {
                     var timeOffsetSeconds = (data.VisitTime - currentViewportStartTime).TotalSeconds; // Sekunden seit dem Render Startzeitpunkt
-                    var pos = startOffset + timeOffsetSeconds * PixelsPerSecond;
+                    var pos = timeOffsetSeconds != 0 // Soll verhindern, dass der erste Eintrag direkt am Start der Timeline steht - funkt noch nicht ganz
+                        ? startOffset + timeOffsetSeconds * PixelsPerSecond
+                        : startOffset;
 
-                    
+
+
                     <!-- Debugging Informationen -->
                     <div style="margin-left: 260px; background-color: white;">
                         <pre>
                             Pos: @pos
-                                SecondsSinceBase: @timeOffsetSeconds
+                            SecondsSinceBase: @timeOffsetSeconds
                             VisitTime: @data.VisitTime
+                            viewportWidth: @viewportWidth
+                            Scrollindex: @scrollIndex
+                            PixelPerSecond: @PixelsPerSecond
                         </pre>
                     </div>
 
@@ -342,6 +336,7 @@
                         <div class="history-marker"
                              style="left: calc(@($"{pos}px - 5px"))"
                              data-url="@data.Url"
+                             data-time="@data.VisitTime"
                              @onclick="() => selectedEntry = data">
                         </div>
                     }

@@ -171,7 +171,8 @@
 }
 
     .history-marker:hover::after {
-        content: attr(data-url);
+        content: attr(data-time) "\A" attr(data-url);
+        white-space: pre; /* "\A" für Zeilenumbruch aktivieren */
         position: absolute;
         top: -28px;
         left: 50%;
@@ -180,7 +181,6 @@
         color: white;
         padding: 4px 8px;
         border-radius: 4px;
-        white-space: nowrap;
         font-size: 10px;
         z-index: 999;
     }

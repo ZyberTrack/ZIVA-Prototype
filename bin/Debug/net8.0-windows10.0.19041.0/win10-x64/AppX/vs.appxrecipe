@@ -29,7 +29,7 @@
     <AppXManifest Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\bin\Debug\net8.0-windows10.0.19041.0\win10-x64\AppxManifest.xml">
       <PackagePath>AppxManifest.xml</PackagePath>
       <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
-      <Modified>2025-06-02T18:52:36.795</Modified>
+      <Modified>2025-06-03T10:13:58.060</Modified>
     </AppXManifest>
   </ItemGroup>
   <ItemGroup>
@@ -43,11 +43,11 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\bin\Debug\net8.0-windows10.0.19041.0\win10-x64\ZIVA-Prototype.dll">
       <PackagePath>ZIVA-Prototype.dll</PackagePath>
-      <Modified>2025-06-02T18:52:36.633</Modified>
+      <Modified>2025-06-03T10:13:57.902</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\apphost.exe">
       <PackagePath>ZIVA-Prototype.exe</PackagePath>
-      <Modified>2025-06-02T18:52:36.633</Modified>
+      <Modified>2025-06-03T10:13:57.902</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\Resources\Raw\AboutAssets.txt">
       <PackagePath>AboutAssets.txt</PackagePath>
@@ -67,7 +67,7 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\css\site.css">
       <PackagePath>wwwroot\css\site.css</PackagePath>
-      <Modified>2025-05-04T10:36:04.410</Modified>
+      <Modified>2025-06-03T10:00:41.361</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\favicon.png">
       <PackagePath>wwwroot\favicon.png</PackagePath>
