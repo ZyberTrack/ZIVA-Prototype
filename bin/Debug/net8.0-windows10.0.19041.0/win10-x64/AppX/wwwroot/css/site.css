@@ -1,11 +1,11 @@
 ﻿/* Wrapper für die gesamte Ansicht */
 .timeline-wrapper {
-    display: flex;
-    position: fixed;
-    left: 250px; /* Platz für Menü */
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 250px;
+    right: 0;
+    overflow: hidden; /* oder scroll, je nach Bedarf */
 }
 
 /* Linker Bereich: Legende */
@@ -66,9 +66,12 @@
     height: 100%;
     left: 200px;
     right: 250px;
-    overflow: hidden;
+    overflow-x: scroll;
+    overflow-y: hidden;
     white-space: nowrap;
 }
+
+
 
 .movable-layer {
     position: relative;

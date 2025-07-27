@@ -29,6 +29,8 @@ build_property.SupportLocalizedComponentNames =
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
 build_property.MSBuildProjectDirectory = C:\Users\vikto\Documents\GitHub\ZIVA-prototype
 build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 8.0
+build_property.EnableCodeStyleSeverity = 
 
 [C:/Users/vikto/Documents/GitHub/ZIVA-prototype/App.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml

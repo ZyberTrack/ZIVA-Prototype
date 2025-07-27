@@ -64,20 +64,23 @@
 
 
 
-# To Do TILL END OF APRIL / DURING MAY
+# To Do TILL END OF 2025
 
 
 8. Implementation Beginnen ---> **Proof of Concept PT.2**
 	3. Prototypen Anhand des Optimierten Konzepts durch die User Tests nachbauen. Darstellungsfokussiert. 4 Artefakt Arten Limitiert und 2 Use Cases Erkennung.
 		1. C# Projekt Umgebung anlegen mit GitHub 
-		2. Strucktur für das Programm anlegen und planen
+		2. Visualisierungsmethode Skizzieren. Methode der Implementierung skizzieren. verstehen!
+			1. Planen und zeichnen und durchdenken
+		3. Strucktur für das Programm anlegen
 			1. ~~Blazer verstehen und werwenden.~~
 			2. Diagramm mit Excalidraw erstellen
 			3. Programmieren Beginnen
 				1. Darstellung der Daten
-					1. Zeitstrahlen anzeigen
-						1. eigene Zeitlinien für die weiteren gewünschten Artefakt Arten bauen (Cookies etc)
-						2. ~~Zeitstrahl scrollen können - fixen -> liegt das an der fläche der ebene?~~
+					1. ~~Zeitstrahlen anzeigen~~
+						1. **Zeitstrahl FIX -> rendert immer die senkrechten Linien zu beginn, anstelle dass sie mit scrollen. Verwirrende Ansicht!** unbedingt fixen damit man nachvollziehen kann, dass die Zeitachse gescrollt wird. -> EVTL liegt es an der startposition?
+						2. eigene Leitlinien für die weiteren gewünschten Artefakt Arten bauen (Cookies etc)
+						3. ~~Zeitstrahl scrollen können - fixen -> liegt das an der fläche der ebene?~~
 							1. ~~Zeitstrahl mit Maus ziehen -> verschieben können~~
 							2. ~~Zoomen soll den dargestellten Zeitintervall festlegen~~
 							3. Zeitachsen Artefakt Positionsdarstellung FIXEN!!!
@@ -86,18 +89,27 @@
 								2. ~~endlos scrollen ermöglichen~~
 							5. ~~Listen aus datenbanken werden nach Zeitstempel sortiert.~~
 					2. ~~Zeitlose Artefakte Bereich auf Zeitstrahl darstellen~~
-					3. Objekte oder Symbole für Artefakt Darstellung und farben selektion festlegen
-						1. Farben per URL Zufällig festlegen
 				2. Import von Daten
 					1. History Datenbank Imortieren
-						1. Darstellung aller besuchten Domänen der Reihe nach
-							1. FEHLER FIX. Nur darstellung der 1. Zwei elemente der Datenbank
-						2. Implementierung der Einfachen Domöne Zusammenfassung -> Zusammengehörige domänen per website referenz oder reihenfolge.
-						3. Implementierung der langzeit zusammenfassungen
 					2. Einfügen weiterer Artefakte
 						1. Cookie Database
 						2. WebData Database
-				3. Analyse Implementieren
+						3. Favicons?
+					3. Soll eine eigene Database angelegt werden, die alle artefakte durchparsed und für ZIVA anpasst? -> eigenes Format übertragen um alles gemeinsam zu haben
+						1. oder alternatriv einfach nur das darstellen was bei import importiert wird. -> unschön aber schneller.
+					4. Objekte oder Symbole für Artefakt Darstellung und farben selektion festlegen
+						1. Farben per URL Zufällig festlegen?
+				3. Darstellung der Artefakte auf dem Zeitstrahl
+					1. Darstellung aller besuchten Domänen der Reihe nach
+							1. FEHLER FIX. Nur darstellung der 1. Zwei elemente der Datenbank ->
+								1. Genaue exakte darstellung!
+							2. Farben und größe Anpassen.
+					2. Zusammenfassung von häufig besuchten Domänen
+						1.  Implementierung der Einfachen Domöne Zusammenfassung -> Zusammengehörige domänen per website referenz oder reihenfolge.
+						2. Implementierung der langzeit zusammenfassungen
+					3. Zusammenhänge/Referenzen markieren.
+				4. Analyse Implementieren
+					1. Patterns für Anomalien der Use Cases implementieren.
 
 
 

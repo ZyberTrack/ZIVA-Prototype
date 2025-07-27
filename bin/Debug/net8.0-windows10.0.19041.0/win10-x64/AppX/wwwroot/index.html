@@ -19,6 +19,18 @@
             });
         };
     </script>
+    <script>
+        window.scrollHelpers = {
+            ignoreNextScroll: false,
+
+            scrollTo: function (element, x, y) {
+                if (!element) return;
+                this.ignoreNextScroll = true;
+                element.scrollTo({ left: x, top: y, behavior: 'auto' });
+            }
+        };
+    </script>
+
 
 </head>
 
@@ -30,7 +42,8 @@
 
     <script src="js/scroll-handler.js"></script>
     <script src="js/drag-drop-handler.js"></script>
-    <script src="js/timeinterval-zoom-handler.js"></script>
+    <script src="js/timeinterval-zoom-handler.js"></script> 
+    <script src="js/viewportwith-handler.js"></script>
 
     <div id="blazor-error-ui">
         An unhandled error has occurred.

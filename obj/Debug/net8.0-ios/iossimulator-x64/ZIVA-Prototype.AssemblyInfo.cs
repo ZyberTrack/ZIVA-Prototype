@@ -14,11 +14,11 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ZIVA-Prototype")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+efdcc9bd18709bcb32372d7faf5b3c7b1783a265")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+a62aee3f343373a6b09e20acd7ca2c4e0012875d")]
 [assembly: System.Reflection.AssemblyProductAttribute("ZIVA-Prototype")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ZIVA-Prototype")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
-[assembly: System.Runtime.Versioning.TargetPlatformAttribute("iOS17.5")]
+[assembly: System.Runtime.Versioning.TargetPlatformAttribute("iOS18.0")]
 [assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("iOS14.2")]
 
 // Von der MSBuild WriteCodeFragment-Klasse generiert.

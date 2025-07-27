@@ -41,6 +41,14 @@
       "PackagePath": "staticwebassets\\js\\timeinterval-zoom-handler.js"
     },
     {
+      "Id": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\wwwroot\\js\\viewportwith-handler.js",
+      "PackagePath": "staticwebassets\\js\\viewportwith-handler.js"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0-windows10.0.19041.0\\win10-x64\\staticwebassets\\msbuild.ZIVA-Prototype.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+    },
+    {
       "Id": "obj\\Debug\\net8.0-windows10.0.19041.0\\win10-x64\\staticwebassets\\msbuild.ZIVA-Prototype.Microsoft.AspNetCore.StaticWebAssets.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
     },

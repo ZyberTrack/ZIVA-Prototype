@@ -448,3 +448,13 @@ C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.1904
 C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\qualifiers.txt.intermediate
 C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\MultipleQualifiersPerDimensionFound.txt
 C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\ProjectArchitectures.txt
+C:\Users\vikto\Documents\GitHub\ZIVA-prototype\bin\Debug\net8.0-windows10.0.19041.0\win10-x64\ZIVA-Prototype.staticwebassets.endpoints.json
+C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\rpswa.dswa.cache.json
+C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\rjimswa.dswa.cache.json
+C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\rjsmrazor.dswa.cache.json
+C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\rjsmcshtml.dswa.cache.json
+C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\staticwebassets.build.json.cache
+C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\staticwebassets.build.endpoints.json
+C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\staticwebassets\msbuild.ZIVA-Prototype.Microsoft.AspNetCore.StaticWebAssetEndpoints.props
+C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\staticwebassets.upToDateCheck.txt
+C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\staticwebassets.publish.endpoints.json

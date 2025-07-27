@@ -1,21 +1,38 @@
+window.scrollHelpers = {
+    ignoreNextScroll: false,
+
+    scrollTo: function (element, x, y) {
+        if (!element) return;
+        this.ignoreNextScroll = true;
+        element.scrollTo({ left: x, top: y, behavior: 'auto' }); // oder 'smooth'
+    }
+};
+
 window.timelineInterop = {
     registerScrollHandler: function (dotNetRef) {
         const scrollWrapper = document.querySelector('.scroll-wrapper-timeline');
         if (!scrollWrapper) return;
 
-        // Wheel-Events für Zoom & Richtung
+        // STRG + Scroll für Zoom
         scrollWrapper.addEventListener('wheel', function (e) {
             if (e.ctrlKey) {
                 e.preventDefault();
                 dotNetRef.invokeMethodAsync("OnZoom", e.deltaY < 0 ? "in" : "out");
+       
             } else {
-                e.preventDefault();
-                dotNetRef.invokeMethodAsync("OnScroll", e.deltaY < 0 ? "left" : "right");
+                // normales Scrollen in horizontal umwandeln
+                e.preventDefault(); // sonst scrollt Seite
+                scrollWrapper.scrollLeft += e.deltaY;
             }
         }, { passive: false });
 
-        // Scrollposition melden für Sichtbarkeitsprüfung
-        scrollWrapper.addEventListener('scroll', function (e) {
+        // Scrollposition mit Schutz gegen "self-trigger"
+        scrollWrapper.addEventListener('scroll', function () {
+            if (window.scrollHelpers.ignoreNextScroll) {
+                window.scrollHelpers.ignoreNextScroll = false;
+                return; // nicht Blazor benachrichtigen
+            }
+
             dotNetRef.invokeMethodAsync("OnScrollPositionChanged", scrollWrapper.scrollLeft);
         });
     }

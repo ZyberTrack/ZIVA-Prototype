@@ -1,0 +1,70 @@
+# Build-Ordner
+bin/
+obj/
+
+# Visual Studio Verzeichnis (temporäre Dateien, Caches)
+.vs/
+
+# User-spezifische Dateien
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider IDE Dateien (falls du JetBrains Rider nutzt)
+.idea/
+
+# Logs
+*.log
+
+# NuGet Packages
+*.nupkg
+packages/
+.nuget/
+
+# ASP.NET Temporary files
+*.cache
+*.pdb
+
+# Dateien der Paket-Manager (npm, yarn, etc.)
+node_modules/
+
+# Sonstige temporäre Dateien
+*.tmp
+*.temp
+
+# EditorConfig Backup Dateien
+*.editorconfig.bak
+
+# SQLite Datenbanken (falls gewünscht, sonst weglassen)
+*.sqlite
+*.db
+
+# VS Code Settings (falls du VS Code benutzt)
+.vscode/
+
+# JetBrains Rider
+.idea/
+
+# DotCover
+*.dotCover
+
+# Mac/Unix versteckte Dateien
+.DS_Store
+
+# Backup-Dateien
+*.bak
+
+# Exclude user secrets (if using dotnet user-secrets)
+secrets.json
+
+# ReSharper
+_ReSharper*/
+*.ReSharper*/
+
+# Paket Lock-Dateien (je nach Projekt evtl. nötig)
+package-lock.json
+yarn.lock
+
+# Logs und temporäre Dateien von .NET CLI
+*.vsix
