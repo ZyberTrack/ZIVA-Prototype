@@ -78,8 +78,9 @@
 			3. Programmieren Beginnen
 				1. Darstellung der Daten
 					1. ~~Zeitstrahlen anzeigen~~
-						1. **Zeitstrahl FIX -> rendert immer die senkrechten Linien zu beginn, anstelle dass sie mit scrollen. Verwirrende Ansicht!** unbedingt fixen damit man nachvollziehen kann, dass die Zeitachse gescrollt wird. -> EVTL liegt es an der startposition?
-						2. eigene Leitlinien für die weiteren gewünschten Artefakt Arten bauen (Cookies etc)
+						1. ~~**Zeitstrahl FIX -> rendert immer die senkrechten Linien zu beginn, anstelle dass sie mit scrollen. Verwirrende Ansicht!** unbedingt fixen damit man nachvollziehen kann, dass die Zeitachse gescrollt wird. -> EVTL liegt es an der startposition?~~
+							1. **Zoom Funktion spakt!!!!**
+						2. eigene ZeitLinien für die weiteren gewünschten Artefakt Arten bauen (Cookies etc)
 						3. ~~Zeitstrahl scrollen können - fixen -> liegt das an der fläche der ebene?~~
 							1. ~~Zeitstrahl mit Maus ziehen -> verschieben können~~
 							2. ~~Zoomen soll den dargestellten Zeitintervall festlegen~~
