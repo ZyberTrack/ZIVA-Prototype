@@ -9,7 +9,12 @@
 
 
     //
-    // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. ZOOM FUNIKONIERT NICHT KORTREKT -> Zeitachse springt bei Zoom oder rendert gar nicht mehr.
+    // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. ZOOM FUNIKONIERT NICHT KORREKT -> Zeitachse springt bei Zoom oder rendert gar nicht mehr.
+    // Ab besstimmter ZOOMSTUFE wird BASE Time nicht mer aktualisiert bzw falsch verschoben!!!!
+    // 
+    // 
+    //
+    // NEUER Ansatz: Zoomstufen bestimmen Zoom.  -> Statt PixelperSeconds wird jetzt abhängig von dem aktuellen Zoom lvl das Intervall für den Zeitabstand des Spacings festgelegt.
     //
 
     private bool isZooming = false; // Flag to indicate if zooming is in progress
@@ -24,14 +29,18 @@
     private int startOffset = 70;
     private int spacing = 250;
     private int visibleTimestamps = 0;
+    private int movableLayerWidth;
+    private const int MinLayerWidth = 5000;       // z. B. 5.000 Pixel Mindestbreite
+    private const int MaxLayerWidth = 5_000_000;  // z. B. 5 Mio Pixel Maximalbreite
     private int scrollIndex = 0;
     private int renderBuffer = 5;
     private int lastScrollIndex = int.MinValue;
-    private const int movableLayerWidthConst = 5_000_000;
-    private int movableLayerWidth = movableLayerWidthConst; // initial setzen
     private DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
 
-    // Intelligent Zoom
+
+
+
+    // Alles was ZOOMEN angeht, wird hier definiert.
     private readonly int[] zoomLevelsInSeconds = new[]
     {
     10,      // 10 Sekunden
@@ -58,9 +67,31 @@
     };
 
     private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
+    private int SecondsPerSpacing => zoomLevelsInSeconds[currentZoomIndex];  //  Zoomstufe bestimmt Dauer eines Intervalls
+
+    private double TimeToPixel(DateTime t)
+    {
+        var secondsFromBase = (t - baseTime).TotalSeconds;
+        return InitialOffsetPx + (secondsFromBase / SecondsPerSpacing) * spacing;
+    }
+    private DateTime PixelToTime(double px)
+    {
+        var seconds = ((px - InitialOffsetPx) / spacing) * SecondsPerSpacing;
+        return baseTime.AddSeconds(seconds);
+    }
+
     private int CurrentIntervalInSeconds => zoomLevelsInSeconds[currentZoomIndex];
-    private double PixelsPerSecond => spacing / (double)zoomLevelsInSeconds[currentZoomIndex]; //Anzeige Intervall in Pixel pro Sekunden für Timeline Einträge
     private DateTime currentViewportStartTime => baseTime.AddSeconds(scrollIndex * zoomLevelsInSeconds[currentZoomIndex]); //Startzeit des aktuellen Zoom levels und der ansicht.
+
+	// Dynamic movable layer width based on zoom level
+    private int GetMovableLayerWidth()
+    {
+        int width = spacing * zoomLevelsInSeconds[currentZoomIndex];
+        return Math.Max(MinLayerWidth, Math.Min(width, MaxLayerWidth));
+    }
+
+    private double PixelsPerSecond => spacing / (double)zoomLevelsInSeconds[currentZoomIndex]; //Anzeige Intervall in Pixel pro Sekunden für Timeline Einträge
+
 
 
 
@@ -78,6 +109,9 @@
     private async Task LoadFromDatabase()
     {
         var filePath = Path.Combine(FileSystem.AppDataDirectory, "history.sqlite");
+
+        // Breite neu berechnen
+        movableLayerWidth = GetMovableLayerWidth();
 
         // sicherstellen, dass die Datei existiert
         if (File.Exists(filePath))
@@ -175,7 +209,6 @@
         //NEU: width so setzen, dass auch negative Einträge Platz haben
         int minIndex = firstVisibleIndex;
         int maxIndex = lastVisibleIndex;
-        movableLayerWidth = (maxIndex - minIndex + 2 * renderBuffer) * spacing;
 
         //Optional: baseOffset setzen, um negative Indexe sichtbar zu machen
         startOffset = -minIndex * spacing + 250; // z. B. 250px Puffer nach links
@@ -197,7 +230,7 @@
     {
         foreach (var entry in visibleEntries)
         {
-            entry.Position = (int)(InitialOffsetPx + entry.Index * spacing - currentScrollLeft + startOffset);
+            entry.Position = (int)(TimeToPixel(entry.Time) - currentScrollLeft + startOffset);
 
         }
     }
@@ -259,36 +292,43 @@
     [JSInvokable("OnZoom")]
     public async Task OnZoomAsync(string direction)
     {
-        isZooming = true;
+        // Scrollgrenzen absichern
+        currentScrollLeft = Math.Clamp(currentScrollLeft, 0, Math.Max(0, movableLayerWidth - viewportWidth));
 
-        // Alte Skalierung sichern
-        double oldPixelsPerSecond = PixelsPerSecond;
+        // Mittelpunkt-Zeit merken (zentriert im Viewport)
+        double centerPx = currentScrollLeft + viewportWidth / 2;
+        DateTime centerTime = PixelToTime(centerPx);
 
-        // Zeitwert der aktuellen Bildschirmmitte vor Zoom
-        double viewportCenterPx = currentScrollLeft + viewportWidth / 2;
-        DateTime centerTime = baseTime.AddSeconds((viewportCenterPx - InitialOffsetPx) / oldPixelsPerSecond);
-
-        // Zoom-Stufe anpassen
+        // Zoomstufe anpassen
         if (direction == "in" && currentZoomIndex > 0)
             currentZoomIndex--;
         else if (direction == "out" && currentZoomIndex < zoomLevelsInSeconds.Length - 1)
             currentZoomIndex++;
 
-        // Neue Scrollposition berechnen, sodass centerTime wieder in der Mitte liegt
-        double newCenterPx = InitialOffsetPx + (centerTime - baseTime).TotalSeconds * PixelsPerSecond;
-        currentScrollLeft = newCenterPx - viewportWidth / 2;
+        // Breite neu berechnen
+        movableLayerWidth = GetMovableLayerWidth();
 
-        ignoreNextScrollEvent = true;
-        await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, currentScrollLeft, 0);
+        // Neue Scrollposition berechnen, sodass die Zeit gleich bleibt
+        double newCenterPx = TimeToPixel(centerTime);
+        double newScrollLeft = newCenterPx - viewportWidth / 2;
 
-        visibleEntries.Clear();
+        // Scrollgrenzen erneut absichern
+        newScrollLeft = Math.Clamp(newScrollLeft, 0, Math.Max(0, movableLayerWidth - viewportWidth));
+
+        if (Math.Abs(newScrollLeft - currentScrollLeft) > 1) // Nur scrollen wenn signifikant anders
+        {
+            currentScrollLeft = newScrollLeft;
+            ignoreNextScrollEvent = true;
+            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, currentScrollLeft, 0);
+        }
+
+        // Darstellung aktualisieren
         UpdateVisibleEntries();
         RecalculatePositions();
         StateHasChanged();
-
-        await Task.Delay(50);
-        isZooming = false;
     }
+
+
 
 
 
@@ -331,11 +371,18 @@
         </div>
     </div>
 
+    <div style="position: fixed; top: 0; left: 0; background: yellow; z-index: 1000; padding: 4px;">
+        DEBUG: CurrentIntervalInSeconds = @CurrentIntervalInSeconds
+        DEBUG: currentScrollLeft = @currentScrollLeft
+        DEBUG: baseTime = @baseTime
+    </div>
+
 
     <div class="timeline-container">
         <!-- Externer Container mit fixer Breite & overflow -->
         <div id="scroll-container" class="scroll-wrapper scroll-wrapper-timeline" @ref="scrollDivRef">
             <div class="movable-layer" style="width:@(movableLayerWidth)px; position: relative;">
+
                 @foreach (var entry in visibleEntries)
                 {
                     <div @key="entry.Index" class="timestamp" style="left:@($"{entry.Position}px")">
@@ -354,8 +401,6 @@
                 }
 
 
-
-
                 @foreach (var data in State.BrowserEntries)
                 {
                     var pos = (data.VisitTime - baseTime).TotalSeconds * PixelsPerSecond;
@@ -368,7 +413,6 @@
                     <div style="margin-left: 260px; background-color: white;">
                         <pre>
                             Pos: @pos
-                            SecondsSinceBase: @timeOffsetSeconds
                             VisitTime: @data.VisitTime
                             viewportWidth: @viewportWidth
                             Scrollindex: @scrollIndex
