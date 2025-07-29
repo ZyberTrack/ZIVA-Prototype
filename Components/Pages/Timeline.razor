@@ -9,10 +9,11 @@
 
 
     //
-    // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. ZOOM FUNIKONIERT NICHT KORREKT -> Bei zu weitem Rauszoomen werden die Sekunden zu hoch und zommen hängt sich auf.
+    // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. 
     // 
-    // 
-	// SecondsPerSpacing verwendet statt pixelsPerSeconds
+    // TO DO:
+    // -- Beim zoomen soll die Zeitleiste nicht leer sein
+    // -- Beim Ein und Aus Zoomen soll die Stelle die gleiche bleiben und nicht verloren gehen. Auf Mitte zentriert!
     //
     // NEUER Ansatz: Zoomstufen bestimmen Zoom.  -> Statt PixelperSeconds wird jetzt abhängig von dem aktuellen Zoom lvl das Intervall für den Zeitabstand des Spacings festgelegt.
     //
@@ -39,41 +40,59 @@
 
 
     // Alles was ZOOMEN angeht, wird hier definiert.
-    private readonly int[] zoomLevelsInSeconds = new[]
+    enum TimeUnit
     {
-    10,      // 10 Sekunden
-    30,      // 30 Sekunden
-    60,      // 1 Minute
-    300,     // 5 Minuten
-    600,     // 10 Minuten
-    1200,    // 20 Minuten
-    1800,    // 30 Minuten
-    3600,    // 1 Stunde
-    7200,    // 2 Stunden
-    86400,   // 24 Stunden (1 Tag)
-    172800,  // 48 Stunden (2 Tage)
-    259200,  // 72 Stunden (3 Tage)
-    604800,  // 1 Woche (7 Tage)
-    1209600, // 2 Wochen (14 Tage)
-    2419200, // 1 Monat (30 Tage)
-    5184000, // 2 Monate (60 Tage)
-    7776000, // 3 Monate (90 Tage)
-    10368000,// 4 Monate (120 Tage)
-    15552000,// 6 Monate (180 Tage)
-    31104000,// 1 Jahr (365 Tage)
-    63072000,// 2 Jahre
+        Seconds,
+        Minutes,
+        Hours,
+        Days,
+        Months,
+        Years
+    }
+
+	// neuer Ansatz: Zoomstufen definieren, die die Dauer eines Intervalls bestimmen
+    private readonly (int seconds, TimeUnit unit)[] zoomLevels = new[]
+    {
+        (10, TimeUnit.Seconds),
+        (30, TimeUnit.Seconds),
+        (60, TimeUnit.Minutes),
+        (300, TimeUnit.Minutes),
+        (600, TimeUnit.Minutes),
+        (1200, TimeUnit.Minutes),
+        (1800, TimeUnit.Minutes),
+        (3600, TimeUnit.Hours),
+        (7200, TimeUnit.Hours),
+        (86400, TimeUnit.Hours),
+        (172800, TimeUnit.Days),
+        (259200, TimeUnit.Days),
+        (604800, TimeUnit.Days),
+        (1209600, TimeUnit.Days),
+        (2419200, TimeUnit.Days),
+        (5184000, TimeUnit.Days),
+        (7776000, TimeUnit.Months),
+        (10368000, TimeUnit.Months),
+        (15552000, TimeUnit.Months),
+        (31104000, TimeUnit.Years),
+        (63072000, TimeUnit.Years),
     };
 
     private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
-    private int SecondsPerSpacing => zoomLevelsInSeconds[currentZoomIndex];  //  Zoomstufe bestimmt Dauer eines Intervalls
-	private int CurrentIntervalInSeconds => zoomLevelsInSeconds[currentZoomIndex]; //Zoomstufe in Sekunden, die aktuell aktiv ist
-    private double PixelsPerSecond => spacing / (double)zoomLevelsInSeconds[currentZoomIndex]; //Anzeige Intervall in Pixel pro Sekunden für Timeline Einträge
+    private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
+
+    //
+    private double PixelsPerSecond => spacing / (double)zoomLevels[currentZoomIndex].seconds; //Überflüssig!!!!!
+    //
+
+
+	// Neuer Ansatz: Zoomstufen in Units statt Sekunden
+    private TimeUnit CurrentTimeUnit => zoomLevels[currentZoomIndex].unit;
+
 
 	// Dynamic movable layer width based on zoom level
     private int GetMovableLayerWidth()
     {
-        int width = spacing * zoomLevelsInSeconds[currentZoomIndex];
-        return Math.Max(MinLayerWidth, Math.Min(width, MaxLayerWidth));
+        long width = (long)spacing * zoomLevels[currentZoomIndex].seconds;  // Auf LONG umgestellt und dadurch rechenfehler vorgebeugt! Der zu zoom absturz geführt hat!
+        return (int)Math.Max(MinLayerWidth, Math.Min(width, MaxLayerWidth));
     }
 
 
@@ -198,15 +217,27 @@
 
 
 	// Zeitstempel Einäge erstellen
-    private TimestampEntry CreateEntry(int index)
+private TimestampEntry CreateEntry(int index)
+{
+    var time = CurrentTimeUnit switch
     {
-        return new TimestampEntry
-            {
-                Index = index,
-                Time = baseTime.AddHours(index * (CurrentIntervalInSeconds / 3600.0)), // kann auch negativ sein - intervall in Sekunden
-                Position = 0
-            };
-    }
+        TimeUnit.Seconds => baseTime.AddSeconds(index * SecondsPerSpacing),
+        TimeUnit.Minutes => baseTime.AddMinutes(index * (SecondsPerSpacing / 60.0)),
+        TimeUnit.Hours   => baseTime.AddHours(index * (SecondsPerSpacing / 3600.0)),
+        TimeUnit.Days    => baseTime.AddDays(index * (SecondsPerSpacing / 86400.0)),
+        TimeUnit.Months  => baseTime.AddMonths(index), // 1 Monat pro Intervall – Optional kannst du noch CurrentIntervalInMonths einführen
+        TimeUnit.Years   => baseTime.AddYears(index),
+        _ => baseTime
+    };
+
+    return new TimestampEntry
+    {
+        Index = index,
+        Time = time,
+        Position = 0
+    };
+}
+
 
     private void RecalculatePositions()
     {
@@ -219,13 +250,51 @@
 	// Pixel in Zeit umwandlung und umgekehrt
     private double TimeToPixel(DateTime t)
     {
-        var secondsFromBase = (t - baseTime).TotalSeconds;
-        return InitialOffsetPx + (secondsFromBase / SecondsPerSpacing) * spacing;
+        double unitDistance;
+
+        switch (CurrentTimeUnit)
+        {
+            case TimeUnit.Seconds:
+                unitDistance = (t - baseTime).TotalSeconds;
+                break;
+            case TimeUnit.Minutes:
+                unitDistance = (t - baseTime).TotalMinutes;
+                break;
+            case TimeUnit.Hours:
+                unitDistance = (t - baseTime).TotalHours;
+                break;
+            case TimeUnit.Days:
+                unitDistance = (t - baseTime).TotalDays;
+                break;
+            case TimeUnit.Months:
+                unitDistance = ((t.Year - baseTime.Year) * 12 + t.Month - baseTime.Month)
+                                + (t.Day - baseTime.Day) / 30.0; // grob geschätzt
+                break;
+            case TimeUnit.Years:
+                unitDistance = t.Year - baseTime.Year + (t.DayOfYear - baseTime.DayOfYear) / 365.0;
+                break;
+            default:
+                unitDistance = 0;
+                break;
+        }
+
+        return InitialOffsetPx + unitDistance * spacing;
     }
+
     private DateTime PixelToTime(double px)
     {
-        var seconds = ((px - InitialOffsetPx) / spacing) * SecondsPerSpacing;
-        return baseTime.AddSeconds(seconds);
+        double unitDistance = (px - InitialOffsetPx) / spacing;
+
+        return CurrentTimeUnit switch
+        {
+            TimeUnit.Seconds => baseTime.AddSeconds(unitDistance),
+            TimeUnit.Minutes => baseTime.AddMinutes(unitDistance),
+            TimeUnit.Hours => baseTime.AddHours(unitDistance),
+            TimeUnit.Days => baseTime.AddDays(unitDistance),
+            TimeUnit.Months => baseTime.AddMonths((int)unitDistance).AddDays((unitDistance % 1) * 30), // Näherung
+            TimeUnit.Years => baseTime.AddYears((int)unitDistance).AddDays((unitDistance % 1) * 365), // Näherung
+            _ => baseTime
+        };
     }
 
 
@@ -234,13 +303,11 @@
     [JSInvokable("OnScrollPositionChanged")]
     public async Task OnScrollPositionChanged(double scrollLeft)
     {
-        
         if (ignoreNextScrollEvent)
         {
             ignoreNextScrollEvent = false;
             return;
         }
-        
 
         scrollIndex = scrollLeft;
 
@@ -249,10 +316,14 @@
             double newOffset = movableLayerWidth / 2;
             int indexShift = (int)((scrollIndex - newOffset) / spacing);
 
-            // Zeitbasis verschieben --> Wert in Stunden statt sekunden um overflow vorzubeugen
-            baseTime = baseTime.AddHours(indexShift * (CurrentIntervalInSeconds / 3600.0));
+            // Aktuelles ZoomLevel abrufen
+            var currentZoom = zoomLevels[currentZoomIndex];
+            var spacingTimeSpan = GetTimeSpanFromZoomLevel(currentZoom);
 
-            // Scrollposition korrigieren, damit visuell keine Sprünge entstehen
+            // Zeitbasis verschieben
+            baseTime = baseTime.AddTicks(spacingTimeSpan.Ticks * indexShift);
+
+            // Scrollposition korrigieren
             scrollIndex = scrollIndex - indexShift * spacing;
 
             ignoreNextScrollEvent = true;
@@ -266,6 +337,38 @@
         UpdateVisibleEntries();
         StateHasChanged();
     }
+	// Für scroll Funktion wird die Zeitspanne aus der Zoomstufe berechnet
+    private TimeSpan GetTimeSpanFromZoomLevel((int seconds, TimeUnit unit) zoomLevel)
+    {
+        return zoomLevel.unit switch
+        {
+            TimeUnit.Seconds => TimeSpan.FromSeconds(zoomLevel.seconds),
+            TimeUnit.Minutes => TimeSpan.FromMinutes(zoomLevel.seconds / 60.0),
+            TimeUnit.Hours => TimeSpan.FromHours(zoomLevel.seconds / 3600.0),
+            TimeUnit.Days => TimeSpan.FromDays(zoomLevel.seconds / 86400.0),
+            TimeUnit.Months => TimeSpan.FromDays(zoomLevel.seconds / 86400.0), // Näherung: 1 Monat = 30 Tage
+            TimeUnit.Years => TimeSpan.FromDays(zoomLevel.seconds / 86400.0),  // Näherung: 1 Jahr = 365 Tage
+            _ => TimeSpan.FromSeconds(zoomLevel.seconds)
+        };
+    }
+
+	// Berechnet die Distanz zwischen zwei Zeitpunkten in der aktuellen Zeiteinheit
+    private double GetUnitDistance(DateTime from, DateTime to)
+    {
+        return CurrentTimeUnit switch
+        {
+            TimeUnit.Seconds => (to - from).TotalSeconds,
+            TimeUnit.Minutes => (to - from).TotalMinutes,
+            TimeUnit.Hours => (to - from).TotalHours,
+            TimeUnit.Days => (to - from).TotalDays,
+            TimeUnit.Months => ((to.Year - from.Year) * 12 + to.Month - from.Month)
+                                + (to.Day - from.Day) / 30.0,
+            TimeUnit.Years => (to.Year - from.Year)
+                                + (to.DayOfYear - from.DayOfYear) / 365.0,
+            _ => 0
+        };
+    }
+
 
 
     [JSInvokable("OnZoom")]
@@ -281,7 +384,7 @@
         // Zoomstufe anpassen
         if (direction == "in" && currentZoomIndex > 0)
             currentZoomIndex--;
-        else if (direction == "out" && currentZoomIndex < zoomLevelsInSeconds.Length - 1)
+        else if (direction == "out" && currentZoomIndex < zoomLevels.Length - 1)
             currentZoomIndex++;
 
         // Breite neu berechnen
@@ -348,14 +451,14 @@
     </div>
 
     <div style="position: fixed; top: 50px; left: 0; background: yellow; z-index: 1000; padding: 4px;">
-        DEBUG: CurrentIntervalInSeconds = @CurrentIntervalInSeconds
+        DEBUG: SecondsPerSpacing = @SecondsPerSpacing
         DEBUG: scrollIndex = @scrollIndex
         DEBUG: baseTime = @baseTime
 		DEBUG: viewportWidth = @viewportWidth
         DEBUG: movableLayerWidth = @movableLayerWidth
         DEBUG: PixelsPerSecond = @PixelsPerSecond
         DEBUG: CurrentZoomIndex = @currentZoomIndex
-        DEBUG: TimeStamp 0 @baseTime.AddHours(currentZoomIndex * (CurrentIntervalInSeconds / 3600.0))
+        DEBUG: TimeStamp 0 @baseTime.AddHours(currentZoomIndex * (SecondsPerSpacing / 3600.0))
 
         <div style="margin-top: 10px;">
             <strong>Visible Entries (@visibleEntries.Count):</strong>
@@ -379,11 +482,11 @@
                     <div @key="entry.Index" class="timestamp" style="left:@($"{entry.Position}px")">
                         <span>
                             @entry.Time.ToString(
-                                     CurrentIntervalInSeconds < 60 ? "yyyy-MM-dd HH:mm:ss" :      // Sekunden bis Minuten
-                                     CurrentIntervalInSeconds < 3600 ? "yyyy-MM-dd HH:mm" :        // Minuten bis Stunden
-                                     CurrentIntervalInSeconds < 86400 ? "yyyy-MM-dd HH:mm" :       // Stunden bis 24 Stunden
-                                     CurrentIntervalInSeconds < 2592000 ? "yyyy-MM-dd" :            // Ab 30 Tagen auf "yyyy-MM-dd"
-                                     CurrentIntervalInSeconds < 31536000 ? "yyyy-MM" :               // Ab 2 Monaten auf "yyyy-MM"
+                                     SecondsPerSpacing < 60 ? "yyyy-MM-dd HH:mm:ss" :      // Sekunden bis Minuten
+                                     SecondsPerSpacing < 3600 ? "yyyy-MM-dd HH:mm" :        // Minuten bis Stunden
+                                     SecondsPerSpacing < 86400 ? "yyyy-MM-dd HH:mm" :       // Stunden bis 24 Stunden
+                                     SecondsPerSpacing < 2592000 ? "yyyy-MM-dd" :            // Ab 30 Tagen auf "yyyy-MM-dd"
+                                     SecondsPerSpacing < 31536000 ? "yyyy-MM" :               // Ab 2 Monaten auf "yyyy-MM"
                                      "yyyy"                                                       // Ab 1 Jahr auf "yyyy-MM"
                                      )
                         </span>
@@ -394,10 +497,9 @@
 
                 @foreach (var data in State.BrowserEntries)
                 {
-                    var pos = (data.VisitTime - baseTime).TotalSeconds * PixelsPerSecond;
-                    pos = InitialOffsetPx + pos - scrollIndex;
-
-
+					// Verwendet neue methode zur Berechnung der Position
+                    var unitDistance = GetUnitDistance(baseTime, data.VisitTime);
+                    var pos = InitialOffsetPx + unitDistance * spacing - scrollIndex;
 
 
                     <!-- Debugging Informationen 
