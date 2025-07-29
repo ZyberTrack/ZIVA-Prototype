@@ -9,10 +9,10 @@
 
 
     //
-    // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. ZOOM FUNIKONIERT NICHT KORREKT -> Zeitachse springt bei Zoom oder rendert gar nicht mehr.
-    // Ab besstimmter ZOOMSTUFE wird BASE Time nicht mer aktualisiert bzw falsch verschoben!!!!
+    // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. ZOOM FUNIKONIERT NICHT KORREKT -> Bei zu weitem Rauszoomen werden die Sekunden zu hoch und zommen hängt sich auf.
     // 
     // 
+	// SecondsPerSpacing verwendet statt pixelsPerSeconds
     //
     // NEUER Ansatz: Zoomstufen bestimmen Zoom.  -> Statt PixelperSeconds wird jetzt abhängig von dem aktuellen Zoom lvl das Intervall für den Zeitabstand des Spacings festgelegt.
     //
@@ -23,16 +23,14 @@
 
 
     private ElementReference scrollDivRef;
-    private const int InitialOffsetPx = 250000000; // z. B. Mitte der 500000px Fläche Für zeitachse
-    private double currentScrollLeft = 0;
+    private const int InitialOffsetPx = 2500000; // z. B. Mitte der 500000px Fläche Für zeitachse
+    private double scrollIndex = 0;
     private int viewportWidth;
     private int startOffset = 70;
     private int spacing = 250;
-    private int visibleTimestamps = 0;
     private int movableLayerWidth;
     private const int MinLayerWidth = 5000;       // z. B. 5.000 Pixel Mindestbreite
     private const int MaxLayerWidth = 5_000_000;  // z. B. 5 Mio Pixel Maximalbreite
-    private int scrollIndex = 0;
     private int renderBuffer = 5;
     private int lastScrollIndex = int.MinValue;
     private DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
@@ -68,20 +66,8 @@
 
     private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
     private int SecondsPerSpacing => zoomLevelsInSeconds[currentZoomIndex];  //  Zoomstufe bestimmt Dauer eines Intervalls
-
-    private double TimeToPixel(DateTime t)
-    {
-        var secondsFromBase = (t - baseTime).TotalSeconds;
-        return InitialOffsetPx + (secondsFromBase / SecondsPerSpacing) * spacing;
-    }
-    private DateTime PixelToTime(double px)
-    {
-        var seconds = ((px - InitialOffsetPx) / spacing) * SecondsPerSpacing;
-        return baseTime.AddSeconds(seconds);
-    }
-
-    private int CurrentIntervalInSeconds => zoomLevelsInSeconds[currentZoomIndex];
-    private DateTime currentViewportStartTime => baseTime.AddSeconds(scrollIndex * zoomLevelsInSeconds[currentZoomIndex]); //Startzeit des aktuellen Zoom levels und der ansicht.
+	private int CurrentIntervalInSeconds => zoomLevelsInSeconds[currentZoomIndex]; //Zoomstufe in Sekunden, die aktuell aktiv ist
+    private double PixelsPerSecond => spacing / (double)zoomLevelsInSeconds[currentZoomIndex]; //Anzeige Intervall in Pixel pro Sekunden für Timeline Einträge
 
 	// Dynamic movable layer width based on zoom level
     private int GetMovableLayerWidth()
@@ -90,20 +76,37 @@
         return Math.Max(MinLayerWidth, Math.Min(width, MaxLayerWidth));
     }
 
-    private double PixelsPerSecond => spacing / (double)zoomLevelsInSeconds[currentZoomIndex]; //Anzeige Intervall in Pixel pro Sekunden für Timeline Einträge
-
-
-
 
     private DotNetObjectReference<Timeline>? selfRef;
 
     private List<TimestampEntry> visibleEntries = new();
-
     public class TimestampEntry
     {
         public int Index { get; set; }
         public DateTime Time { get; set; }
         public int Position { get; set; }
+    }
+
+    
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateViewportWidthAsync();
+        await LoadFromDatabase();
+
+        UpdateVisibleEntries();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            selfRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("registerResizeHandler", selfRef);
+            await JS.InvokeVoidAsync("timelineInterop.registerScrollHandler", selfRef, scrollDivRef);
+            await JS.InvokeVoidAsync("registerDragHandler", selfRef);
+            await JS.InvokeVoidAsync("registerZoomHandler", selfRef);
+        }
     }
 
     private async Task LoadFromDatabase()
@@ -143,11 +146,11 @@
 
             // Zentriere den ersten Eintrag auf dem Bildschirm
             var scrollTo = InitialOffsetPx + (first.VisitTime - baseTime).TotalSeconds * PixelsPerSecond;
-            currentScrollLeft = scrollTo - viewportWidth / 2;
+            scrollIndex = scrollTo - viewportWidth / 2;
 
             // Jetzt scrollen
             ignoreNextScrollEvent = true;
-            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, currentScrollLeft, 0);
+            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
 
             visibleEntries.Clear();
             UpdateVisibleEntries();
@@ -155,27 +158,6 @@
             StateHasChanged();
         }
 
-    }
-
-
-    protected override async Task OnInitializedAsync()
-    {
-        await UpdateViewportWidthAsync();
-        await LoadFromDatabase();
-
-        UpdateVisibleEntries();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            selfRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("registerResizeHandler", selfRef);
-            await JS.InvokeVoidAsync("timelineInterop.registerScrollHandler", selfRef, scrollDivRef);
-            await JS.InvokeVoidAsync("registerDragHandler", selfRef);
-            await JS.InvokeVoidAsync("registerZoomHandler", selfRef);
-        }
     }
 
     [JSInvokable("OnResize")] // Elemente werden Visuell dem Fenster angepasst
@@ -189,14 +171,14 @@
     private async Task UpdateViewportWidthAsync()
     {
         viewportWidth = Math.Max(await JS.InvokeAsync<int>("getViewportWidth"), 300); // Minimum
-        visibleTimestamps = Math.Max(0, (viewportWidth)); // die gesammte breite kann zählen. 
     }
 
     private void UpdateVisibleEntries()
     {
-        int centerIndex = (int)((currentScrollLeft - InitialOffsetPx) / spacing);
-        int firstVisibleIndex = (int)((currentScrollLeft - InitialOffsetPx) / spacing) - renderBuffer;
+        int centerIndex = (int)((scrollIndex - InitialOffsetPx) / spacing);
+        int firstVisibleIndex = (int)((scrollIndex - InitialOffsetPx) / spacing) - renderBuffer;
         int lastVisibleIndex = firstVisibleIndex + (int)(viewportWidth / spacing) + 2 * renderBuffer;
+
 
         visibleEntries = new();
         for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++)
@@ -215,13 +197,13 @@
     }
 
 
-
+	// Zeitstempel Einäge erstellen
     private TimestampEntry CreateEntry(int index)
     {
         return new TimestampEntry
             {
                 Index = index,
-                Time = baseTime.AddSeconds(index * CurrentIntervalInSeconds), // kann auch negativ sein - intervall in Sekunden
+                Time = baseTime.AddHours(index * (CurrentIntervalInSeconds / 3600.0)), // kann auch negativ sein - intervall in Sekunden
                 Position = 0
             };
     }
@@ -230,54 +212,51 @@
     {
         foreach (var entry in visibleEntries)
         {
-            entry.Position = (int)(TimeToPixel(entry.Time) - currentScrollLeft + startOffset);
-
+            entry.Position = (int)(TimeToPixel(entry.Time) - scrollIndex + startOffset);
         }
     }
 
-
-    [JSInvokable("OnScroll")]
-    public async Task OnScrollAsync(string direction)
+	// Pixel in Zeit umwandlung und umgekehrt
+    private double TimeToPixel(DateTime t)
     {
-        // Wir scrollen manuell über das Scroll-DOM-Element
-        const int scrollStep = 100;
-
-        if (direction == "left")
-            currentScrollLeft = Math.Max(currentScrollLeft - scrollStep, 0);
-        else
-            currentScrollLeft += scrollStep;
-
-        await JS.InvokeVoidAsync("scrollHelpers.scrollTo", currentScrollLeft, 0);        // Jetzt wird korrekt gescrollt per JS
-        UpdateVisibleEntries();
-        StateHasChanged();
+        var secondsFromBase = (t - baseTime).TotalSeconds;
+        return InitialOffsetPx + (secondsFromBase / SecondsPerSpacing) * spacing;
+    }
+    private DateTime PixelToTime(double px)
+    {
+        var seconds = ((px - InitialOffsetPx) / spacing) * SecondsPerSpacing;
+        return baseTime.AddSeconds(seconds);
     }
 
 
 
+    // Scroll Funktion
     [JSInvokable("OnScrollPositionChanged")]
     public async Task OnScrollPositionChanged(double scrollLeft)
     {
+        
         if (ignoreNextScrollEvent)
         {
             ignoreNextScrollEvent = false;
             return;
         }
+        
 
-        currentScrollLeft = scrollLeft;
+        scrollIndex = scrollLeft;
 
-        if (currentScrollLeft < 50000 || currentScrollLeft > movableLayerWidth - 50000)
+        if (scrollIndex < 50000 || scrollIndex > movableLayerWidth - 50000)
         {
             double newOffset = movableLayerWidth / 2;
-            int indexShift = (int)((currentScrollLeft - newOffset) / spacing);
+            int indexShift = (int)((scrollIndex - newOffset) / spacing);
 
-            // Zeitbasis verschieben
-            baseTime = baseTime.AddSeconds(indexShift * CurrentIntervalInSeconds);
+            // Zeitbasis verschieben --> Wert in Stunden statt sekunden um overflow vorzubeugen
+            baseTime = baseTime.AddHours(indexShift * (CurrentIntervalInSeconds / 3600.0));
 
             // Scrollposition korrigieren, damit visuell keine Sprünge entstehen
-            currentScrollLeft = currentScrollLeft - indexShift * spacing;
+            scrollIndex = scrollIndex - indexShift * spacing;
 
             ignoreNextScrollEvent = true;
-            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, currentScrollLeft, 0);
+            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
 
             UpdateVisibleEntries();
             StateHasChanged();
@@ -293,10 +272,10 @@
     public async Task OnZoomAsync(string direction)
     {
         // Scrollgrenzen absichern
-        currentScrollLeft = Math.Clamp(currentScrollLeft, 0, Math.Max(0, movableLayerWidth - viewportWidth));
+        scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
 
         // Mittelpunkt-Zeit merken (zentriert im Viewport)
-        double centerPx = currentScrollLeft + viewportWidth / 2;
+        double centerPx = scrollIndex + viewportWidth / 2;
         DateTime centerTime = PixelToTime(centerPx);
 
         // Zoomstufe anpassen
@@ -315,11 +294,11 @@
         // Scrollgrenzen erneut absichern
         newScrollLeft = Math.Clamp(newScrollLeft, 0, Math.Max(0, movableLayerWidth - viewportWidth));
 
-        if (Math.Abs(newScrollLeft - currentScrollLeft) > 1) // Nur scrollen wenn signifikant anders
+        if (Math.Abs(newScrollLeft - scrollIndex) > 1) // Nur scrollen wenn signifikant anders
         {
-            currentScrollLeft = newScrollLeft;
+            scrollIndex = newScrollLeft;
             ignoreNextScrollEvent = true;
-            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, currentScrollLeft, 0);
+            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
         }
 
         // Darstellung aktualisieren
@@ -327,9 +306,6 @@
         RecalculatePositions();
         StateHasChanged();
     }
-
-
-
 
 
     public void Dispose()
@@ -371,10 +347,25 @@
         </div>
     </div>
 
-    <div style="position: fixed; top: 0; left: 0; background: yellow; z-index: 1000; padding: 4px;">
+    <div style="position: fixed; top: 50px; left: 0; background: yellow; z-index: 1000; padding: 4px;">
         DEBUG: CurrentIntervalInSeconds = @CurrentIntervalInSeconds
-        DEBUG: currentScrollLeft = @currentScrollLeft
+        DEBUG: scrollIndex = @scrollIndex
         DEBUG: baseTime = @baseTime
+		DEBUG: viewportWidth = @viewportWidth
+        DEBUG: movableLayerWidth = @movableLayerWidth
+        DEBUG: PixelsPerSecond = @PixelsPerSecond
+        DEBUG: CurrentZoomIndex = @currentZoomIndex
+        DEBUG: TimeStamp 0 @baseTime.AddHours(currentZoomIndex * (CurrentIntervalInSeconds / 3600.0))
+
+        <div style="margin-top: 10px;">
+            <strong>Visible Entries (@visibleEntries.Count):</strong>
+            <ul style="font-size: 12px; padding-left: 20px;">
+                @foreach (var e in visibleEntries)
+                {
+                    <li>Index: @e.Index, Time: @e.Time, Pos: @e.Position</li>
+                }
+            </ul>
+        </div>
     </div>
 
 
@@ -404,7 +395,7 @@
                 @foreach (var data in State.BrowserEntries)
                 {
                     var pos = (data.VisitTime - baseTime).TotalSeconds * PixelsPerSecond;
-                    pos = InitialOffsetPx + pos - currentScrollLeft;
+                    pos = InitialOffsetPx + pos - scrollIndex;
 
 
 
