@@ -10,6 +10,7 @@ namespace ZIVA_Prototype.Components.Models
         public string? Title { get; set; }
         public string? ReferrerUrl { get; set; }
         public string? ReferrerTitle { get; set; }
+        public double Position { get; set; }
     }
 
     public class HistoryImportService
@@ -56,7 +57,8 @@ namespace ZIVA_Prototype.Components.Models
                     Title = title,
                     VisitTime = visitTime,
                     ReferrerUrl = referrerUrl,
-                    ReferrerTitle = referrerTitle
+                    ReferrerTitle = referrerTitle,
+                    Position = 0 // Position can be set later if needed
                 });
             }
 

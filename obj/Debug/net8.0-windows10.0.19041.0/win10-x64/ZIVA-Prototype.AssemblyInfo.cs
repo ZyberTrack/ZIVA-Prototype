@@ -18,7 +18,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ZIVA-Prototype")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+5b5f98bf7cf0d181b1cf1d985c762f7beae049ba")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+3076c597af9b603296545f7103ae7339e5694d00")]
 [assembly: System.Reflection.AssemblyProductAttribute("ZIVA-Prototype")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ZIVA-Prototype")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -29,7 +29,7 @@
     <AppXManifest Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\bin\Debug\net8.0-windows10.0.19041.0\win10-x64\AppxManifest.xml">
       <PackagePath>AppxManifest.xml</PackagePath>
       <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
-      <Modified>2025-07-29T15:55:07.701</Modified>
+      <Modified>2025-07-29T20:31:58.556</Modified>
     </AppXManifest>
   </ItemGroup>
   <ItemGroup>
@@ -43,11 +43,11 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\bin\Debug\net8.0-windows10.0.19041.0\win10-x64\ZIVA-Prototype.dll">
       <PackagePath>ZIVA-Prototype.dll</PackagePath>
-      <Modified>2025-07-29T15:55:07.505</Modified>
+      <Modified>2025-07-29T20:31:58.375</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\apphost.exe">
       <PackagePath>ZIVA-Prototype.exe</PackagePath>
-      <Modified>2025-07-29T15:55:07.509</Modified>
+      <Modified>2025-07-29T20:31:58.378</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\Resources\Raw\AboutAssets.txt">
       <PackagePath>AboutAssets.txt</PackagePath>
@@ -67,7 +67,7 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\css\site.css">
       <PackagePath>wwwroot\css\site.css</PackagePath>
-      <Modified>2025-07-27T09:49:49.446</Modified>
+      <Modified>2025-07-29T20:17:51.725</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\favicon.png">
       <PackagePath>wwwroot\favicon.png</PackagePath>
@@ -83,7 +83,7 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\js\scroll-handler.js">
       <PackagePath>wwwroot\js\scroll-handler.js</PackagePath>
-      <Modified>2025-07-27T11:22:39.571</Modified>
+      <Modified>2025-07-29T19:18:19.110</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\wwwroot\js\timeinterval-zoom-handler.js">
       <PackagePath>wwwroot\js\timeinterval-zoom-handler.js</PackagePath>
@@ -815,7 +815,7 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\Documents\GitHub\ZIVA-prototype\obj\Debug\net8.0-windows10.0.19041.0\win10-x64\staticwebassets.build.endpoints.json">
       <PackagePath>ZIVA-Prototype.staticwebassets.endpoints.json</PackagePath>
-      <Modified>2025-07-27T12:43:58.137</Modified>
+      <Modified>2025-07-29T20:17:53.165</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\vikto\.nuget\packages\microsoft.maui.controls.compatibility\8.0.100\lib\net8.0-windows10.0.19041\Microsoft.Maui.Controls.Compatibility.pri">
       <PackagePath>Microsoft.Maui.Controls.Compatibility.pri</PackagePath>

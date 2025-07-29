@@ -33,7 +33,7 @@ window.timelineInterop = {
                 return; // nicht Blazor benachrichtigen
             }
 
-            dotNetRef.invokeMethodAsync("OnScrollPositionChanged", scrollWrapper.scrollLeft);
+            dotNetRef.invokeMethodAsync("OnAsyncScroll", scrollWrapper.scrollLeft);
         });
     }
 };

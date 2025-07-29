@@ -72,12 +72,12 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName></AssetTraitName>
       <AssetTraitValue></AssetTraitValue>
-      <Fingerprint>pcv61kpyso</Fingerprint>
-      <Integrity>x5qTsnDKWPzhuP+Z8ZL1eSPXigIwSxtCO5tgemwNLYA=</Integrity>
+      <Fingerprint>nm94b82e60</Fingerprint>
+      <Integrity>v7QdVtyEg8gDSnHJRlJlyhKvvAOpTagwfS+ngMv47eo=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <FileLength>4485</FileLength>
-      <LastWriteTime>Sun, 27 Jul 2025 09:49:49 GMT</LastWriteTime>
+      <FileLength>4641</FileLength>
+      <LastWriteTime>Tue, 29 Jul 2025 20:17:51 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\site.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\favicon.png'))">
@@ -152,12 +152,12 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName></AssetTraitName>
       <AssetTraitValue></AssetTraitValue>
-      <Fingerprint>8u3tbb8abm</Fingerprint>
-      <Integrity>UFAS5CjV1L6i0v1mOawD1r/fCFot7oC2Bjy0oUWUh70=</Integrity>
+      <Fingerprint>8s999kop18</Fingerprint>
+      <Integrity>OC1fu7dMonGxiBMpe8hSxg4gYa6kGwssaoG/TpXHYz0=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <FileLength>1414</FileLength>
-      <LastWriteTime>Sun, 27 Jul 2025 11:22:39 GMT</LastWriteTime>
+      <FileLength>1404</FileLength>
+      <LastWriteTime>Tue, 29 Jul 2025 19:18:19 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\js\scroll-handler.js'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\js\timeinterval-zoom-handler.js'))">

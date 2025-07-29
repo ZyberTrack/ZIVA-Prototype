@@ -1,4 +1,16 @@
-﻿/* Wrapper für die gesamte Ansicht */
+﻿html, body {
+    height: 100%;
+    margin: 0;
+}
+
+.timeline-wrapper,
+.timeline-container,
+.scroll-wrapper,
+.movable-layer {
+    height: 100%;
+}
+
+/* Wrapper für die gesamte Ansicht */
 .timeline-wrapper {
     position: absolute;
     top: 0;
@@ -32,7 +44,7 @@
     height: 100%;
     background: rgb(233, 208, 171);
     border-left: 2px solid #474747;
-    z-index: 10; /* Über der scrollbaren Zeitachse */
+    z-index: 20; /* Über der scrollbaren Zeitachse */
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -163,12 +175,12 @@
 .history-marker {
     position: absolute;
     top: calc(25% - 6px);
-    left: calc(-6px); /* damit es auf der Achsenlinie liegt */
+    /*left: calc(-6px);  damit es auf der Achsenlinie liegt */
     width: 12px;
     height: 12px;
     background-color: #007BFF;
     border-radius: 50%;
-    z-index: 20;
+    z-index: 19;
     cursor: pointer;
     box-shadow: 0 0 3px rgba(0,0,0,0.3);
 }
