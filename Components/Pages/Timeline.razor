@@ -12,9 +12,9 @@
     // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. 
     // 
     // TO DO:
-	// -- Positionen der Hisaory Einträge werden im Sekunden bereich nicht genau genug in Pixel umgerechnet und dargestellt.
-    // -- Beim Ein und Aus Zoomen soll die Stelle die gleiche bleiben und nicht verloren gehen. Auf Mitte zentriert! NOCH BESSER
-    //
+	// 
+	// 
+	// -- Einträge zoomen nicht mit dem scrollindex ident... versetzt...   !!!!!!  -> Wenn das sitzt kann man weiter arbeiten!! || Muss an TimeToPixel liegen oder RecalculatePositions
     // 
     //
 
@@ -35,7 +35,6 @@
 
 
 
-
     // Alles was ZOOMEN angeht, wird hier definiert.
     enum TimeUnit
     {
@@ -45,6 +44,13 @@
         Days,
         Months,
         Years
+    }
+
+    
+    private double GetPixelPerSecond()
+    {
+        // Wir wollen, dass jedes Intervall eine feste Pixelbreite hat, z.B. spacing
+        return spacing / zoomLevels[currentZoomIndex].seconds;
     }
 
     // neuer Ansatz: Zoomstufen definieren, die die Dauer eines Intervalls bestimmen
@@ -75,7 +81,7 @@
     private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
     private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
 
- 
+
 
     // Neuer Ansatz: Zoomstufen in Units statt Sekunden
     private TimeUnit CurrentTimeUnit => zoomLevels[currentZoomIndex].unit;
@@ -90,7 +96,7 @@
         public int Position { get; set; }
     }
 
-    
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -201,8 +207,8 @@
         startOffset = -minIndex * spacing + 250; // z. B. 250px Puffer nach links
     }
 
-
-	    // Zeitstempel Einäge erstellen
+    
+    // Zeitstempel Einträge erstellen
     private TimestampEntry CreateEntry(int index)
     {
         var time = CurrentTimeUnit switch
@@ -224,16 +230,18 @@
         };
     }
 
-
+    // Nur für Einträge in der Zeitachse
     private void RecalculatePositions()
     {
+        // Wird für jeden Eintrag gemacht
         foreach (var historyEntry in State.BrowserEntries)
         {
-            historyEntry.Position = (int)TimeToPixel(historyEntry.VisitTime) - scrollIndex + spacing;
+			historyEntry.Position = (int)TimeToPixel(historyEntry.VisitTime) - scrollIndex; //Hier geht was schief wenn die position mit dsem zoom nicht stimmt
         }
     }
 
-	// Pixel in Zeit umwandlung und umgekehrt
+    
+    // Pixel in Zeit umwandlung und umgekehrt
     private double TimeToPixel(DateTime t)
     {
         double unitDistance;
@@ -254,7 +262,7 @@
                 break;
             case TimeUnit.Months:
                 unitDistance = ((t.Year - baseTime.Year) * 12 + t.Month - baseTime.Month)
-                                + (t.Day - baseTime.Day) / 30.0; // grob geschätzt
+                + (t.Day - baseTime.Day) / 30.0; // grob geschätzt
                 break;
             case TimeUnit.Years:
                 unitDistance = t.Year - baseTime.Year + (t.DayOfYear - baseTime.DayOfYear) / 365.0;
@@ -262,23 +270,28 @@
             default:
                 unitDistance = 0;
                 break;
-        }
+                }
 
-        return InitialOffsetPx + unitDistance * spacing;
+
+        // zoomLevels[currentZoomIndex].seconds
+        //return InitialOffsetPx + unitDistance * spacing;
+        return InitialOffsetPx + unitDistance;
     }
 
+
+	// Darstellung der History Einträge in der Zeitachse
     private DateTime PixelToTime(double px)
     {
-        double unitDistance = (px - InitialOffsetPx) / spacing;
+        double unitDistance = px - InitialOffsetPx; //--> PixelPerSeconds spacing / zoomLevels[currentZoomIndex].seconds || Berechnet den abstand einer Sekunde in Pixeln anhand aktuellem Zoomlevel
 
         return CurrentTimeUnit switch
         {
-            TimeUnit.Seconds => baseTime.AddSeconds(unitDistance),
-            TimeUnit.Minutes => baseTime.AddMinutes(unitDistance),
-            TimeUnit.Hours => baseTime.AddHours(unitDistance),
-            TimeUnit.Days => baseTime.AddDays(unitDistance),
-            TimeUnit.Months => baseTime.AddMonths((int)unitDistance).AddDays((unitDistance % 1) * 30), // Näherung
-            TimeUnit.Years => baseTime.AddYears((int)unitDistance).AddDays((unitDistance % 1) * 365), // Näherung
+            TimeUnit.Seconds => baseTime.AddSeconds(unitDistance * zoomLevels[currentZoomIndex].seconds),
+            TimeUnit.Minutes => baseTime.AddMinutes(unitDistance * zoomLevels[currentZoomIndex].seconds / 60.0),
+            TimeUnit.Hours => baseTime.AddHours(unitDistance * zoomLevels[currentZoomIndex].seconds / 3600.0),
+            TimeUnit.Days => baseTime.AddDays(unitDistance * zoomLevels[currentZoomIndex].seconds / 86400.0),
+            TimeUnit.Months => baseTime.AddMonths((int)(unitDistance * zoomLevels[currentZoomIndex].seconds / 2592000.0)), // 30 Tage als Monat
+            TimeUnit.Years => baseTime.AddYears((int)(unitDistance * zoomLevels[currentZoomIndex].seconds / 31536000.0)), // 365 Tage als Jahr
             _ => baseTime
         };
     }
@@ -327,7 +340,8 @@
         RecalculatePositions();
         StateHasChanged();
     }
-	// Für scroll Funktion wird die Zeitspanne aus der Zoomstufe berechnet
+
+    // Für scroll Funktion wird die Zeitspanne aus der Zoomstufe berechnet
     private TimeSpan GetTimeSpanFromZoomLevel((int seconds, TimeUnit unit) zoomLevel)
     {
         return zoomLevel.unit switch
@@ -342,7 +356,7 @@
         };
     }
 
-	// Berechnet die Distanz zwischen zwei Zeitpunkten in der aktuellen Zeiteinheit
+    // Berechnet die Distanz zwischen zwei Zeitpunkten in der aktuellen Zeiteinheit
     private double GetUnitDistance(DateTime from, DateTime to)
     {
         return CurrentTimeUnit switch
@@ -360,24 +374,29 @@
     }
 
 
-
     [JSInvokable("OnZoom")]
     public async Task OnZoomAsync(string direction)
     {
-		isZooming = true; //zoom sperre Flag setzen
+        isZooming = true; //zoom sperre Flag setzen
 
         // Scrollgrenzen absichern
         scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
 
         // Mittelpunkt-Zeit merken (zentriert im Viewport)
         double centerPx = scrollIndex + viewportWidth / 2;
-        DateTime centerTime = PixelToTime(centerPx);
+		DateTime centerTime = PixelToTime(centerPx);  // ACHTUNG: ERROR anfälligkeit hier!!
 
         // Zoomstufe anpassen
         if (direction == "in" && currentZoomIndex > 0)
+        {
             currentZoomIndex--;
+            //pixelPerSecond *= 2; // Beispiel: 2x reinzoomen
+        }
         else if (direction == "out" && currentZoomIndex < zoomLevels.Length - 1)
+        {
             currentZoomIndex++;
+            //pixelPerSecond /= 2; // Beispiel: 2x rauszoomen
+        }
 
         // Neue Scrollposition berechnen, sodass die Zeit gleich bleibt
         double newCenterPx = TimeToPixel(centerTime);
@@ -385,15 +404,6 @@
 
         // Scrollgrenzen erneut absichern
         newScrollLeft = Math.Clamp(newScrollLeft, 0, Math.Max(0, movableLayerWidth - viewportWidth));
-
-        if (Math.Abs(newScrollLeft - scrollIndex) > 1) // Nur scrollen wenn signifikant anders
-        {
-            scrollIndex = newScrollLeft;
-            isProgrammaticScroll = true;
-            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
-            await Task.Delay(50); // Browser braucht kurz Zeit
-            isProgrammaticScroll = false;
-        }
 
         // Darstellung aktualisieren
         UpdateVisibleTimestamps();
@@ -480,6 +490,7 @@
     <div class="timeline-container">
         <!-- Externer Container mit fixer Breite & overflow -->
         <div id="scroll-container" class="scroll-wrapper scroll-wrapper-timeline" @ref="scrollDivRef">
+            <!-- Zeitachsn Balken -->
             <div class="movable-layer" style="width:@(movableLayerWidth)px; position: relative;">
 
                 @foreach (var entry in visibleEntries)
@@ -501,6 +512,8 @@
   
             </div>
 
+
+            <!-- Einträge in der Zeitachse -->
             @foreach (var data in State.BrowserEntries)
             {
                 if (data.Position > -50 && data.Position < viewportWidth - 300)
