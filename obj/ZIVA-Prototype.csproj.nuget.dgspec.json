@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\ZIVA-Prototype.csproj": {}
+    "C:\\Users\\vikto\\source\\repos\\ZyberTrack\\ZIVA-prototype\\ZIVA-Prototype.csproj": {}
   },
   "projects": {
-    "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\ZIVA-Prototype.csproj": {
+    "C:\\Users\\vikto\\source\\repos\\ZyberTrack\\ZIVA-prototype\\ZIVA-Prototype.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\ZIVA-Prototype.csproj",
+        "projectUniqueName": "C:\\Users\\vikto\\source\\repos\\ZyberTrack\\ZIVA-prototype\\ZIVA-Prototype.csproj",
         "projectName": "ZIVA-Prototype",
-        "projectPath": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\ZIVA-Prototype.csproj",
+        "projectPath": "C:\\Users\\vikto\\source\\repos\\ZyberTrack\\ZIVA-prototype\\ZIVA-Prototype.csproj",
         "packagesPath": "C:\\Users\\vikto\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\vikto\\Documents\\GitHub\\ZIVA-prototype\\obj\\",
+        "outputPath": "C:\\Users\\vikto\\source\\repos\\ZyberTrack\\ZIVA-prototype\\obj\\",
         "projectStyle": "PackageReference",
         "crossTargeting": true,
         "fallbackFolders": [
@@ -34,7 +34,7 @@
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net8.0-android34.0": {
+          "net8.0-android21.0": {
             "targetAlias": "net8.0-android",
             "projectReferences": {}
           },
@@ -61,15 +61,15 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
-        "net8.0-android34.0": {
+        "net8.0-android21.0": {
           "targetAlias": "net8.0-android",
           "dependencies": {
             "Microsoft.AspNetCore.Components.WebView.Maui": {
               "target": "Package",
-              "version": "[8.0.100, )"
+              "version": "(, )"
             },
             "Microsoft.Data.Sqlite": {
               "target": "Package",
@@ -81,17 +81,11 @@
             },
             "Microsoft.Maui.Controls": {
               "target": "Package",
-              "version": "[8.0.100, )"
+              "version": "(, )"
             },
             "Microsoft.Maui.Controls.Compatibility": {
               "target": "Package",
-              "version": "[8.0.100, )"
-            },
-            "Microsoft.NET.ILLink.Tasks": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[8.0.22, )",
-              "autoReferenced": true
+              "version": "(, )"
             },
             "Radzen.Blazor": {
               "target": "Package",
@@ -132,25 +126,18 @@
             }
           ],
           "frameworkReferences": {
-            "Microsoft.Android": {
-              "privateAssets": "all"
-            },
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.307/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json"
         },
         "net8.0-ios1.0": {
           "targetAlias": "net8.0-ios",
           "dependencies": {
             "Microsoft.AspNetCore.Components.WebView.Maui": {
               "target": "Package",
-              "version": "[8.0.100, )"
-            },
-            "Microsoft.Data.Sqlite": {
-              "target": "Package",
-              "version": "[9.0.4, )"
+              "version": "(, )"
             },
             "Microsoft.Extensions.Logging.Debug": {
               "target": "Package",
@@ -158,11 +145,11 @@
             },
             "Microsoft.Maui.Controls": {
               "target": "Package",
-              "version": "[8.0.100, )"
+              "version": "(, )"
             },
             "Microsoft.Maui.Controls.Compatibility": {
               "target": "Package",
-              "version": "[8.0.100, )"
+              "version": "(, )"
             },
             "Radzen.Blazor": {
               "target": "Package",
@@ -185,14 +172,14 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.307/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json"
         },
         "net8.0-maccatalyst1.0": {
           "targetAlias": "net8.0-maccatalyst",
           "dependencies": {
             "Microsoft.AspNetCore.Components.WebView.Maui": {
               "target": "Package",
-              "version": "[8.0.100, )"
+              "version": "(, )"
             },
             "Microsoft.Data.Sqlite": {
               "target": "Package",
@@ -204,11 +191,11 @@
             },
             "Microsoft.Maui.Controls": {
               "target": "Package",
-              "version": "[8.0.100, )"
+              "version": "(, )"
             },
             "Microsoft.Maui.Controls.Compatibility": {
               "target": "Package",
-              "version": "[8.0.100, )"
+              "version": "(, )"
             },
             "Radzen.Blazor": {
               "target": "Package",
@@ -231,18 +218,14 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.307/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json"
         },
         "net8.0-windows10.0.19041": {
           "targetAlias": "net8.0-windows10.0.19041.0",
           "dependencies": {
             "Microsoft.AspNetCore.Components.WebView.Maui": {
               "target": "Package",
-              "version": "[8.0.100, )"
-            },
-            "Microsoft.Data.Sqlite": {
-              "target": "Package",
-              "version": "[9.0.4, )"
+              "version": "(, )"
             },
             "Microsoft.Extensions.Logging.Debug": {
               "target": "Package",
@@ -250,11 +233,11 @@
             },
             "Microsoft.Maui.Controls": {
               "target": "Package",
-              "version": "[8.0.100, )"
+              "version": "(, )"
             },
             "Microsoft.Maui.Controls.Compatibility": {
               "target": "Package",
-              "version": "[8.0.100, )"
+              "version": "(, )"
             },
             "Radzen.Blazor": {
               "target": "Package",
@@ -286,24 +269,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.307\\RuntimeIdentifierGraph.json"
-        }
-      },
-      "runtimes": {
-        "android-arm": {
-          "#import": []
-        },
-        "android-arm64": {
-          "#import": []
-        },
-        "android-x64": {
-          "#import": []
-        },
-        "android-x86": {
-          "#import": []
-        },
-        "win10-x64": {
-          "#import": []
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

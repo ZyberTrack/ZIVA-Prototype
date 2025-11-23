@@ -1,8 +1,10 @@
 {
   "ExpandedNodes": [
     "",
-    "\\Models"
+    "\\Components",
+    "\\Components\\Models",
+    "\\Components\\Pages",
+    "\\Services"
   ],
-  "SelectedNode": "\\Models\\Anomaly.cs",
   "PreviewInSolutionExplorer": false
 }

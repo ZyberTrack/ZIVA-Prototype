@@ -1,1 +1,0 @@
-C:\Users\vikto\Documents\GitHub\ZIVA-prototype\ZIVA-Prototype.csproj;x64

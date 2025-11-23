@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\ZIVA-Prototype.props" />
-</Project>
