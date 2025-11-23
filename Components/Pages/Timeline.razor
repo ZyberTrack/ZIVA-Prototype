@@ -47,11 +47,6 @@
     }
 
     
-    private double GetPixelPerSecond()
-    {
-        // Wir wollen, dass jedes Intervall eine feste Pixelbreite hat, z.B. spacing
-        return spacing / zoomLevels[currentZoomIndex].seconds;
-    }
 
     // neuer Ansatz: Zoomstufen definieren, die die Dauer eines Intervalls bestimmen
     private readonly (int seconds, TimeUnit unit)[] zoomLevels = new[]
@@ -239,61 +234,83 @@
 			historyEntry.Position = (int)TimeToPixel(historyEntry.VisitTime) - scrollIndex; //Hier geht was schief wenn die position mit dsem zoom nicht stimmt
         }
     }
-
-    
-    // Pixel in Zeit umwandlung und umgekehrt
-    private double TimeToPixel(DateTime t)
+    private double GetPixelPerUnit()
     {
-        double unitDistance;
+        // spacing bleibt fix
+        double fixedSpacing = spacing;
 
-        switch (CurrentTimeUnit)
+        // aktuelle Zoomstufe
+        double valueInSeconds = zoomLevels[currentZoomIndex].seconds;
+        TimeUnit unit = zoomLevels[currentZoomIndex].unit;
+
+        // Dynamisch die Einheit anpassen
+        while (true)
         {
-            case TimeUnit.Seconds:
-                unitDistance = (t - baseTime).TotalSeconds;
-                break;
-            case TimeUnit.Minutes:
-                unitDistance = (t - baseTime).TotalMinutes;
-                break;
-            case TimeUnit.Hours:
-                unitDistance = (t - baseTime).TotalHours;
-                break;
-            case TimeUnit.Days:
-                unitDistance = (t - baseTime).TotalDays;
-                break;
-            case TimeUnit.Months:
-                unitDistance = ((t.Year - baseTime.Year) * 12 + t.Month - baseTime.Month)
-                + (t.Day - baseTime.Day) / 30.0; // grob geschätzt
-                break;
-            case TimeUnit.Years:
-                unitDistance = t.Year - baseTime.Year + (t.DayOfYear - baseTime.DayOfYear) / 365.0;
-                break;
-            default:
-                unitDistance = 0;
-                break;
-                }
+            // Berechne value in der aktuellen Einheit
+            double valueInCurrentUnit = valueInSeconds;
+            switch (unit)
+            {
+                case TimeUnit.Seconds:
+                    break; // bleibt Sekunden
+                case TimeUnit.Minutes:
+                    valueInCurrentUnit /= 60.0;
+                    break;
+                case TimeUnit.Hours:
+                    valueInCurrentUnit /= 3600.0;
+                    break;
+                case TimeUnit.Days:
+                    valueInCurrentUnit /= 86400.0;
+                    break;
+                case TimeUnit.Months:
+                    valueInCurrentUnit /= (30 * 86400.0);
+                    break;
+                case TimeUnit.Years:
+                    valueInCurrentUnit /= (365 * 86400.0);
+                    break;
+            }
 
+            // Prüfen: passt valueInCurrentUnit zu spacing?
+            if (valueInCurrentUnit <= fixedSpacing || unit == TimeUnit.Years)
+                break;
 
-        // zoomLevels[currentZoomIndex].seconds
-        //return InitialOffsetPx + unitDistance * spacing;
-        return InitialOffsetPx + unitDistance;
+            // sonst nächstgrößere Einheit wählen
+            unit = unit switch
+            {
+                TimeUnit.Seconds => TimeUnit.Minutes,
+                TimeUnit.Minutes => TimeUnit.Hours,
+                TimeUnit.Hours => TimeUnit.Days,
+                TimeUnit.Days => TimeUnit.Months,
+                TimeUnit.Months => TimeUnit.Years,
+                TimeUnit.Years => TimeUnit.Years
+            };
+        }
+
+        // Pixel pro Einheit = spacing / valueInCurrentUnit
+        double pixelPerUnit = fixedSpacing / valueInSeconds;
+
+        return pixelPerUnit;
     }
 
+
+    //return spacing / zoomLevels[currentZoomIndex].seconds;  // Wert ist schon mal besser  -> Zoom ist nicht wirklich von spacing abhängig oder??
+
+    private double TimeToPixel(DateTime t)
+    {
+        double secondsFromBase = (t - baseTime).TotalSeconds;
+        double pixelsPerSecond = GetPixelPerUnit();
+
+        return InitialOffsetPx + secondsFromBase * pixelsPerSecond;
+    }
 
 	// Darstellung der History Einträge in der Zeitachse
     private DateTime PixelToTime(double px)
     {
-        double unitDistance = px - InitialOffsetPx; //--> PixelPerSeconds spacing / zoomLevels[currentZoomIndex].seconds || Berechnet den abstand einer Sekunde in Pixeln anhand aktuellem Zoomlevel
+        double pixelsFromStart = px - InitialOffsetPx;
+        double secondsPerPixel = zoomLevels[currentZoomIndex].seconds / spacing;
 
-        return CurrentTimeUnit switch
-        {
-            TimeUnit.Seconds => baseTime.AddSeconds(unitDistance * zoomLevels[currentZoomIndex].seconds),
-            TimeUnit.Minutes => baseTime.AddMinutes(unitDistance * zoomLevels[currentZoomIndex].seconds / 60.0),
-            TimeUnit.Hours => baseTime.AddHours(unitDistance * zoomLevels[currentZoomIndex].seconds / 3600.0),
-            TimeUnit.Days => baseTime.AddDays(unitDistance * zoomLevels[currentZoomIndex].seconds / 86400.0),
-            TimeUnit.Months => baseTime.AddMonths((int)(unitDistance * zoomLevels[currentZoomIndex].seconds / 2592000.0)), // 30 Tage als Monat
-            TimeUnit.Years => baseTime.AddYears((int)(unitDistance * zoomLevels[currentZoomIndex].seconds / 31536000.0)), // 365 Tage als Jahr
-            _ => baseTime
-        };
+        double secondsFromBase = pixelsFromStart * secondsPerPixel;
+
+        return baseTime.AddSeconds(secondsFromBase);
     }
 
 
