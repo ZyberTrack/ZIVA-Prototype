@@ -14,7 +14,7 @@
     // TO DO:
 	// 
 	// 
-	// -- Einträge zoomen nicht mit dem scrollindex ident... versetzt...   !!!!!!  -> Wenn das sitzt kann man weiter arbeiten!! || Muss an TimeToPixel liegen oder RecalculatePositions
+	// -- Workaround fürs Zoom -> Pivoting between entrys.
     // 
     //
 
@@ -74,6 +74,7 @@
     };
 
     private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
+    private int currentPivotIndex = 0; // Index in State.BrowserEntries
     private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
 
 
@@ -111,6 +112,7 @@
             await JS.InvokeVoidAsync("timelineInterop.registerScrollHandler", selfRef, scrollDivRef);
             await JS.InvokeVoidAsync("registerDragHandler", selfRef);
             await JS.InvokeVoidAsync("registerZoomHandler", selfRef);
+            await JS.InvokeVoidAsync("registerArrowKeys", selfRef);
         }
     }
 
@@ -164,6 +166,37 @@
         }
 
     }
+
+    // zentriert Timeline um ein entry.
+    private async Task CenterOnEntry(int index)
+    {
+        if (State.BrowserEntries == null || !State.BrowserEntries.Any())
+            return;
+
+        // Index clampen
+        index = Math.Clamp(index, 0, State.BrowserEntries.Count - 1);
+        currentPivotIndex = index;
+
+        var entry = State.BrowserEntries[currentPivotIndex];
+
+        // baseTime auf den Pivot-Entry setzen
+        baseTime = entry.VisitTime;
+
+        // scrollIndex so berechnen, dass Pivot in die Mitte des Viewports kommt
+        scrollIndex = TimeToPixel(entry.VisitTime) - viewportWidth / 2;
+
+        // Scrollgrenzen sichern
+        scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
+
+        // Anzeige aktualisieren
+        UpdateVisibleTimestamps();
+        RecalculatePositions();
+        StateHasChanged();
+
+        // Optional: Browser scrollen, falls du einen externen Scroll-Container hast
+        await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
+    }
+
 
     [JSInvokable("OnResize")] // Elemente werden Visuell dem Fenster angepasst
     public async Task OnResizeAsync()
@@ -390,6 +423,20 @@
         };
     }
 
+    [JSInvokable("OnArrowRight")]
+    public async Task OnArrowRightAsync()
+    {
+        if (currentPivotIndex < State.BrowserEntries.Count - 1)
+            await CenterOnEntry(currentPivotIndex + 1);
+    }
+
+    [JSInvokable("OnArrowLeft")]
+    public async Task OnArrowLeftAsync()
+    {
+        if (currentPivotIndex > 0)
+            await CenterOnEntry(currentPivotIndex - 1);
+    }
+
 
     [JSInvokable("OnZoom")]
     public async Task OnZoomAsync(string direction)
@@ -401,7 +448,7 @@
 
         // Mittelpunkt-Zeit merken (zentriert im Viewport)
         double centerPx = scrollIndex + viewportWidth / 2;
-		DateTime centerTime = PixelToTime(centerPx);  // ACHTUNG: ERROR anfälligkeit hier!!
+        DateTime centerTime = PixelToTime(centerPx);  // ACHTUNG: ERROR anfälligkeit hier!!
 
         // Zoomstufe anpassen
         if (direction == "in" && currentZoomIndex > 0)
@@ -429,6 +476,8 @@
 
         isZooming = false;
     }
+
+
 
 
     public void Dispose()
