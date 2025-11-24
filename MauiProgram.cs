@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using ZIVA_Prototype.Components.Models;
+using ZIVA_Prototype.Services;
 
 namespace ZIVA_Prototype
 {
@@ -18,6 +19,7 @@ namespace ZIVA_Prototype
             builder.Services.AddMauiBlazorWebView();
             // ⬇ Hier deine Services registrieren:
             builder.Services.AddSingleton<HistoryImportService>();
+            builder.Services.AddSingleton<CookieImportService>();
             builder.Services.AddSingleton<TimelineStateService>();
 
 #if DEBUG

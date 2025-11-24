@@ -1,16 +1,19 @@
 ﻿@page "/data_import"
 @using ZIVA_Prototype.Components.Models
-@inject HistoryImportService ImportService
+@using ZIVA_Prototype.Services;
+@inject HistoryImportService HistoryImportService
+@inject CookieImportService CookieImportService
 @inject TimelineStateService State
 @using Microsoft.Maui.Storage
 
-<h3>Import</h3>
+<h3>Import DBs</h3>
 
 <!-- Button zum Auswählen der Datei und Importieren -->
-<button @onclick="ImportDb">Importieren</button>
+<button @onclick="ImportHistoryDb">History DB Importieren</button>
+<button @onclick="ImportCookiesDb">Cookies DB Importieren</button>
 
 @code {
-    private async Task ImportDb()
+    private async Task ImportHistoryDb()
     {
         // Öffne den Dateimanager und lasse den Benutzer eine Datei auswählen
         var filePath = await SelectFileAsync();
@@ -18,8 +21,26 @@
         if (!string.IsNullOrEmpty(filePath))
         {
             // Falls eine Datei ausgewählt wurde, lade sie
-            var entries = ImportService.LoadFromHistoryDatabase(filePath);
+            var entries = HistoryImportService.LoadFromHistoryDatabase(filePath);
             State.SetBrowserEntries(entries);
+        }
+        else
+        {
+            // Fehlerbehandlung, falls keine Datei ausgewählt wurde
+            Console.WriteLine("Keine Datei ausgewählt.");
+        }
+    }
+
+    private async Task ImportCookiesDb()
+    {
+        // Öffne den Dateimanager und lasse den Benutzer eine Datei auswählen
+        var filePath = await SelectFileAsync();
+
+        if (!string.IsNullOrEmpty(filePath))
+        {
+            // Falls eine Datei ausgewählt wurde, lade sie
+            var entries = CookieImportService.LoadFromCookieDatabase(filePath);
+            State.SetBrowserCookies(entries);
         }
         else
         {

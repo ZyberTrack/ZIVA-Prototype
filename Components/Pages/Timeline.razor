@@ -2,6 +2,7 @@
 @inject IJSRuntime JS
 @implements IDisposable
 @using ZIVA_Prototype.Components.Models
+@using ZIVA_Prototype.Services;
 @inject TimelineStateService State // Verwaltet States mehrerer Importierter Datenbanken
 @inject HistoryImportService Importer
 
@@ -19,7 +20,8 @@
     //
 
     private bool isZooming = false; // Flag to indicate if zooming is in progress
-    private BrowserHistoryEntry? selectedEntry; // Aktuell ausgewählte Browser Artefakt Entry
+    private BrowserHistoryEntry? selectedEntry; // Aktuell ausgewählte Browser History Artefakt Entry
+    private BrowserCookieEntry? selectedCookie; // Aktuell ausgewählte Browser Cookies Artefakt Entry
     private bool isProgrammaticScroll = false; //scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
 
     private ElementReference scrollDivRef;
@@ -97,9 +99,11 @@
     protected override async Task OnInitializedAsync()
     {
         await UpdateViewportWidthAsync();
-        await LoadFromDatabase();
+        await LoadFromDatabase(); // Läd die History Datenbank Artefakte
+        await LoadCookieDatabase(); // Läd die Cookie Datenbank Artefakte
 
         RecalculatePositions();
+        RecalculateCookiePositions();
         UpdateVisibleTimestamps();
     }
 
@@ -164,8 +168,62 @@
             RecalculatePositions();
             StateHasChanged();
         }
-
     }
+
+
+    private async Task LoadCookieDatabase()
+    {
+        var filePath = Path.Combine(FileSystem.AppDataDirectory, "cookies.sqlite");
+
+        // sicherstellen, dass die Datei existiert
+        if (File.Exists(filePath))
+        {
+            var cookieService = new CookieImportService();
+            var cookies = cookieService.LoadFromCookieDatabase(filePath);
+            State.SetBrowserCookies(cookies);
+        }
+        else
+        {
+            Console.WriteLine("Cookie-Datei nicht gefunden: " + filePath);
+        }
+
+        // Initiale Breite der Timeline setzen
+        if (State.BrowserCookies is { Count: > 0 })
+        {
+            // Basiszeit: frühester "LastAccessed" (macht für Cookies am meisten Sinn)
+            baseTime = State.BrowserCookies
+                .Where(c => c.LastAccessed > DateTime.MinValue)
+                .Min(c => c.LastAccessed);
+
+            // Viewport-Breite aktualisieren
+            await UpdateViewportWidthAsync();
+
+            // Erstes Cookie — das neuste, entsprechend deiner ORDER BY last_access_utc DESC
+            var first = State.BrowserCookies.First();
+
+            // Zeitliche Distanz
+            var unitDistance = GetUnitDistance(baseTime, first.LastAccessed);
+
+            // Position berechnen
+            var scrollTo = InitialOffsetPx + unitDistance * spacing;
+            scrollIndex = scrollTo - viewportWidth / 2;
+
+            // Scrollen
+            isProgrammaticScroll = true;
+            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
+            await Task.Delay(50);
+            isProgrammaticScroll = false;
+
+            visibleEntries.Clear();
+            UpdateVisibleTimestamps();
+            RecalculatePositions();
+            StateHasChanged();
+        }
+    }
+
+
+
+
 
     // zentriert Timeline um ein entry.
     private async Task CenterOnEntry(int index)
@@ -191,6 +249,7 @@
         // Anzeige aktualisieren
         UpdateVisibleTimestamps();
         RecalculatePositions();
+        RecalculateCookiePositions();
         StateHasChanged();
 
         // Optional: Browser scrollen, falls du einen externen Scroll-Container hast
@@ -203,6 +262,8 @@
     {
         await UpdateViewportWidthAsync();
         UpdateVisibleTimestamps();
+        RecalculatePositions();
+        RecalculateCookiePositions();
         StateHasChanged();
     }
 
@@ -267,6 +328,18 @@
 			historyEntry.Position = (int)TimeToPixel(historyEntry.VisitTime) - scrollIndex; //Hier geht was schief wenn die position mit dsem zoom nicht stimmt
         }
     }
+
+    private void RecalculateCookiePositions()
+    {
+        if (State.BrowserCookies == null) return;
+
+        foreach (var cookie in State.BrowserCookies)
+        {
+            cookie.Position = (int)TimeToPixel(cookie.LastAccessed) - (int)scrollIndex;
+        }
+    }
+
+
     private double GetPixelPerUnit()
     {
         // spacing bleibt fix
@@ -388,6 +461,7 @@
 
         UpdateVisibleTimestamps();
         RecalculatePositions();
+        RecalculateCookiePositions();
         StateHasChanged();
     }
 
@@ -472,6 +546,7 @@
         // Darstellung aktualisieren
         UpdateVisibleTimestamps();
         RecalculatePositions();
+        RecalculateCookiePositions();
         StateHasChanged();
 
         isZooming = false;
@@ -488,10 +563,18 @@
 
 <!-- RAZOR MARKUP -->
 <div class="timeline-wrapper">
+    <!-- LEFT SIDE OF TIMELINE -->
     <div class="legend-area">
         <div class="timeline-area-static timeline-area-top">
-            <div class="timeline-label">Verlauf-Zeitachse</div>
+            <div class="timeline-label">Verlauf-Zeitachse</div> 
+            <div class="timeline-history-label">Website Verlauf</div>
             <div class="timeline"></div>
+            <div class="timeline-cookies-label">Cookies</div>
+            <div class="timeline-cookies"></div>
+            <div class="timeline-webdata-label">Web Data</div>
+            <div class="timeline-webdata"></div>
+            <div class="timeline-favicons-label">Favicons</div>
+            <div class="timeline-favicons"></div>
         </div>
         <div class="timeline-area-static timeline-area-bottom">
             <div class="timeline-label">Analyse-Zeitachse</div>
@@ -499,9 +582,13 @@
         </div>
     </div>
 
+    <!-- MOVABLE TIMELINE -->
     <div class="timeline-static">
         <div class="timeline-area-scroll timeline-area-top">
             <div class="timeline"></div>
+            <div class="timeline-cookies"></div>
+            <div class="timeline-webdata"></div>
+            <div class="timeline-favicons"></div>
         </div>
 
         <div class="timeline-area-scroll timeline-area-bottom">
@@ -509,10 +596,14 @@
         </div>
     </div>
 
+    <!-- RIGHT SIDE OF TIMELINE -->
     <div class="timeless-area">
         <div class="timeline-area-static">
             <div class="timeline-label">Zeitstempel Unbekannt</div>
             <div class="timeline"></div>
+            <div class="timeline-cookies"></div>
+            <div class="timeline-webdata"></div>
+            <div class="timeline-favicons"></div>
         </div>
         <div class="timeline-area-static">
             <div class="timeline"></div>
@@ -536,6 +627,16 @@
                     @foreach (var e in State.BrowserEntries)
                     {
                         <li>Time: @e.VisitTime, Pos: @e.Position</li>
+                    }
+                </ul>
+            </div>
+
+            <div style="flex: 1;">
+                <strong>Visible Cookie Entries (@State.BrowserCookies.Count):</strong>
+                <ul style="font-size: 12px; padding-left: 20px;">
+                    @foreach (var e in State.BrowserCookies)
+                    {
+                        <li>Time: @e.LastAccessed, Pos: @e.Position</li>
                     }
                 </ul>
             </div>
@@ -579,7 +680,7 @@
             </div>
 
 
-            <!-- Einträge in der Zeitachse -->
+            <!-- History Einträge in der Zeitachse -->
             @foreach (var data in State.BrowserEntries)
             {
                 if (data.Position > -50 && data.Position < viewportWidth - 300)
@@ -603,6 +704,32 @@
                     }
                 </div>
             }
+
+            <!-- Cookies Einträge in der Zeitachse -->
+            @foreach (var cookie in State.BrowserCookies)
+            {
+                if (cookie.Position > -50 && cookie.Position < viewportWidth - 300)
+                {
+                    <div class="cookie-marker"
+                         style="left: calc(@($"{cookie.Position}px - 5px"))"
+                         data-host="@cookie.Host"
+                         data-time="@cookie.LastAccessed"
+                         @onclick="() => selectedCookie = cookie">
+                    </div>
+                }
+            }
+
+            @if (selectedCookie != null)
+            {
+                <div class="entry-details cookie-details">
+                    <p><strong>Host:</strong> @selectedCookie.Host</p>
+                    <p><strong>Name:</strong> @selectedCookie.Name</p>
+                    <p><strong>Created:</strong> @selectedCookie.Created</p>
+                    <p><strong>Last Accessed:</strong> @selectedCookie.LastAccessed</p>
+                    <p><strong>Expires:</strong> @selectedCookie.Expires</p>
+                </div>
+            }
+
 
         </div>
     </div>
