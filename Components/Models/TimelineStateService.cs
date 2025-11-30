@@ -25,6 +25,17 @@ namespace ZIVA_Prototype.Components.Models
             BrowserCookies.Clear();
             BrowserCookies.AddRange(cookies.OrderBy(c => c.LastAccessed));
         }
+
+
+        // === WebDataAutofill ===
+        public List<WebDataAutofillEntry> AutofillEntries { get; } = new();
+
+        public void SetAutofillEntries(List<WebDataAutofillEntry> entries)
+        {
+            AutofillEntries.Clear();
+            AutofillEntries.AddRange(entries.OrderBy(e => e.DateLastUsed));
+        }
+
     }
 }
 

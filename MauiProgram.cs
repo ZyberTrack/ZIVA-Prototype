@@ -19,6 +19,7 @@ namespace ZIVA_Prototype
             builder.Services.AddMauiBlazorWebView();
             // ⬇ Hier deine Services registrieren:
             builder.Services.AddSingleton<HistoryImportService>();
+            builder.Services.AddSingleton<WebDataAutofillImportService>();
             builder.Services.AddSingleton<CookieImportService>();
             builder.Services.AddSingleton<TimelineStateService>();
 

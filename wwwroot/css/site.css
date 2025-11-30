@@ -293,13 +293,42 @@
 }
 
     .cookie-marker:hover::after {
-        content: "Last Accessed: " attr(data-time) "\A" attr(data-url);
+        content: "Created: " attr(data-time) "\A Name: " attr(data-host) "\A Value: " attr(data-encryptedvalue);
         white-space: pre; /* "\A" für Zeilenumbruch aktivieren */
         position: absolute;
         top: -28px;
         left: 50%;
         transform: translateX(-50%);
         background-color: #6846FC;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        z-index: 999;
+    }
+
+
+.autofill-marker {
+    position: absolute;
+    top: calc(32.5% - 10px);
+    /*left: calc(-6px);  damit es auf der Achsenlinie liegt */
+    width: 4px;
+    height: 20px;
+    background-color: #25AAC1;
+    border-radius: 50%;
+    z-index: 19;
+    cursor: pointer;
+    box-shadow: 0 0 3px rgba(0,0,0,0.3);
+}
+
+    .autofill-marker:hover::after {
+        content: "Created: " attr(data-time) "\A Name: " attr(data-name) "\A Value: " attr(data-value);
+        white-space: pre; /* "\A" für Zeilenumbruch aktivieren */
+        position: absolute;
+        top: -28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #25AAC1;
         color: white;
         padding: 4px 8px;
         border-radius: 4px;

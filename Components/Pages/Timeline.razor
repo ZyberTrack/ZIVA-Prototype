@@ -13,15 +13,16 @@
     // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. 
     // 
     // TO DO:
-	// 
-	// 
-	// -- Workaround fürs Zoom -> Pivoting between entrys.
+    // 
+    // - Webdata Artefakte importieren und in der Timeline anzeigen
+    // 
     // 
     //
 
     private bool isZooming = false; // Flag to indicate if zooming is in progress
     private BrowserHistoryEntry? selectedEntry; // Aktuell ausgewählte Browser History Artefakt Entry
-    private BrowserCookieEntry? selectedCookie; // Aktuell ausgewählte Browser Cookies Artefakt Entry
+    private BrowserCookieEntry? selectedCookie; // Aktuell ausgewählte Browser Cookies Artefakt Entry selectedAutofill
+    private WebDataAutofillEntry? selectedAutofill;
     private bool isProgrammaticScroll = false; //scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
 
     private ElementReference scrollDivRef;
@@ -48,7 +49,6 @@
         Years
     }
 
-    
 
     // neuer Ansatz: Zoomstufen definieren, die die Dauer eines Intervalls bestimmen
     private readonly (int seconds, TimeUnit unit)[] zoomLevels = new[]
@@ -69,7 +69,7 @@
         (2419200, TimeUnit.Days),
         (5184000, TimeUnit.Days),
         (7776000, TimeUnit.Months),
-        (10368000, TimeUnit.Months),
+        (10368000, TimeUnit.Months), 
         (15552000, TimeUnit.Months),
         (31104000, TimeUnit.Years),
         (63072000, TimeUnit.Years),
@@ -104,6 +104,7 @@
 
         RecalculatePositions();
         RecalculateCookiePositions();
+        RecalculateAutofillPositions();
         UpdateVisibleTimestamps();
     }
 
@@ -166,6 +167,8 @@
             visibleEntries.Clear();
             UpdateVisibleTimestamps();
             RecalculatePositions();
+            RecalculateCookiePositions();
+            RecalculateAutofillPositions();
             StateHasChanged();
         }
     }
@@ -192,8 +195,8 @@
         {
             // Basiszeit: frühester "LastAccessed" (macht für Cookies am meisten Sinn)
             baseTime = State.BrowserCookies
-                .Where(c => c.LastAccessed > DateTime.MinValue)
-                .Min(c => c.LastAccessed);
+                .Where(c => c.Created > DateTime.MinValue)
+                .Min(c => c.Created);
 
             // Viewport-Breite aktualisieren
             await UpdateViewportWidthAsync();
@@ -202,7 +205,7 @@
             var first = State.BrowserCookies.First();
 
             // Zeitliche Distanz
-            var unitDistance = GetUnitDistance(baseTime, first.LastAccessed);
+            var unitDistance = GetUnitDistance(baseTime, first.Created);
 
             // Position berechnen
             var scrollTo = InitialOffsetPx + unitDistance * spacing;
@@ -217,9 +220,64 @@
             visibleEntries.Clear();
             UpdateVisibleTimestamps();
             RecalculatePositions();
+            RecalculateCookiePositions();
+            RecalculateAutofillPositions();
             StateHasChanged();
         }
     }
+
+
+    private async Task LoadAutofillDatabase()
+    {
+        var filePath = Path.Combine(FileSystem.AppDataDirectory, "webdata_autofill.sqlite");
+
+        if (File.Exists(filePath))
+        {
+            var autofillService = new WebDataAutofillImportService();
+            var entries = autofillService.LoadAutofill(filePath);
+            State.SetAutofillEntries(entries);
+        }
+        else
+        {
+            Console.WriteLine("Autofill-Datei nicht gefunden: " + filePath);
+        }
+
+        // Timeline initialisieren
+        if (State.AutofillEntries is { Count: > 0 })
+        {
+            // Basiszeit: erstes erzeugtes Datenfeld
+            baseTime = State.AutofillEntries
+                .Where(a => a.DateCreated > DateTime.MinValue)
+                .Min(a => a.DateCreated);
+
+            // Viewport ermitteln
+            await UpdateViewportWidthAsync();
+
+            // Erstes Element der Liste (ordnungsgemäß nach letzter Nutzung sortiert)
+            var first = State.AutofillEntries.First();
+
+            // Zeitliche Distanz berechnen
+            var unitDistance = GetUnitDistance(baseTime, first.DateCreated);
+
+            // Position bestimmen
+            var scrollTo = InitialOffsetPx + unitDistance * spacing;
+            scrollIndex = scrollTo - viewportWidth / 2;
+
+            // Scrollen
+            isProgrammaticScroll = true;
+            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
+            await Task.Delay(50);
+            isProgrammaticScroll = false;
+
+            // Sichtbare Einträge neu berechnen
+            visibleEntries.Clear();
+            UpdateVisibleTimestamps();
+            RecalculateCookiePositions();
+            RecalculateAutofillPositions();
+            StateHasChanged();
+        }
+    }
+
 
 
 
@@ -250,6 +308,7 @@
         UpdateVisibleTimestamps();
         RecalculatePositions();
         RecalculateCookiePositions();
+        RecalculateAutofillPositions();
         StateHasChanged();
 
         // Optional: Browser scrollen, falls du einen externen Scroll-Container hast
@@ -264,6 +323,7 @@
         UpdateVisibleTimestamps();
         RecalculatePositions();
         RecalculateCookiePositions();
+        RecalculateAutofillPositions();
         StateHasChanged();
     }
 
@@ -335,9 +395,20 @@
 
         foreach (var cookie in State.BrowserCookies)
         {
-            cookie.Position = (int)TimeToPixel(cookie.LastAccessed) - (int)scrollIndex;
+            cookie.Position = (int)TimeToPixel(cookie.Created) - (int)scrollIndex;
         }
     }
+
+    private void RecalculateAutofillPositions()
+    {
+        if (State.AutofillEntries == null) return;
+
+        foreach (var entry in State.AutofillEntries)
+        {
+            entry.Position = (int)TimeToPixel(entry.DateCreated) - (int)scrollIndex;
+        }
+    }
+
 
 
     private double GetPixelPerUnit()
@@ -462,6 +533,7 @@
         UpdateVisibleTimestamps();
         RecalculatePositions();
         RecalculateCookiePositions();
+        RecalculateAutofillPositions();
         StateHasChanged();
     }
 
@@ -547,6 +619,7 @@
         UpdateVisibleTimestamps();
         RecalculatePositions();
         RecalculateCookiePositions();
+        RecalculateAutofillPositions();
         StateHasChanged();
 
         isZooming = false;
@@ -627,6 +700,16 @@
                     @foreach (var e in State.BrowserEntries)
                     {
                         <li>Time: @e.VisitTime, Pos: @e.Position</li>
+                    }
+                </ul>
+            </div>
+
+            <div style="flex: 1;">
+                <strong>Visible Cookie Entries (@State.AutofillEntries.Count):</strong>
+                <ul style="font-size: 12px; padding-left: 20px;">
+                    @foreach (var e in State.AutofillEntries)
+                    {
+                        <li>Time: @e.DateCreated, Pos: @e.Position</li>
                     }
                 </ul>
             </div>
@@ -713,7 +796,8 @@
                     <div class="cookie-marker"
                          style="left: calc(@($"{cookie.Position}px - 5px"))"
                          data-host="@cookie.Host"
-                         data-time="@cookie.LastAccessed"
+                         data-value="@cookie.EncryptedValue"
+                         data-time="@cookie.Created"
                          @onclick="() => selectedCookie = cookie">
                     </div>
                 }
@@ -729,6 +813,38 @@
                     <p><strong>Expires:</strong> @selectedCookie.Expires</p>
                 </div>
             }
+
+            <!-- Autofill Einträge in der Zeitachse -->
+            @foreach (var item in State.AutofillEntries)
+            {
+                if (item.Position > -50 && item.Position < viewportWidth - 300)
+                {
+                    <div class="autofill-marker"
+                         style="left: calc(@($"{item.Position}px - 5px"))"
+                         data-name="@item.Name"
+                         data-value="@item.Value"
+                         data-time="@item.DateCreated"
+                         @onclick="() => selectedAutofill = item">
+                    </div>
+                }
+            }
+
+            @if (selectedAutofill != null)
+            {
+                <div class="entry-details autofill-details">
+                    <p><strong>Name:</strong> @selectedAutofill.Name</p>
+                    <p><strong>Value:</strong> @selectedAutofill.Value</p>
+
+                    <p><strong>Created:</strong> @selectedAutofill.DateCreated</p>
+                    <p><strong>Last Used:</strong> @selectedAutofill.DateLastUsed</p>
+
+                    @if (@selectedAutofill.DateCreated > DateTime.MinValue)
+                    {
+                        <p><strong>Modified:</strong> @selectedAutofill.DateCreated</p>
+                    }
+                </div>
+            }
+
 
 
         </div>

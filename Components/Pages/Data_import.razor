@@ -3,6 +3,7 @@
 @using ZIVA_Prototype.Services;
 @inject HistoryImportService HistoryImportService
 @inject CookieImportService CookieImportService
+@inject WebDataAutofillImportService AutofillService
 @inject TimelineStateService State
 @using Microsoft.Maui.Storage
 
@@ -11,6 +12,7 @@
 <!-- Button zum Auswählen der Datei und Importieren -->
 <button @onclick="ImportHistoryDb">History DB Importieren</button>
 <button @onclick="ImportCookiesDb">Cookies DB Importieren</button>
+<button @onclick="ImportAutofillDb">Autofill DB Importieren</button>
 
 @code {
     private async Task ImportHistoryDb()
@@ -46,6 +48,17 @@
         {
             // Fehlerbehandlung, falls keine Datei ausgewählt wurde
             Console.WriteLine("Keine Datei ausgewählt.");
+        }
+    }
+
+    private async Task ImportAutofillDb()
+    {
+        var filePath = await SelectFileAsync();
+
+        if (!string.IsNullOrEmpty(filePath))
+        {
+            var entries = AutofillService.LoadAutofill(filePath);
+            State.SetAutofillEntries(entries);
         }
     }
 
