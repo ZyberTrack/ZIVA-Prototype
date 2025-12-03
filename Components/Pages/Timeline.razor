@@ -14,16 +14,17 @@
     // 
     // TO DO:
     // 
-    // - Webdata Artefakte importieren und in der Timeline anzeigen
-    // 
-    // 
-    //
+    // - Favicons Artefakte importieren und in der Timeline anzeigen
+	// - History Artefakte in richtigen Farben anzeigen (Domain-basiert)
+    // - Domäne Objekte in Websiten Ausklappen lassen
+    // - Zoom Lvl zusammenfassung beeinflussen lassen
 
+    private List<DomainEntry> SummarizedEntries { get; set; } = new();
     private bool isZooming = false; // Flag to indicate if zooming is in progress
     private BrowserHistoryEntry? selectedEntry; // Aktuell ausgewählte Browser History Artefakt Entry
     private BrowserCookieEntry? selectedCookie; // Aktuell ausgewählte Browser Cookies Artefakt Entry selectedAutofill
     private WebDataAutofillEntry? selectedAutofill;
-    private bool isProgrammaticScroll = false; //scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
+    private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
 
     private ElementReference scrollDivRef;
     private const int InitialOffsetPx = 2500000; // z. B. Mitte der 500000px Fläche Für zeitachse
@@ -80,6 +81,112 @@
     private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
 
 
+    //------------------------------------------------------------
+    // Bessere Domain-Farbzuweisung mit maximaler Farbdistanz (HSL)
+    //------------------------------------------------------------
+    private static Dictionary<string, string> domainColors = new();
+
+    // Liste aller bisher vergebenen Hue-Werte
+    private static List<int> usedHues = new();
+
+    // Schrittweite zwischen Farben (z. B. 40° = gut unterscheidbar)
+    private const int HueStep = 40;
+
+    // Sättigung und Luminanz für kräftige, aber nicht zu grelle Farben
+    private const int Saturation = 75; // %
+    private const int Lightness = 45;  // %
+
+
+    // Gibt HEX-Farbe aus HSL zurück
+    private string HslToRgb(int h, int s, int l)
+    {
+        double sat = s / 100.0;
+        double light = l / 100.0;
+        double c = (1 - Math.Abs(2 * light - 1)) * sat;
+        double x = c * (1 - Math.Abs((h / 60.0) % 2 - 1));
+        double m = light - c / 2;
+
+        double r = 0, g = 0, b = 0;
+
+        if (h < 60) { r = c; g = x; b = 0; }
+        else if (h < 120) { r = x; g = c; b = 0; }
+        else if (h < 180) { r = 0; g = c; b = x; }
+        else if (h < 240) { r = 0; g = x; b = c; }
+        else if (h < 300) { r = x; g = 0; b = c; }
+        else { r = c; g = 0; b = x; }
+
+        int R = (int)((r + m) * 255);
+        int G = (int)((g + m) * 255);
+        int B = (int)((b + m) * 255);
+
+        return $"rgb({R},{G},{B})";
+    }
+
+
+    // Gibt gut unterscheidbare Farbe für eine Domain zurück
+    private string GetColorForDomain(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return "rgb(200,200,200)";
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return "rgb(200,200,200)";
+
+        string domain = uri.Host.ToLower();
+
+        // Falls schon eine Farbe existiert → zurückgeben
+        if (domainColors.ContainsKey(domain))
+            return domainColors[domain];
+
+        // Neuen Hue-Wert wählen
+        int hue = (usedHues.Count * HueStep) % 360;
+        usedHues.Add(hue);
+
+        // Farbe generieren
+        string color = HslToRgb(hue, Saturation, Lightness);
+
+        domainColors[domain] = color;
+        return color;
+    }
+
+
+    //------------------------------------------------------------ Domänen Zusammenfassung
+
+    private List<DomainEntry> SummarizeEntries(List<BrowserHistoryEntry> entries, int maxSecondsBetween = 10)
+
+    {
+        var summarized = new List<DomainEntry>();
+        DomainEntry current = null;
+
+        foreach (var entry in entries.OrderBy(e => e.VisitTime))
+        {
+            var domain = new Uri(entry.Url).Host.ToLower();
+
+            if (current == null || current.Domain != domain || (entry.VisitTime - current.VisitTime).TotalSeconds > maxSecondsBetween)
+            {
+                current = new DomainEntry
+                {
+                    Domain = domain,
+                    Url = entry.Url,
+                    VisitTime = entry.VisitTime,
+                    IsDirect = entry.ReferrerUrl == null, // kein Referrer → direkt
+					IsSearch = entry.ReferrerUrl != null && entry.ReferrerUrl.Contains("google"), // Erkennt jetzt exemplarisch nur Google als Suchmaschine
+                };
+                summarized.Add(current);
+            }
+            else
+            {
+                // Gruppiere als SubEntry
+                current.SubEntries.Add(entry);
+                // Wenn Referrer → indirekt markieren
+                if (entry.ReferrerUrl != null)
+                    current.IsDirect = false;
+            }
+        }
+
+        return summarized;
+    }
+
 
     // Neuer Ansatz: Zoomstufen in Units statt Sekunden
     private TimeUnit CurrentTimeUnit => zoomLevels[currentZoomIndex].unit;
@@ -105,6 +212,7 @@
         RecalculatePositions();
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
         UpdateVisibleTimestamps();
     }
 
@@ -158,6 +266,8 @@
             var scrollTo = InitialOffsetPx + unitDistance * spacing;
             scrollIndex = scrollTo - viewportWidth / 2;
 
+            SummarizedEntries = SummarizeEntries(State.BrowserEntries, maxSecondsBetween: zoomLevels[currentZoomIndex].seconds); //Domänen Zusammenfassung erstellen
+
             // Jetzt scrollen
             isProgrammaticScroll = true;
             await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
@@ -169,6 +279,7 @@
             RecalculatePositions();
             RecalculateCookiePositions();
             RecalculateAutofillPositions();
+            RecalculateSummarizedPositions();
             StateHasChanged();
         }
     }
@@ -222,6 +333,7 @@
             RecalculatePositions();
             RecalculateCookiePositions();
             RecalculateAutofillPositions();
+            RecalculateSummarizedPositions();
             StateHasChanged();
         }
     }
@@ -274,6 +386,7 @@
             UpdateVisibleTimestamps();
             RecalculateCookiePositions();
             RecalculateAutofillPositions();
+            RecalculateSummarizedPositions();
             StateHasChanged();
         }
     }
@@ -309,6 +422,7 @@
         RecalculatePositions();
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
         StateHasChanged();
 
         // Optional: Browser scrollen, falls du einen externen Scroll-Container hast
@@ -324,6 +438,7 @@
         RecalculatePositions();
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
         StateHasChanged();
     }
 
@@ -408,6 +523,17 @@
             entry.Position = (int)TimeToPixel(entry.DateCreated) - (int)scrollIndex;
         }
     }
+
+    private void RecalculateSummarizedPositions()
+    {
+        if (SummarizedEntries == null) return;
+
+        foreach (var entry in SummarizedEntries)
+        {
+            entry.Position = (int)TimeToPixel(entry.VisitTime) - (int)scrollIndex;
+        }
+    }
+
 
 
 
@@ -534,6 +660,7 @@
         RecalculatePositions();
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
         StateHasChanged();
     }
 
@@ -620,6 +747,7 @@
         RecalculatePositions();
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
         StateHasChanged();
 
         isZooming = false;
@@ -764,29 +892,44 @@
 
 
             <!-- History Einträge in der Zeitachse -->
-            @foreach (var data in State.BrowserEntries)
+            @foreach (var domainEntry in SummarizedEntries)
             {
-                if (data.Position > -50 && data.Position < viewportWidth - 300)
-                {
-                    <div class="history-marker"
-                         style="left: calc(@($"{data.Position}px - 5px"))"
-                         data-url="@data.Url"
-                         data-time="@data.VisitTime"
-                         @onclick="() => selectedEntry = data">
+                var color = GetColorForDomain(domainEntry.Url);
+                string markerClass = domainEntry.IsSearch ? "history-marker square" :
+                domainEntry.IsDirect ? "history-marker hollow" :
+                "history-marker filled";
+                if (domainEntry.IsExpanded)
+                    markerClass += " expanded";
+
+                <div class="@markerClass"
+                     style="left: calc(@($"{domainEntry.Position}px - 6px")); color:@color"
+                     @onclick="() => domainEntry.IsExpanded = !domainEntry.IsExpanded">
+
+                    <div class="domaine-tooltip" style="background-color:@color;">
+                        <div><strong>@domainEntry.VisitTime</strong></div>
+                        <div>@domainEntry.Domain</div>
                     </div>
+                </div>
+
+                @if (domainEntry.IsExpanded && domainEntry.SubEntries.Any())
+                {
+                    @foreach (var sub in domainEntry.SubEntries)
+                    {
+                        <div class="history-marker filled subentry"
+                             style="left: calc(@($"{sub.Position}px - 6px")); color:@GetColorForDomain(domainEntry.Url); top: calc(25% - 6px);"
+                             title="@sub.Url">
+
+                            <div class="subentry-tooltip" style="background-color:@color;">
+                                <div><strong>@sub.VisitTime</strong></div>
+                                <div>@sub.Url</div>
+                            </div>
+                        </div>
+                    }
                 }
             }
-            @if (selectedEntry != null)
-            {
-                <div class="entry-details">
-                    <p><strong>Besuchszeit:</strong> @selectedEntry.VisitTime</p>
-                    <p><strong>URL:</strong> @selectedEntry.Url</p>
-                    @if (!string.IsNullOrEmpty(selectedEntry.Title))
-                    {
-                        <p><strong>Titel:</strong> @selectedEntry.Title</p>
-                    }
-                </div>
-            }
+
+
+
 
             <!-- Cookies Einträge in der Zeitachse -->
             @foreach (var cookie in State.BrowserCookies)
@@ -844,9 +987,6 @@
                     }
                 </div>
             }
-
-
-
         </div>
     </div>
 </div>

@@ -238,33 +238,113 @@
 }
 
 /* --- Zeitachsen-Elemente --- */
+
 .history-marker {
     position: absolute;
     top: calc(25% - 6px);
     /*left: calc(-6px);  damit es auf der Achsenlinie liegt */
     width: 12px;
     height: 12px;
-    background-color: #007BFF;
     border-radius: 50%;
     z-index: 19;
     cursor: pointer;
     box-shadow: 0 0 3px rgba(0,0,0,0.3);
 }
 
-    .history-marker:hover::after {
-        content: attr(data-time) "\A" attr(data-url);
-        white-space: pre; /* "\A" für Zeilenumbruch aktivieren */
-        position: absolute;
-        top: -28px;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: rgba(0, 123, 255, 0.9);
-        color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 10px;
-        z-index: 999;
+    /* Hohler Quadrat Marker */
+    .history-marker.square {
+        width: 12px;
+        height: 12px;
+        border: 2px solid currentColor;
+        background: none;
+        z-index: 20;
     }
+
+    /* Hohler Kreis Marker */
+    .history-marker.hollow {
+        width: 12px;
+        height: 12px;
+        border: 2px solid currentColor;
+        border-radius: 50%;
+        background: none;
+    }
+
+    /* Gefüllter Kreis Marker */
+    .history-marker.filled {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: currentColor;
+    }
+
+    .history-marker.expanded {
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-bottom: 12px solid currentColor; /* Dreieck nach unten */
+        background: none;
+        border-radius: 0;
+    }
+
+
+/* Subentries */
+.subentries {
+    margin-top: 4px;
+    font-size: 10px;
+    position: absolute;
+    left: 0;
+}
+
+.subentry {
+    margin-left: 12px;
+}
+
+
+/* Tooltip */
+.subentry-tooltip {
+    position: absolute;
+    top: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    padding: 6px 10px;
+    color: white;
+    border-radius: 4px;
+    font-size: 11px;
+    z-index: 999;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+.domaine-tooltip {
+    position: absolute;
+    top: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    padding: 6px 10px;
+    color: white;
+    border-radius: 4px;
+    font-size: 11px;
+    z-index: 999;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+/* Domain Tooltip */
+.history-marker:hover > .domaine-tooltip {
+    display: block;
+}
+
+/* SubEntry Tooltip */
+.subentry:hover > .subentry-tooltip {
+    display: block;
+}
+
+
+
+
 
 /* Wenn auf Artefakt geklickt wird */
 .entry-details {
@@ -296,7 +376,7 @@
         content: "Created: " attr(data-time) "\A Name: " attr(data-host) "\A Value: " attr(data-encryptedvalue);
         white-space: pre; /* "\A" für Zeilenumbruch aktivieren */
         position: absolute;
-        top: -28px;
+        top: 28px;
         left: 50%;
         transform: translateX(-50%);
         background-color: #6846FC;
@@ -325,7 +405,7 @@
         content: "Created: " attr(data-time) "\A Name: " attr(data-name) "\A Value: " attr(data-value);
         white-space: pre; /* "\A" für Zeilenumbruch aktivieren */
         position: absolute;
-        top: -28px;
+        top: 28px;
         left: 50%;
         transform: translateX(-50%);
         background-color: #25AAC1;
