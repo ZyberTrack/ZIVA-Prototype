@@ -15,9 +15,9 @@
     // TO DO:
     // 
     // - Favicons Artefakte importieren und in der Timeline anzeigen
-	// - History Artefakte in richtigen Farben anzeigen (Domain-basiert)
-    // - Domäne Objekte in Websiten Ausklappen lassen
-    // - Zoom Lvl zusammenfassung beeinflussen lassen
+	// - Gewisse Objekte verschwinden, wenn man sie ausklappt... Google domäne.
+    // 
+    // 
 
     private List<DomainEntry> SummarizedEntries { get; set; } = new();
     private bool isZooming = false; // Flag to indicate if zooming is in progress
@@ -170,7 +170,12 @@
                     Url = entry.Url,
                     VisitTime = entry.VisitTime,
                     IsDirect = entry.ReferrerUrl == null, // kein Referrer → direkt
-					IsSearch = entry.ReferrerUrl != null && entry.ReferrerUrl.Contains("google"), // Erkennt jetzt exemplarisch nur Google als Suchmaschine
+
+                    // Richtige Erkennung: URL selbst ist eine Google-Suchseite
+                    IsSearch =
+                        entry.Url != null &&
+                        entry.Url.Contains("google.") &&
+                        (entry.Url.Contains("/search") || entry.Url.Contains("q=")),
                 };
                 summarized.Add(current);
             }
@@ -895,38 +900,95 @@
             @foreach (var domainEntry in SummarizedEntries)
             {
                 var color = GetColorForDomain(domainEntry.Url);
-                string markerClass = domainEntry.IsSearch ? "history-marker square" :
-                domainEntry.IsDirect ? "history-marker hollow" :
-                "history-marker filled";
-                if (domainEntry.IsExpanded)
-                    markerClass += " expanded";
 
-                <div class="@markerClass"
-                     style="left: calc(@($"{domainEntry.Position}px - 6px")); color:@color"
-                     @onclick="() => domainEntry.IsExpanded = !domainEntry.IsExpanded">
+                <div class="domain-container">
 
-                    <div class="domaine-tooltip" style="background-color:@color;">
-                        <div><strong>@domainEntry.VisitTime</strong></div>
-                        <div>@domainEntry.Domain</div>
-                    </div>
-                </div>
-
-                @if (domainEntry.IsExpanded && domainEntry.SubEntries.Any())
-                {
-                    @foreach (var sub in domainEntry.SubEntries)
+                    @if (!domainEntry.IsExpanded)
                     {
-                        <div class="history-marker filled subentry"
-                             style="left: calc(@($"{sub.Position}px - 6px")); color:@GetColorForDomain(domainEntry.Url); top: calc(25% - 6px);"
-                             title="@sub.Url">
+                        // Domain Marker
+                        string domainClass = domainEntry.IsSearch ? "domain-marker square" :
+                        domainEntry.IsDirect ? "domain-marker hollow" :
+                        "domain-marker filled";
 
-                            <div class="subentry-tooltip" style="background-color:@color;">
-                                <div><strong>@sub.VisitTime</strong></div>
-                                <div>@sub.Url</div>
+                        <div class="@domainClass"
+                             style="left: calc(@($"{domainEntry.Position}px - 6px")); color:@color"
+                             @onclick="() => domainEntry.IsExpanded = true">
+
+                            <div class="domaine-tooltip" style="background-color:@color;">
+                                <div><strong>Zeitstempel: @domainEntry.VisitTime</strong></div>
+                                <div>Domäne: @domainEntry.Domain</div>
                             </div>
                         </div>
                     }
-                }
+                    else if (domainEntry.SubEntries.Any())
+                    {
+                        // Erster SubEntry-Marker ersetzt die Domain
+                        var firstSub = domainEntry.SubEntries.First();
+
+                        <div class="subentry"
+                             style="position: absolute; left: calc(@($"{domainEntry.Position}px - 6px")); top: calc(25% - 12px); color:@GetColorForDomain(domainEntry.Url); cursor:pointer; z-index: 20;"
+                             @onclick="() => domainEntry.IsExpanded = false">
+
+                            @* Inline-SVG für gefüllt oder hohl *@
+                            @if (string.IsNullOrEmpty(firstSub.ReferrerUrl))
+                            {
+                                <svg width="12" height="12" viewBox="0 0 12 12">
+                                    <polygon points="0,0 12,0 6,12" fill="none" stroke="currentColor" stroke-width="2" />
+                                </svg>
+                            }
+                            else
+                            {
+                                <svg width="12" height="12" viewBox="0 0 12 12">
+                                    <polygon points="0,0 12,0 6,12" fill="currentColor" />
+                                </svg>
+                            }
+
+                            <div class="subentry-tooltip" style="background-color:@color;">
+                                <div><strong>Zeitstempel: @firstSub.VisitTime</strong></div>
+                                <div>URL: @firstSub.Url</div>
+                                @if (!string.IsNullOrEmpty(firstSub.ReferrerUrl))
+                                {
+                                    <div>Verwiesen von: @firstSub.ReferrerUrl</div>
+                                }
+                            </div>
+                        </div>
+
+                        // Restliche SubEntries (falls mehr als 1)
+                        foreach (var sub in domainEntry.SubEntries.Skip(1))
+                        {
+                            <div class="subentry"
+                                 style="position: absolute; left: calc(@($"{sub.Position}px - 6px")); top: calc(25% - 12px); color:@GetColorForDomain(domainEntry.Url); cursor:pointer; z-index: 20;">
+
+                                @if (string.IsNullOrEmpty(sub.ReferrerUrl))
+                                {
+                                    <svg width="12" height="12" viewBox="0 0 12 12">
+                                        <polygon points="0,0 12,0 6,12" fill="none" stroke="currentColor" stroke-width="2" />
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <svg width="12" height="12" viewBox="0 0 12 12">
+                                        <polygon points="0,0 12,0 6,12" fill="currentColor" />
+                                    </svg>
+                                }
+
+                                <div class="subentry-tooltip" style="background-color:@color;">
+                                    <div><strong>Zeitstempel: @sub.VisitTime</strong></div>
+                                    <div>URL: @sub.Url</div>
+                                    @if (!string.IsNullOrEmpty(sub.ReferrerUrl))
+                                    {
+                                        <div>Verwiesen von: @sub.ReferrerUrl</div>
+                                    }
+                                </div>
+                            </div>
+
+                        }
+                    }
+                </div>
             }
+
+
+
 
 
 

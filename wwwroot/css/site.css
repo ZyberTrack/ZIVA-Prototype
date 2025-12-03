@@ -239,10 +239,10 @@
 
 /* --- Zeitachsen-Elemente --- */
 
-.history-marker {
+/* Basis Marker */
+.domain-marker {
     position: absolute;
     top: calc(25% - 6px);
-    /*left: calc(-6px);  damit es auf der Achsenlinie liegt */
     width: 12px;
     height: 12px;
     border-radius: 50%;
@@ -251,53 +251,33 @@
     box-shadow: 0 0 3px rgba(0,0,0,0.3);
 }
 
-    /* Hohler Quadrat Marker */
-    .history-marker.square {
-        width: 12px;
-        height: 12px;
+    /* Hohler Kreis */
+    .domain-marker.hollow {
         border: 2px solid currentColor;
-        background: none;
-        z-index: 20;
-    }
-
-    /* Hohler Kreis Marker */
-    .history-marker.hollow {
-        width: 12px;
-        height: 12px;
-        border: 2px solid currentColor;
-        border-radius: 50%;
         background: none;
     }
 
-    /* Gefüllter Kreis Marker */
-    .history-marker.filled {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
+    /* Gefüllter Kreis */
+    .domain-marker.filled {
         background-color: currentColor;
     }
 
-    .history-marker.expanded {
-        width: 0;
-        height: 0;
-        border-left: 6px solid transparent;
-        border-right: 6px solid transparent;
-        border-bottom: 12px solid currentColor; /* Dreieck nach unten */
+    /* Hohles Quadrat (Google / Suchmaschine) */
+    .domain-marker.square {
+        width: 12px;
+        height: 12px;
+        border: 2px solid currentColor;
         background: none;
         border-radius: 0;
     }
 
 
-/* Subentries */
-.subentries {
-    margin-top: 4px;
-    font-size: 10px;
+.subentry-marker {
     position: absolute;
-    left: 0;
-}
-
-.subentry {
-    margin-left: 12px;
+    cursor: pointer;
+    z-index: 20;
+    width: 12px;
+    height: 12px;
 }
 
 
@@ -333,7 +313,7 @@
 }
 
 /* Domain Tooltip */
-.history-marker:hover > .domaine-tooltip {
+.domain-marker:hover > .domaine-tooltip {
     display: block;
 }
 
