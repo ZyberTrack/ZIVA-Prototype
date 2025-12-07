@@ -5,7 +5,9 @@
 @inject CookieImportService CookieImportService
 @inject WebDataAutofillImportService AutofillService
 @inject TimelineStateService State
+@inject PersistStateService PersistService
 @using Microsoft.Maui.Storage
+
 
 <h3>Import DBs</h3>
 
@@ -13,6 +15,7 @@
 <button @onclick="ImportHistoryDb">History DB Importieren</button>
 <button @onclick="ImportCookiesDb">Cookies DB Importieren</button>
 <button @onclick="ImportAutofillDb">Autofill DB Importieren</button>
+<button @onclick="ClearAllData">Daten Löschen</button>
 
 @code {
     private async Task ImportHistoryDb()
@@ -23,8 +26,9 @@
         if (!string.IsNullOrEmpty(filePath))
         {
             // Falls eine Datei ausgewählt wurde, lade sie
-            var entries = HistoryImportService.LoadFromHistoryDatabase(filePath);
-            State.SetBrowserEntries(entries);
+            var entries = await HistoryImportService.LoadFromHistoryDatabaseAsync(filePath);
+            State.AddBrowserEntries(entries); // ⚡ Hinzufügen statt ersetzen
+            await PersistService.PersistStateAsync(State);
         }
         else
         {
@@ -41,8 +45,9 @@
         if (!string.IsNullOrEmpty(filePath))
         {
             // Falls eine Datei ausgewählt wurde, lade sie
-            var entries = CookieImportService.LoadFromCookieDatabase(filePath);
-            State.SetBrowserCookies(entries);
+            var entries = await CookieImportService.LoadFromCookieDatabaseAsync(filePath);
+            State.AddBrowserCookies(entries);
+            await PersistService.PersistStateAsync(State);
         }
         else
         {
@@ -57,8 +62,14 @@
 
         if (!string.IsNullOrEmpty(filePath))
         {
-            var entries = AutofillService.LoadAutofill(filePath);
-            State.SetAutofillEntries(entries);
+            var entries = await AutofillService.LoadAutofillAsync(filePath);
+            State.AddAutofillEntries(entries);
+            await PersistService.PersistStateAsync(State);
+        }
+        else
+        {
+            // Fehlerbehandlung, falls keine Datei ausgewählt wurde
+            Console.WriteLine("Keine Datei ausgewählt.");
         }
     }
 
@@ -74,5 +85,12 @@
         }
 
         return null; // Falls keine Datei ausgewählt wurde
+    }
+
+    // Neuer Button zum Löschen aller Daten
+    private async Task ClearAllData()
+    {
+        State.ClearAll();
+        await PersistService.PersistStateAsync(State);
     }
 }

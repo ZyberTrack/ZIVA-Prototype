@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ZIVA_Prototype.Components.Models;
 
-namespace ZIVA_Prototype.Components.Models
+namespace ZIVA_Prototype.Services
 {
     public class TimelineStateService
     {
@@ -16,6 +16,12 @@ namespace ZIVA_Prototype.Components.Models
             BrowserEntries.AddRange(entries.OrderBy(e => e.VisitTime));
         }
 
+        public void AddBrowserEntries(List<BrowserHistoryEntry> entries)
+        {
+            BrowserEntries.AddRange(entries);
+            BrowserEntries.Sort((a, b) => a.VisitTime.CompareTo(b.VisitTime));
+        }
+
 
         // === COOKIES ===
         public List<BrowserCookieEntry> BrowserCookies { get; } = new();
@@ -24,6 +30,12 @@ namespace ZIVA_Prototype.Components.Models
         {
             BrowserCookies.Clear();
             BrowserCookies.AddRange(cookies.OrderBy(c => c.LastAccessed));
+        }
+
+        public void AddBrowserCookies(List<BrowserCookieEntry> cookies)
+        {
+            BrowserCookies.AddRange(cookies);
+            BrowserCookies.Sort((a, b) => a.LastAccessed.CompareTo(b.LastAccessed));
         }
 
 
@@ -36,6 +48,20 @@ namespace ZIVA_Prototype.Components.Models
             AutofillEntries.AddRange(entries.OrderBy(e => e.DateLastUsed));
         }
 
+        public void AddAutofillEntries(List<WebDataAutofillEntry> entries)
+        {
+            AutofillEntries.AddRange(entries);
+            AutofillEntries.Sort((a, b) => a.DateLastUsed.CompareTo(b.DateLastUsed));
+        }
+
+        // === Alles löschen ===
+        public void ClearAll()
+        {
+            BrowserEntries.Clear();
+            BrowserCookies.Clear();
+            AutofillEntries.Clear();
+        }
     }
 }
+
 

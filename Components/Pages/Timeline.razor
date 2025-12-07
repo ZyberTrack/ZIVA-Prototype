@@ -1,10 +1,12 @@
 ﻿@page "/"
 @inject IJSRuntime JS
 @implements IDisposable
-@using ZIVA_Prototype.Components.Models
+@using ZIVA_Prototype.Components.Models;
 @using ZIVA_Prototype.Services;
 @inject TimelineStateService State // Verwaltet States mehrerer Importierter Datenbanken
-@inject HistoryImportService Importer
+@inject HistoryImportService Importer   
+@inject PersistStateService PersistService // falls benötigt
+
 
 @code {
 
@@ -16,7 +18,7 @@
     // - Zoom Mittelpunkt zur Maus verschieben.
     // - Favicons Artefakte importieren und in der Timeline anzeigen
 	// 
-	// 
+	// - Daten Persistent machen funkt nicht.. wenn es zu viel arbeit macht.. lassen wir es.
     // 
 
     private List<DomainEntry> SummarizedEntries { get; set; } = new();
@@ -155,7 +157,7 @@
     private List<DomainEntry> SummarizeEntries(List<BrowserHistoryEntry> entries, int maxSecondsBetween = 10)
     {
         var summarized = new List<DomainEntry>();
-        DomainEntry current = null;
+        DomainEntry? current = null;
 
         // 1) VORVERARBEITUNG: Domain-Hit-Count
         var domainCounts = entries
@@ -264,9 +266,16 @@
     protected override async Task OnInitializedAsync()
     {
         await UpdateViewportWidthAsync();
-        await LoadFromDatabase(); // Läd die History Datenbank Artefakte
-        await LoadCookieDatabase(); // Läd die Cookie Datenbank Artefakte
 
+        // Lade alles parallel im Hintergrund
+        var historyTask = LoadFromDatabase();
+        var cookieTask = LoadCookieDatabase();
+        var autofillTask = LoadAutofillDatabase();
+        var persistTask = PersistService.LoadPersistedStateAsync(State);
+
+        //await Task.WhenAll(historyTask, cookieTask, autofillTask, persistTask);
+
+        // Danach UI-Berechnungen
         RecalculatePositions();
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
@@ -294,8 +303,8 @@
         // sicherstellen, dass die Datei existiert
         if (File.Exists(filePath))
         {
-            var entries = Importer.LoadFromHistoryDatabase(filePath);
-            State.SetBrowserEntries(entries);
+            var entries = await Importer.LoadFromHistoryDatabaseAsync(filePath);
+            State.AddBrowserEntries(entries);
         }
         else
         {
@@ -338,7 +347,7 @@
             RecalculateCookiePositions();
             RecalculateAutofillPositions();
             RecalculateSummarizedPositions();
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -351,7 +360,7 @@
         if (File.Exists(filePath))
         {
             var cookieService = new CookieImportService();
-            var cookies = cookieService.LoadFromCookieDatabase(filePath);
+            var cookies = await cookieService.LoadFromCookieDatabaseAsync(filePath);
             State.SetBrowserCookies(cookies);
         }
         else
@@ -392,7 +401,7 @@
             RecalculateCookiePositions();
             RecalculateAutofillPositions();
             RecalculateSummarizedPositions();
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -404,7 +413,7 @@
         if (File.Exists(filePath))
         {
             var autofillService = new WebDataAutofillImportService();
-            var entries = autofillService.LoadAutofill(filePath);
+            var entries = await autofillService.LoadAutofillAsync(filePath);
             State.SetAutofillEntries(entries);
         }
         else
@@ -445,14 +454,11 @@
             RecalculateCookiePositions();
             RecalculateAutofillPositions();
             RecalculateSummarizedPositions();
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
-
-
-
-
+    
 
     // zentriert Timeline um ein entry.
     private async Task CenterOnEntry(int index)

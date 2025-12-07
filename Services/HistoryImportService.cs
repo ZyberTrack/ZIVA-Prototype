@@ -8,15 +8,17 @@ namespace ZIVA_Prototype.Services
 {
     public class HistoryImportService
     {
-        public List<BrowserHistoryEntry> LoadFromHistoryDatabase(string filePath)
+        public async Task<List<BrowserHistoryEntry>> LoadFromHistoryDatabaseAsync(string filePath)
         {
-            var entries = new List<BrowserHistoryEntry>();
+            return await Task.Run(() =>
+            {
+                var entries = new List<BrowserHistoryEntry>();
 
-            using var connection = new SqliteConnection($"Data Source={filePath};");
-            connection.Open();
+                using var connection = new SqliteConnection($"Data Source={filePath};");
+                connection.Open();
 
-            var command = connection.CreateCommand();
-            command.CommandText = @"
+                var command = connection.CreateCommand();
+                command.CommandText = @"
                 SELECT
                     v.id AS visit_id,
                     datetime(v.visit_time / 1000000 + strftime('%s', '1601-01-01'), 'unixepoch', 'localtime') AS datetime_local,
@@ -33,29 +35,31 @@ namespace ZIVA_Prototype.Services
                 ORDER BY v.visit_time DESC;
             ";
 
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                var url = reader.GetString(reader.GetOrdinal("current_url"));
-                var title = reader.IsDBNull(reader.GetOrdinal("current_title")) ? null : reader.GetString(reader.GetOrdinal("current_title"));
-                var visitTimeRaw = reader.GetString(reader.GetOrdinal("datetime_local"));
-                var referrerUrl = reader.IsDBNull(reader.GetOrdinal("referrer_url")) ? null : reader.GetString(reader.GetOrdinal("referrer_url"));
-                var referrerTitle = reader.IsDBNull(reader.GetOrdinal("referrer_title")) ? null : reader.GetString(reader.GetOrdinal("referrer_title"));
-
-                var visitTime = DateTime.Parse(visitTimeRaw);
-
-                entries.Add(new BrowserHistoryEntry
+                using var reader = command.ExecuteReader();
+                while (reader.Read())
                 {
-                    Url = url,
-                    Title = title,
-                    VisitTime = visitTime,
-                    ReferrerUrl = referrerUrl,
-                    ReferrerTitle = referrerTitle,
-                    Position = 0 // Position can be set later if needed
-                });
-            }
+                    var url = reader.GetString(reader.GetOrdinal("current_url"));
+                    var title = reader.IsDBNull(reader.GetOrdinal("current_title")) ? null : reader.GetString(reader.GetOrdinal("current_title"));
+                    var visitTimeRaw = reader.GetString(reader.GetOrdinal("datetime_local"));
+                    var referrerUrl = reader.IsDBNull(reader.GetOrdinal("referrer_url")) ? null : reader.GetString(reader.GetOrdinal("referrer_url"));
+                    var referrerTitle = reader.IsDBNull(reader.GetOrdinal("referrer_title")) ? null : reader.GetString(reader.GetOrdinal("referrer_title"));
 
-            return entries;
+                    var visitTime = DateTime.Parse(visitTimeRaw);
+
+                    entries.Add(new BrowserHistoryEntry
+                    {
+                        Url = url,
+                        Title = title,
+                        VisitTime = visitTime,
+                        ReferrerUrl = referrerUrl,
+                        ReferrerTitle = referrerTitle,
+                        Position = 0 // Position can be set later if needed
+                    });
+                }
+
+                return entries;
+            });
         }
     }
+
 }

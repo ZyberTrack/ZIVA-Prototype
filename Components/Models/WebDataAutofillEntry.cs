@@ -1,7 +1,7 @@
 public class WebDataAutofillEntry
 {
-    public string Name { get; set; }          // z. B. "email", "firstname"
-    public string Value { get; set; }         // z. B. "max.mustermann@gmail.com"
+    public string Name { get; set; } = string.Empty;          // z. B. "email", "firstname"
+    public string Value { get; set; } = string.Empty;         // z. B. "max.mustermann@gmail.com"
     public DateTime DateCreated { get; set; }
     public DateTime DateLastUsed { get; set; }
     public int Count { get; set; }            // wie oft benutzt
@@ -15,9 +15,9 @@ public class WebDataAutofillEntry
 
 public class WebDataCreditCardEntry
 {
-    public string NameOnCard { get; set; }
-    public string CardNumber { get; set; }            // nur unverschlüsselt
-    public byte[] EncryptedCardNumber { get; set; }   // Chrome schützt Kartennummern
+    public string NameOnCard { get; set; } = string.Empty;
+    public string CardNumber { get; set; } = string.Empty;            // nur unverschlüsselt
+    public byte[] EncryptedCardNumber { get; set; } = Array.Empty<byte>();   // Chrome schützt Kartennummern
     public int ExpMonth { get; set; }
     public int ExpYear { get; set; }
 
@@ -30,15 +30,15 @@ public class WebDataCreditCardEntry
 
 public class WebDataProfileEntry
 {
-    public string Guid { get; set; }
-    public string FullName { get; set; }
-    public string CompanyName { get; set; }
-    public string StreetAddress { get; set; }
-    public string City { get; set; }
-    public string ZipCode { get; set; }
-    public string CountryCode { get; set; }
-    public string PhoneNumber { get; set; }
-    public string Email { get; set; }
+    public string Guid { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string CompanyName { get; set; } = string.Empty;
+    public string StreetAddress { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string ZipCode { get; set; } = string.Empty;
+    public string CountryCode { get; set; } = string.Empty;
+    public string PhoneNumber { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
 
     public DateTime DateModified { get; set; }
     public int Position { get; set; } // Timeline

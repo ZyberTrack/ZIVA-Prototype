@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using ZIVA_Prototype.Components.Models;
 using ZIVA_Prototype.Services;
 
 namespace ZIVA_Prototype
@@ -22,6 +21,7 @@ namespace ZIVA_Prototype
             builder.Services.AddSingleton<WebDataAutofillImportService>();
             builder.Services.AddSingleton<CookieImportService>();
             builder.Services.AddSingleton<TimelineStateService>();
+            builder.Services.AddSingleton<PersistStateService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
