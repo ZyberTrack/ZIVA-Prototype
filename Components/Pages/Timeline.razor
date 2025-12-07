@@ -15,8 +15,8 @@
     // TO DO:
     // - Zoom Mittelpunkt zur Maus verschieben.
     // - Favicons Artefakte importieren und in der Timeline anzeigen
-	// - Gewisse Objekte verschwinden, wenn man sie ausklappt... Google domäne.
-	// - Lange Domänen Summarize-Einträge berechnen... evtl alles im summerizer? den razor code entscheiden lassen welche summery wie dargestellt wird?
+	// 
+	// 
     // 
 
     private List<DomainEntry> SummarizedEntries { get; set; } = new();
@@ -227,6 +227,9 @@
                         entry.Url.Contains("google.") &&
                         (entry.Url.Contains("/search") || entry.Url.Contains("q=")),
                 };
+
+                // **Ersten Eintrag direkt als SubEntry hinzufügen**
+                current.SubEntries.Add(entry);
 
                 summarized.Add(current);
             }
@@ -854,17 +857,27 @@
 
     <!-- RIGHT SIDE OF TIMELINE -->
     <div class="timeless-area">
-        <div class="timeline-area-static">
-            <div class="timeline-label">Zeitstempel Unbekannt</div>
-            <div class="timeline"></div>
-            <div class="timeline-cookies"></div>
-            <div class="timeline-webdata"></div>
-            <div class="timeline-favicons"></div>
-        </div>
-        <div class="timeline-area-static">
-            <div class="timeline"></div>
-        </div>
+        <div class="timeline-label">Werkzeug</div>
+
+        <button class="btn btn-sm" @onclick="ToggleAllDomains">
+            @(allExpanded ? "Alle einklappen" : "Alle ausklappen")
+        </button>
     </div>
+
+    @code {
+        private bool allExpanded = false; // Status, ob aktuell alles ausgeklappt ist
+
+        private void ToggleAllDomains()
+        {
+            allExpanded = !allExpanded;
+
+            foreach (var entry in SummarizedEntries)
+            {
+                entry.IsExpanded = allExpanded;
+            }
+        }
+    }
+
 
     <div style="position: fixed; top: 600px; left: 80px; background: yellow; z-index: 1000; padding: 4px;">
         DEBUG: SecondsPerSpacing = @SecondsPerSpacing
@@ -1001,7 +1014,6 @@
                             z-index:15;">
                             </div>
                         }
-
 
                         // SubEntries anzeigen
                         foreach (var sub in domainEntry.SubEntries)
