@@ -13,10 +13,10 @@
     // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. 
     // 
     // TO DO:
-    // 
+    // - Zoom Mittelpunkt zur Maus verschieben.
     // - Favicons Artefakte importieren und in der Timeline anzeigen
 	// - Gewisse Objekte verschwinden, wenn man sie ausklappt... Google domäne.
-    // 
+	// - Lange Domänen Summarize-Einträge berechnen... evtl alles im summerizer? den razor code entscheiden lassen welche summery wie dargestellt wird?
     // 
 
     private List<DomainEntry> SummarizedEntries { get; set; } = new();
@@ -153,37 +153,86 @@
     //------------------------------------------------------------ Domänen Zusammenfassung
 
     private List<DomainEntry> SummarizeEntries(List<BrowserHistoryEntry> entries, int maxSecondsBetween = 10)
-
     {
         var summarized = new List<DomainEntry>();
         DomainEntry current = null;
 
+        // 1) VORVERARBEITUNG: Domain-Hit-Count
+        var domainCounts = entries
+            .GroupBy(e => new Uri(e.Url).Host.ToLower())
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // 2) Heavy-Cluster: alle Domains mit >10 Visits
+        var heavyDomains = domainCounts
+            .Where(kvp => kvp.Value > 10)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        // Mapping: domain -> cluster index
+        Dictionary<string, int> heavyClusterIndices = new();
+        int clusterCounter = 1; // 1 = erste Linie über dem normalen Strahl
+
+        foreach (var d in heavyDomains)
+            heavyClusterIndices[d] = clusterCounter++;
+
+        // ---- ORIGINAL Logik bleibt bestehen ----
         foreach (var entry in entries.OrderBy(e => e.VisitTime))
         {
-            var domain = new Uri(entry.Url).Host.ToLower();
+            string domain = new Uri(entry.Url).Host.ToLower();
 
-            if (current == null || current.Domain != domain || (entry.VisitTime - current.VisitTime).TotalSeconds > maxSecondsBetween)
+            bool isHeavy = heavyClusterIndices.ContainsKey(domain);
+
+            if (isHeavy)
+            {
+                // Ein Heavy-Cluster erzeugt KEINE normalen „Domain-Wechsel“-Gruppen.
+                // Sondern alles wird EINEM gemeinsamen Cluster zugeordnet.
+
+                if (!summarized.Any(e => e.Domain == domain && e.IsHeavyCluster))
+                {
+                    summarized.Add(new DomainEntry
+                    {
+                        Domain = domain,
+                        Url = entry.Url,
+                        VisitTime = entry.VisitTime,
+                        IsDirect = entry.ReferrerUrl == null,
+                        IsSearch = entry.Url.Contains("google.") &&
+                                   (entry.Url.Contains("/search") || entry.Url.Contains("q=")),
+
+                        IsHeavyCluster = true,
+                        HeavyClusterIndex = heavyClusterIndices[domain],
+                    });
+                }
+
+                // Füge jeden Eintrag als SubEntry hinzu
+                var cluster = summarized.First(e => e.Domain == domain && e.IsHeavyCluster);
+                cluster.SubEntries.Add(entry);
+
+                continue;
+            }
+
+            // ---- Normale Zusammenfassung ----
+            if (current == null ||
+                current.Domain != domain ||
+                (entry.VisitTime - current.VisitTime).TotalSeconds > maxSecondsBetween)
             {
                 current = new DomainEntry
                 {
                     Domain = domain,
                     Url = entry.Url,
                     VisitTime = entry.VisitTime,
-                    IsDirect = entry.ReferrerUrl == null, // kein Referrer → direkt
+                    IsDirect = entry.ReferrerUrl == null,
 
-                    // Richtige Erkennung: URL selbst ist eine Google-Suchseite
                     IsSearch =
                         entry.Url != null &&
                         entry.Url.Contains("google.") &&
                         (entry.Url.Contains("/search") || entry.Url.Contains("q=")),
                 };
+
                 summarized.Add(current);
             }
             else
             {
-                // Gruppiere als SubEntry
                 current.SubEntries.Add(entry);
-                // Wenn Referrer → indirekt markieren
                 if (entry.ReferrerUrl != null)
                     current.IsDirect = false;
             }
@@ -191,6 +240,7 @@
 
         return summarized;
     }
+
 
 
     // Neuer Ansatz: Zoomstufen in Units statt Sekunden
@@ -777,7 +827,7 @@
             <div class="timeline"></div>
             <div class="timeline-cookies-label">Cookies</div>
             <div class="timeline-cookies"></div>
-            <div class="timeline-webdata-label">Web Data</div>
+            <div class="timeline-webdata-label">Web Data Autofill</div>
             <div class="timeline-webdata"></div>
             <div class="timeline-favicons-label">Favicons</div>
             <div class="timeline-favicons"></div>
@@ -897,15 +947,21 @@
 
 
             <!-- History Einträge in der Zeitachse -->
+            @{
+                int baseTop = 25; // Basislinie für normale Domains in %
+                int heavyClusterSpacingPx = 20; // Abstand jeder neuen Heavy Cluster-Linie nach oben
+                int heavyClusterIndex = 1; // Zähler für versetzte Heavy Cluster-Linien
+            }
+
             @foreach (var domainEntry in SummarizedEntries)
             {
                 var color = GetColorForDomain(domainEntry.Url);
 
                 <div class="domain-container">
 
-                    @if (!domainEntry.IsExpanded)
+                    @if (!domainEntry.IsExpanded && !domainEntry.IsHeavyCluster)
                     {
-                        // Domain Marker
+                        // Normale Domain Marker
                         string domainClass = domainEntry.IsSearch ? "domain-marker square" :
                         domainEntry.IsDirect ? "domain-marker hollow" :
                         "domain-marker filled";
@@ -922,42 +978,42 @@
                     }
                     else if (domainEntry.SubEntries.Any())
                     {
-                        // Erster SubEntry-Marker ersetzt die Domain
-                        var firstSub = domainEntry.SubEntries.First();
+                        bool isHeavy = domainEntry.SubEntries.Count >= 10;
 
-                        <div class="subentry"
-                             style="position: absolute; left: calc(@($"{domainEntry.Position}px - 6px")); top: calc(25% - 12px); color:@GetColorForDomain(domainEntry.Url); cursor:pointer; z-index: 18;"
-                             @onclick="() => domainEntry.IsExpanded = false">
+                        // Normale Linie
+                        string topStyle = $"calc({baseTop}% - 12px)";
 
-                            @* Inline-SVG für gefüllt oder hohl *@
-                            @if (string.IsNullOrEmpty(firstSub.ReferrerUrl))
-                            {
-                                <svg width="12" height="12" viewBox="0 0 12 12">
-                                    <polygon points="0,0 12,0 6,12" fill="currentColor" />
-                                </svg>
-                            }
-                            else
-                            {
-                                <svg width="12" height="12" viewBox="0 0 12 12">
-                                    <polygon points="0,0 12,0 6,12" fill="none" stroke="currentColor" stroke-width="2" />
-                                </svg>
-                            }
+                        if (isHeavy)
+                        {
+                            topStyle = $"calc({baseTop}% - 18px - {heavyClusterIndex * heavyClusterSpacingPx}px)";
+                            heavyClusterIndex++;
 
-                            <div class="subentry-tooltip" style="background-color:@color;">
-                                <div><strong>Zeitstempel: @firstSub.VisitTime</strong></div>
-                                <div>URL: @firstSub.Url</div>
-                                @if (!string.IsNullOrEmpty(firstSub.ReferrerUrl))
-                                {
-                                    <div>Verwiesen von: @firstSub.ReferrerUrl</div>
-                                }
+                            double firstPos = domainEntry.SubEntries.First().Position;
+                            double lastPos = domainEntry.SubEntries.Last().Position;
+
+                            <div class="heavy-cluster-line"
+                                 style="position:absolute;
+                            top:@($"calc({baseTop}% + 12px - {heavyClusterIndex * heavyClusterSpacingPx}px)");
+                            left:@($"{firstPos}px");
+                            width:@($"{lastPos - firstPos}px");
+                            height:2px;
+                            background-color:@color;
+                            z-index:15;">
                             </div>
-                        </div>
+                        }
 
-                        // Restliche SubEntries (falls mehr als 1)
-                        foreach (var sub in domainEntry.SubEntries.Skip(1))
+
+                        // SubEntries anzeigen
+                        foreach (var sub in domainEntry.SubEntries)
                         {
                             <div class="subentry"
-                                 style="position: absolute; left: calc(@($"{sub.Position}px - 6px")); top: calc(25% - 12px); color:@GetColorForDomain(domainEntry.Url); cursor:pointer; z-index: 18;">
+                                 style="position: absolute;
+                                        left: calc(@($"{sub.Position}px - 6px"));
+                                        top:calc(@topStyle);
+                                        color:@GetColorForDomain(sub.Url);
+                                        cursor:pointer;
+                                        z-index:18;"
+                                 @onclick="() => domainEntry.IsExpanded = !domainEntry.IsExpanded">
 
                                 @if (string.IsNullOrEmpty(sub.ReferrerUrl))
                                 {
@@ -981,12 +1037,10 @@
                                     }
                                 </div>
                             </div>
-
                         }
                     }
                 </div>
             }
-
 
 
 
