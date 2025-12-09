@@ -18,28 +18,54 @@
     // - Zoom Mittelpunkt zur Maus verschieben.
     // - Favicons Artefakte importieren und in der Timeline anzeigen
 	// 
-	// - Daten Persistent machen funkt nicht.. wenn es zu viel arbeit macht.. lassen wir es.
+	// - Zusammenhänge im Verlauf mit Linie zum History Punkt verbinden
+    // - Beim anklicken einer Domänen-Zusammenfassung, alle domänen namen oberhalb der artefakte anzeigen als text.
+    //
     // 
+    //
 
     private List<DomainEntry> SummarizedEntries { get; set; } = new();
-    private bool isZooming = false; // Flag to indicate if zooming is in progress
+    private List<TimestampEntry> visibleEntries = new();
+    private static List<int> usedHues = new(); // Liste aller bisher vergebenen Hue-Werte
+    private static Dictionary<string, string> domainColors = new();
+    
     private BrowserHistoryEntry? selectedEntry; // Aktuell ausgewählte Browser History Artefakt Entry
     private BrowserCookieEntry? selectedCookie; // Aktuell ausgewählte Browser Cookies Artefakt Entry selectedAutofill
     private WebDataAutofillEntry? selectedAutofill;
-    private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
+    private DotNetObjectReference<Timeline>? selfRef;
 
+    private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
+    private bool isZooming = false; // Flag to indicate if zooming is in progress
+
+    private DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
     private ElementReference scrollDivRef;
+
+    private TimeUnit CurrentTimeUnit => zoomLevels[currentZoomIndex].unit; // Zoomstufen in Units statt Sekunden
+
     private const int InitialOffsetPx = 2500000; // z. B. Mitte der 500000px Fläche Für zeitachse
+    private const int HueStep = 40; // Schrittweite zwischen Farben (z. B. 40° = gut unterscheidbar)
+    private const int Saturation = 75; // %  --> Sättigung und Luminanz für kräftige, aber nicht zu grelle Farben
+    private const int Lightness = 45;  // %  --> Sättigung und Luminanz für kräftige, aber nicht zu grelle Farben
     private double scrollIndex = 0;
+
     private int viewportWidth;
     private int startOffset = 70;
     private int spacing = 250;
     private int movableLayerWidth = 5000000;
     private int renderBuffer = 5;
     private int lastScrollIndex = int.MinValue;
-    private DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
+    private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
+    private int currentPivotIndex = 0; // Index in State.BrowserEntries
+    private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
 
 
+    // Zoomstufen in Units statt Sekunden
+    public class TimestampEntry
+    {
+        public int Index { get; set; }
+        public DateTime Time { get; set; }
+        public int Position { get; set; }
+    }
 
     // Alles was ZOOMEN angeht, wird hier definiert.
     enum TimeUnit
@@ -51,7 +77,6 @@
         Months,
         Years
     }
-
 
     // neuer Ansatz: Zoomstufen definieren, die die Dauer eines Intervalls bestimmen
     private readonly (int seconds, TimeUnit unit)[] zoomLevels = new[]
@@ -78,190 +103,9 @@
         (63072000, TimeUnit.Years),
     };
 
-    private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
-    private int currentPivotIndex = 0; // Index in State.BrowserEntries
-    private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
-
-
     //------------------------------------------------------------
-    // Bessere Domain-Farbzuweisung mit maximaler Farbdistanz (HSL)
+	// Initial Render
     //------------------------------------------------------------
-    private static Dictionary<string, string> domainColors = new();
-
-    // Liste aller bisher vergebenen Hue-Werte
-    private static List<int> usedHues = new();
-
-    // Schrittweite zwischen Farben (z. B. 40° = gut unterscheidbar)
-    private const int HueStep = 40;
-
-    // Sättigung und Luminanz für kräftige, aber nicht zu grelle Farben
-    private const int Saturation = 75; // %
-    private const int Lightness = 45;  // %
-
-
-    // Gibt HEX-Farbe aus HSL zurück
-    private string HslToRgb(int h, int s, int l)
-    {
-        double sat = s / 100.0;
-        double light = l / 100.0;
-        double c = (1 - Math.Abs(2 * light - 1)) * sat;
-        double x = c * (1 - Math.Abs((h / 60.0) % 2 - 1));
-        double m = light - c / 2;
-
-        double r = 0, g = 0, b = 0;
-
-        if (h < 60) { r = c; g = x; b = 0; }
-        else if (h < 120) { r = x; g = c; b = 0; }
-        else if (h < 180) { r = 0; g = c; b = x; }
-        else if (h < 240) { r = 0; g = x; b = c; }
-        else if (h < 300) { r = x; g = 0; b = c; }
-        else { r = c; g = 0; b = x; }
-
-        int R = (int)((r + m) * 255);
-        int G = (int)((g + m) * 255);
-        int B = (int)((b + m) * 255);
-
-        return $"rgb({R},{G},{B})";
-    }
-
-
-    // Gibt gut unterscheidbare Farbe für eine Domain zurück
-    private string GetColorForDomain(string url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-            return "rgb(200,200,200)";
-
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-            return "rgb(200,200,200)";
-
-        string domain = uri.Host.ToLower();
-
-        // Falls schon eine Farbe existiert → zurückgeben
-        if (domainColors.ContainsKey(domain))
-            return domainColors[domain];
-
-        // Neuen Hue-Wert wählen
-        int hue = (usedHues.Count * HueStep) % 360;
-        usedHues.Add(hue);
-
-        // Farbe generieren
-        string color = HslToRgb(hue, Saturation, Lightness);
-
-        domainColors[domain] = color;
-        return color;
-    }
-
-
-    //------------------------------------------------------------ Domänen Zusammenfassung
-
-    private List<DomainEntry> SummarizeEntries(List<BrowserHistoryEntry> entries, int maxSecondsBetween = 10)
-    {
-        var summarized = new List<DomainEntry>();
-        DomainEntry? current = null;
-
-        // 1) VORVERARBEITUNG: Domain-Hit-Count
-        var domainCounts = entries
-            .GroupBy(e => new Uri(e.Url).Host.ToLower())
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        // 2) Heavy-Cluster: alle Domains mit >10 Visits
-        var heavyDomains = domainCounts
-            .Where(kvp => kvp.Value > 10)
-            .Select(kvp => kvp.Key)
-            .ToList();
-
-        // Mapping: domain -> cluster index
-        Dictionary<string, int> heavyClusterIndices = new();
-        int clusterCounter = 1; // 1 = erste Linie über dem normalen Strahl
-
-        foreach (var d in heavyDomains)
-            heavyClusterIndices[d] = clusterCounter++;
-
-        // ---- ORIGINAL Logik bleibt bestehen ----
-        foreach (var entry in entries.OrderBy(e => e.VisitTime))
-        {
-            string domain = new Uri(entry.Url).Host.ToLower();
-
-            bool isHeavy = heavyClusterIndices.ContainsKey(domain);
-
-            if (isHeavy)
-            {
-                // Ein Heavy-Cluster erzeugt KEINE normalen „Domain-Wechsel“-Gruppen.
-                // Sondern alles wird EINEM gemeinsamen Cluster zugeordnet.
-
-                if (!summarized.Any(e => e.Domain == domain && e.IsHeavyCluster))
-                {
-                    summarized.Add(new DomainEntry
-                    {
-                        Domain = domain,
-                        Url = entry.Url,
-                        VisitTime = entry.VisitTime,
-                        IsDirect = entry.ReferrerUrl == null,
-                        IsSearch = entry.Url.Contains("google.") &&
-                                   (entry.Url.Contains("/search") || entry.Url.Contains("q=")),
-
-                        IsHeavyCluster = true,
-                        HeavyClusterIndex = heavyClusterIndices[domain],
-                    });
-                }
-
-                // Füge jeden Eintrag als SubEntry hinzu
-                var cluster = summarized.First(e => e.Domain == domain && e.IsHeavyCluster);
-                cluster.SubEntries.Add(entry);
-
-                continue;
-            }
-
-            // ---- Normale Zusammenfassung ----
-            if (current == null ||
-                current.Domain != domain ||
-                (entry.VisitTime - current.VisitTime).TotalSeconds > maxSecondsBetween)
-            {
-                current = new DomainEntry
-                {
-                    Domain = domain,
-                    Url = entry.Url,
-                    VisitTime = entry.VisitTime,
-                    IsDirect = entry.ReferrerUrl == null,
-
-                    IsSearch =
-                        entry.Url != null &&
-                        entry.Url.Contains("google.") &&
-                        (entry.Url.Contains("/search") || entry.Url.Contains("q=")),
-                };
-
-                // **Ersten Eintrag direkt als SubEntry hinzufügen**
-                current.SubEntries.Add(entry);
-
-                summarized.Add(current);
-            }
-            else
-            {
-                current.SubEntries.Add(entry);
-                if (entry.ReferrerUrl != null)
-                    current.IsDirect = false;
-            }
-        }
-
-        return summarized;
-    }
-
-
-
-    // Neuer Ansatz: Zoomstufen in Units statt Sekunden
-    private TimeUnit CurrentTimeUnit => zoomLevels[currentZoomIndex].unit;
-
-    private DotNetObjectReference<Timeline>? selfRef;
-
-    private List<TimestampEntry> visibleEntries = new();
-    public class TimestampEntry
-    {
-        public int Index { get; set; }
-        public DateTime Time { get; set; }
-        public int Position { get; set; }
-    }
-
-
 
     protected override async Task OnInitializedAsync()
     {
@@ -296,6 +140,106 @@
         }
     }
 
+    //------------------------------------------------------------
+    // Positionsberechnungen und Renderberechnungen
+    //------------------------------------------------------------
+
+    private async Task UpdateViewportWidthAsync()
+    {
+        viewportWidth = Math.Max(await JS.InvokeAsync<int>("getViewportWidth"), 300); // Minimum
+    }
+
+    // Nur Zeitstempel betreffend
+    private void UpdateVisibleTimestamps()
+    {
+        int centerIndex = (int)((scrollIndex - InitialOffsetPx) / spacing);
+        int firstVisibleIndex = (int)((scrollIndex - InitialOffsetPx) / spacing) - renderBuffer;
+        int lastVisibleIndex = firstVisibleIndex + (int)(viewportWidth / spacing) + 2 * renderBuffer;
+
+
+        visibleEntries = new();
+        for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++)
+        {
+            var entry = CreateEntry(i);
+            entry.Position = InitialOffsetPx + i * spacing;            // direktes Positionieren, scrollBar sorgt für Bewegung
+            visibleEntries.Add(entry);
+        }
+
+        //NEU: width so setzen, dass auch negative Einträge Platz haben
+        int minIndex = firstVisibleIndex;
+        int maxIndex = lastVisibleIndex;
+
+        //Optional: baseOffset setzen, um negative Indexe sichtbar zu machen
+        startOffset = -minIndex * spacing + 250; // z. B. 250px Puffer nach links
+    }
+
+
+    // Nur für Einträge in der Zeitachse
+    private void RecalculatePositions()
+    {
+        // Wird für jeden Eintrag gemacht
+        foreach (var historyEntry in State.BrowserEntries)
+        {
+            historyEntry.Position = (int)TimeToPixel(historyEntry.VisitTime) - scrollIndex; //Hier geht was schief wenn die position mit dsem zoom nicht stimmt
+        }
+    }
+
+    private void RecalculateCookiePositions()
+    {
+        if (State.BrowserCookies == null) return;
+
+        foreach (var cookie in State.BrowserCookies)
+        {
+            cookie.Position = (int)TimeToPixel(cookie.Created) - (int)scrollIndex;
+        }
+    }
+
+    private void RecalculateAutofillPositions()
+    {
+        if (State.AutofillEntries == null) return;
+
+        foreach (var entry in State.AutofillEntries)
+        {
+            entry.Position = (int)TimeToPixel(entry.DateCreated) - (int)scrollIndex;
+        }
+    }
+
+    private void RecalculateSummarizedPositions()
+    {
+        if (SummarizedEntries == null) return;
+
+        foreach (var entry in SummarizedEntries)
+        {
+            entry.Position = (int)TimeToPixel(entry.VisitTime) - (int)scrollIndex;
+        }
+    }
+
+    //------------------------------------------------------------
+	// Daten Laden und Initialisierung
+    //------------------------------------------------------------
+
+    // Zeitstempel Einträge erstellen
+    private TimestampEntry CreateEntry(int index)
+    {
+        var time = CurrentTimeUnit switch
+        {
+            TimeUnit.Seconds => baseTime.AddSeconds(index * SecondsPerSpacing),
+            TimeUnit.Minutes => baseTime.AddMinutes(index * (SecondsPerSpacing / 60.0)),
+            TimeUnit.Hours => baseTime.AddHours(index * (SecondsPerSpacing / 3600.0)),
+            TimeUnit.Days => baseTime.AddDays(index * (SecondsPerSpacing / 86400.0)),
+            TimeUnit.Months => baseTime.AddMonths(index), // 1 Monat pro Intervall – Optional kannst du noch CurrentIntervalInMonths einführen
+            TimeUnit.Years => baseTime.AddYears(index),
+            _ => baseTime
+        };
+
+        return new TimestampEntry
+        {
+            Index = index,
+            Time = time,
+            Position = 0
+        };
+    }
+
     private async Task LoadFromDatabase()
     {
         var filePath = Path.Combine(FileSystem.AppDataDirectory, "history.sqlite");
@@ -310,11 +254,6 @@
         {
             Console.WriteLine("Datei nicht gefunden: " + filePath);
         }
-
-        // Debugging
-        //await JS.InvokeVoidAsync("alert", $"Importiert: {State.BrowserEntries.Count} Einträge");
-        //await JS.InvokeVoidAsync("alert", $"Erste URL: {State.BrowserEntries.FirstOrDefault()?.Url}");
-
 
         // Initiale Breite der beweglichen Ebene setzen
         if (State.BrowserEntries is { Count: > 0 })
@@ -458,7 +397,280 @@
         }
     }
 
-    
+    //------------------------------------------------------------
+    // Domänen Zusammenfassungen
+    //------------------------------------------------------------
+
+    private List<DomainEntry> SummarizeEntries(List<BrowserHistoryEntry> entries, int maxSecondsBetween = 10)
+    {
+        var summarized = new List<DomainEntry>();
+        DomainEntry? current = null;
+
+        // 1) VORVERARBEITUNG: Domain-Hit-Count
+        var domainCounts = entries
+            .GroupBy(e => new Uri(e.Url).Host.ToLower())
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // 2) Heavy-Cluster: alle Domains mit >10 Visits
+        var heavyDomains = domainCounts
+            .Where(kvp => kvp.Value > 10)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        // Mapping: domain -> cluster index
+        Dictionary<string, int> heavyClusterIndices = new();
+        int clusterCounter = 1; // 1 = erste Linie über dem normalen Strahl
+
+        foreach (var d in heavyDomains)
+            heavyClusterIndices[d] = clusterCounter++;
+
+        // ---- ORIGINAL Logik bleibt bestehen ----
+        foreach (var entry in entries.OrderBy(e => e.VisitTime))
+        {
+            string domain = new Uri(entry.Url).Host.ToLower();
+
+            bool isHeavy = heavyClusterIndices.ContainsKey(domain);
+
+            if (isHeavy)
+            {
+                // Ein Heavy-Cluster erzeugt KEINE normalen „Domain-Wechsel“-Gruppen.
+                // Sondern alles wird EINEM gemeinsamen Cluster zugeordnet.
+
+                if (!summarized.Any(e => e.Domain == domain && e.IsHeavyCluster))
+                {
+                    summarized.Add(new DomainEntry
+                    {
+                        Domain = domain,
+                        Url = entry.Url,
+                        VisitTime = entry.VisitTime,
+                        IsDirect = entry.ReferrerUrl == null,
+                        IsSearch = entry.Url.Contains("google.") &&
+                                   (entry.Url.Contains("/search") || entry.Url.Contains("q=")),
+
+                        IsHeavyCluster = true,
+                        HeavyClusterIndex = heavyClusterIndices[domain],
+                    });
+                }
+
+                // Füge jeden Eintrag als SubEntry hinzu
+                var cluster = summarized.First(e => e.Domain == domain && e.IsHeavyCluster);
+                cluster.SubEntries.Add(entry);
+
+                continue;
+            }
+
+            // ---- Normale Zusammenfassung ----
+            if (current == null ||
+                current.Domain != domain ||
+                (entry.VisitTime - current.VisitTime).TotalSeconds > maxSecondsBetween)
+            {
+                current = new DomainEntry
+                {
+                    Domain = domain,
+                    Url = entry.Url,
+                    VisitTime = entry.VisitTime,
+                    IsDirect = entry.ReferrerUrl == null,
+
+                    IsSearch =
+                        entry.Url != null &&
+                        entry.Url.Contains("google.") &&
+                        (entry.Url.Contains("/search") || entry.Url.Contains("q=")),
+                };
+
+                // **Ersten Eintrag direkt als SubEntry hinzufügen**
+                current.SubEntries.Add(entry);
+
+                summarized.Add(current);
+            }
+            else
+            {
+                current.SubEntries.Add(entry);
+                if (entry.ReferrerUrl != null)
+                    current.IsDirect = false;
+            }
+        }
+
+        return summarized;
+    }
+
+    //------------------------------------------------------------
+    // Bessere Domain-Farbzuweisung mit maximaler Farbdistanz (HSL)
+    //------------------------------------------------------------
+
+    // Gibt HEX-Farbe aus HSL zurück
+    private string HslToRgb(int h, int s, int l)
+    {
+        double sat = s / 100.0;
+        double light = l / 100.0;
+        double c = (1 - Math.Abs(2 * light - 1)) * sat;
+        double x = c * (1 - Math.Abs((h / 60.0) % 2 - 1));
+        double m = light - c / 2;
+
+        double r = 0, g = 0, b = 0;
+
+        if (h < 60) { r = c; g = x; b = 0; }
+        else if (h < 120) { r = x; g = c; b = 0; }
+        else if (h < 180) { r = 0; g = c; b = x; }
+        else if (h < 240) { r = 0; g = x; b = c; }
+        else if (h < 300) { r = x; g = 0; b = c; }
+        else { r = c; g = 0; b = x; }
+
+        int R = (int)((r + m) * 255);
+        int G = (int)((g + m) * 255);
+        int B = (int)((b + m) * 255);
+
+        return $"rgb({R},{G},{B})";
+    }
+
+    // Gibt gut unterscheidbare Farbe für eine Domain zurück
+    private string GetColorForDomain(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return "rgb(200,200,200)";
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return "rgb(200,200,200)";
+
+        string domain = uri.Host.ToLower();
+
+        // Falls schon eine Farbe existiert → zurückgeben
+        if (domainColors.ContainsKey(domain))
+            return domainColors[domain];
+
+        // Neuen Hue-Wert wählen
+        int hue = (usedHues.Count * HueStep) % 360;
+        usedHues.Add(hue);
+
+        // Farbe generieren
+        string color = HslToRgb(hue, Saturation, Lightness);
+
+        domainColors[domain] = color;
+        return color;
+    }
+
+    //------------------------------------------------------------
+	// JavaScript Interop: Scrollen, Zoomen, Resizing
+    //------------------------------------------------------------
+
+    [JSInvokable("OnResize")] // Elemente werden Visuell dem Fenster angepasst
+    public async Task OnResizeAsync()
+    {
+        await UpdateViewportWidthAsync();
+        UpdateVisibleTimestamps();
+        RecalculatePositions();
+        RecalculateCookiePositions();
+        RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
+        StateHasChanged();
+    }
+
+    // Scroll Funktion
+    [JSInvokable("OnAsyncScroll")]
+    public async Task OnAsyncScroll(double scrollLeft)
+    {
+        if (isProgrammaticScroll || isZooming)
+        {
+            isProgrammaticScroll = false;
+            return;
+        }
+
+        scrollIndex = scrollLeft;
+
+        if (scrollIndex < 50000 || scrollIndex > movableLayerWidth - 50000)
+        {
+            double newOffset = movableLayerWidth / 2;
+            int indexShift = (int)((scrollIndex - newOffset) / spacing);
+
+            // Aktuelles ZoomLevel abrufen
+            var currentZoom = zoomLevels[currentZoomIndex];
+            var spacingTimeSpan = GetTimeSpanFromZoomLevel(currentZoom);
+
+            // Zeitbasis verschieben
+            baseTime = baseTime.AddTicks(spacingTimeSpan.Ticks * indexShift);
+
+            // Scrollposition korrigieren
+            scrollIndex = scrollIndex - indexShift * spacing;
+
+            isProgrammaticScroll = true;
+            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
+            await Task.Delay(50); // Browser braucht kurz Zeit
+            isProgrammaticScroll = false;
+
+            UpdateVisibleTimestamps();
+            RecalculatePositions();
+            StateHasChanged();
+            return;
+        }
+
+        UpdateVisibleTimestamps();
+        RecalculatePositions();
+        RecalculateCookiePositions();
+        RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
+        StateHasChanged();
+    }
+
+    [JSInvokable("OnZoom")]
+    public async Task OnZoomAsync(string direction)
+    {
+        isZooming = true; //zoom sperre Flag setzen
+
+        // Scrollgrenzen absichern
+        scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
+
+        // Mittelpunkt-Zeit merken (zentriert im Viewport)
+        double centerPx = scrollIndex + viewportWidth / 2;
+        DateTime centerTime = PixelToTime(centerPx);  // ACHTUNG: ERROR anfälligkeit hier!!
+
+        // Zoomstufe anpassen
+        if (direction == "in" && currentZoomIndex > 0)
+        {
+            currentZoomIndex--;
+            //pixelPerSecond *= 2; // Beispiel: 2x reinzoomen
+        }
+        else if (direction == "out" && currentZoomIndex < zoomLevels.Length - 1)
+        {
+            currentZoomIndex++;
+            //pixelPerSecond /= 2; // Beispiel: 2x rauszoomen
+        }
+
+        // Neue Scrollposition berechnen, sodass die Zeit gleich bleibt
+        double newCenterPx = TimeToPixel(centerTime);
+        double newScrollLeft = newCenterPx - viewportWidth / 2;
+
+        // Scrollgrenzen erneut absichern
+        newScrollLeft = Math.Clamp(newScrollLeft, 0, Math.Max(0, movableLayerWidth - viewportWidth));
+
+        // Darstellung aktualisieren
+        UpdateVisibleTimestamps();
+        RecalculatePositions();
+        RecalculateCookiePositions();
+        RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
+        StateHasChanged();
+
+        isZooming = false;
+    }
+
+    [JSInvokable("OnArrowRight")]
+    public async Task OnArrowRightAsync()
+    {
+        if (currentPivotIndex < State.BrowserEntries.Count - 1)
+            await CenterOnEntry(currentPivotIndex + 1);
+    }
+
+    [JSInvokable("OnArrowLeft")]
+    public async Task OnArrowLeftAsync()
+    {
+        if (currentPivotIndex > 0)
+            await CenterOnEntry(currentPivotIndex - 1);
+    }
+
+
+
+    //------------------------------------------------------------
+	// Verschiedene Hilfsmethoden
+    //------------------------------------------------------------
 
     // zentriert Timeline um ein entry.
     private async Task CenterOnEntry(int index)
@@ -492,114 +704,6 @@
         // Optional: Browser scrollen, falls du einen externen Scroll-Container hast
         await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
     }
-
-
-    [JSInvokable("OnResize")] // Elemente werden Visuell dem Fenster angepasst
-    public async Task OnResizeAsync()
-    {
-        await UpdateViewportWidthAsync();
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
-        StateHasChanged();
-    }
-
-    private async Task UpdateViewportWidthAsync()
-    {
-        viewportWidth = Math.Max(await JS.InvokeAsync<int>("getViewportWidth"), 300); // Minimum
-    }
-
-    // Nur Zeitstempel betreffend
-    private void UpdateVisibleTimestamps()
-    {
-        int centerIndex = (int)((scrollIndex - InitialOffsetPx) / spacing);
-        int firstVisibleIndex = (int)((scrollIndex - InitialOffsetPx) / spacing) - renderBuffer;
-        int lastVisibleIndex = firstVisibleIndex + (int)(viewportWidth / spacing) + 2 * renderBuffer;
-
-
-        visibleEntries = new();
-        for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++)
-        {
-            var entry = CreateEntry(i);
-            entry.Position = InitialOffsetPx + i * spacing;            // direktes Positionieren, scrollBar sorgt für Bewegung
-            visibleEntries.Add(entry);
-        }
-
-        //NEU: width so setzen, dass auch negative Einträge Platz haben
-        int minIndex = firstVisibleIndex;
-        int maxIndex = lastVisibleIndex;
-
-        //Optional: baseOffset setzen, um negative Indexe sichtbar zu machen
-        startOffset = -minIndex * spacing + 250; // z. B. 250px Puffer nach links
-    }
-
-    
-    // Zeitstempel Einträge erstellen
-    private TimestampEntry CreateEntry(int index)
-    {
-        var time = CurrentTimeUnit switch
-        {
-            TimeUnit.Seconds => baseTime.AddSeconds(index * SecondsPerSpacing),
-            TimeUnit.Minutes => baseTime.AddMinutes(index * (SecondsPerSpacing / 60.0)),
-            TimeUnit.Hours   => baseTime.AddHours(index * (SecondsPerSpacing / 3600.0)),
-            TimeUnit.Days    => baseTime.AddDays(index * (SecondsPerSpacing / 86400.0)),
-            TimeUnit.Months  => baseTime.AddMonths(index), // 1 Monat pro Intervall – Optional kannst du noch CurrentIntervalInMonths einführen
-            TimeUnit.Years   => baseTime.AddYears(index),
-            _ => baseTime
-        };
-
-        return new TimestampEntry
-        {
-            Index = index,
-            Time = time,
-            Position = 0
-        };
-    }
-
-    // Nur für Einträge in der Zeitachse
-    private void RecalculatePositions()
-    {
-        // Wird für jeden Eintrag gemacht
-        foreach (var historyEntry in State.BrowserEntries)
-        {
-			historyEntry.Position = (int)TimeToPixel(historyEntry.VisitTime) - scrollIndex; //Hier geht was schief wenn die position mit dsem zoom nicht stimmt
-        }
-    }
-
-    private void RecalculateCookiePositions()
-    {
-        if (State.BrowserCookies == null) return;
-
-        foreach (var cookie in State.BrowserCookies)
-        {
-            cookie.Position = (int)TimeToPixel(cookie.Created) - (int)scrollIndex;
-        }
-    }
-
-    private void RecalculateAutofillPositions()
-    {
-        if (State.AutofillEntries == null) return;
-
-        foreach (var entry in State.AutofillEntries)
-        {
-            entry.Position = (int)TimeToPixel(entry.DateCreated) - (int)scrollIndex;
-        }
-    }
-
-    private void RecalculateSummarizedPositions()
-    {
-        if (SummarizedEntries == null) return;
-
-        foreach (var entry in SummarizedEntries)
-        {
-            entry.Position = (int)TimeToPixel(entry.VisitTime) - (int)scrollIndex;
-        }
-    }
-
-
-
 
     private double GetPixelPerUnit()
     {
@@ -658,9 +762,6 @@
         return pixelPerUnit;
     }
 
-
-    //return spacing / zoomLevels[currentZoomIndex].seconds;  // Wert ist schon mal besser  -> Zoom ist nicht wirklich von spacing abhängig oder??
-
     private double TimeToPixel(DateTime t)
     {
         double secondsFromBase = (t - baseTime).TotalSeconds;
@@ -678,54 +779,6 @@
         double secondsFromBase = pixelsFromStart * secondsPerPixel;
 
         return baseTime.AddSeconds(secondsFromBase);
-    }
-
-
-
-    // Scroll Funktion
-    [JSInvokable("OnAsyncScroll")]
-    public async Task OnAsyncScroll(double scrollLeft)
-    {
-        if (isProgrammaticScroll || isZooming)
-        {
-            isProgrammaticScroll = false;
-            return;
-        }
-
-        scrollIndex = scrollLeft;
-
-        if (scrollIndex < 50000 || scrollIndex > movableLayerWidth - 50000)
-        {
-            double newOffset = movableLayerWidth / 2;
-            int indexShift = (int)((scrollIndex - newOffset) / spacing);
-
-            // Aktuelles ZoomLevel abrufen
-            var currentZoom = zoomLevels[currentZoomIndex];
-            var spacingTimeSpan = GetTimeSpanFromZoomLevel(currentZoom);
-
-            // Zeitbasis verschieben
-            baseTime = baseTime.AddTicks(spacingTimeSpan.Ticks * indexShift);
-
-            // Scrollposition korrigieren
-            scrollIndex = scrollIndex - indexShift * spacing;
-
-            isProgrammaticScroll = true;
-            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
-            await Task.Delay(50); // Browser braucht kurz Zeit
-            isProgrammaticScroll = false;
-
-            UpdateVisibleTimestamps();
-            RecalculatePositions();
-            StateHasChanged();
-            return;
-        }
-
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
-        StateHasChanged();
     }
 
     // Für scroll Funktion wird die Zeitspanne aus der Zoomstufe berechnet
@@ -758,67 +811,7 @@
                                 + (to.DayOfYear - from.DayOfYear) / 365.0,
             _ => 0
         };
-    }
-
-    [JSInvokable("OnArrowRight")]
-    public async Task OnArrowRightAsync()
-    {
-        if (currentPivotIndex < State.BrowserEntries.Count - 1)
-            await CenterOnEntry(currentPivotIndex + 1);
-    }
-
-    [JSInvokable("OnArrowLeft")]
-    public async Task OnArrowLeftAsync()
-    {
-        if (currentPivotIndex > 0)
-            await CenterOnEntry(currentPivotIndex - 1);
-    }
-
-
-    [JSInvokable("OnZoom")]
-    public async Task OnZoomAsync(string direction)
-    {
-        isZooming = true; //zoom sperre Flag setzen
-
-        // Scrollgrenzen absichern
-        scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
-
-        // Mittelpunkt-Zeit merken (zentriert im Viewport)
-        double centerPx = scrollIndex + viewportWidth / 2;
-        DateTime centerTime = PixelToTime(centerPx);  // ACHTUNG: ERROR anfälligkeit hier!!
-
-        // Zoomstufe anpassen
-        if (direction == "in" && currentZoomIndex > 0)
-        {
-            currentZoomIndex--;
-            //pixelPerSecond *= 2; // Beispiel: 2x reinzoomen
-        }
-        else if (direction == "out" && currentZoomIndex < zoomLevels.Length - 1)
-        {
-            currentZoomIndex++;
-            //pixelPerSecond /= 2; // Beispiel: 2x rauszoomen
-        }
-
-        // Neue Scrollposition berechnen, sodass die Zeit gleich bleibt
-        double newCenterPx = TimeToPixel(centerTime);
-        double newScrollLeft = newCenterPx - viewportWidth / 2;
-
-        // Scrollgrenzen erneut absichern
-        newScrollLeft = Math.Clamp(newScrollLeft, 0, Math.Max(0, movableLayerWidth - viewportWidth));
-
-        // Darstellung aktualisieren
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
-        StateHasChanged();
-
-        isZooming = false;
-    }
-
-
-
+    } 
 
     public void Dispose()
     {
