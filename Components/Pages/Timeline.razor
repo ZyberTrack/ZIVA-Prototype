@@ -21,7 +21,7 @@
 	// - Zusammenhänge im Verlauf mit Linie zum History Punkt verbinden
     // - Beim anklicken einer Domänen-Zusammenfassung, alle domänen namen oberhalb der artefakte anzeigen als text.
     //
-    // 
+    // - Erkennen von zwielichtigen Suchmaschienen -> Pirate Bay etc... und Websiten per liste!!
     //
 
     private List<DomainEntry> SummarizedEntries { get; set; } = new();
@@ -58,6 +58,26 @@
     private int currentPivotIndex = 0; // Index in State.BrowserEntries
     private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
 
+	// Suchmaschinen Domains für Erkennung
+    string[] searchEngines = new[]
+    {
+    "google.",            // Google (alle Länderdomains)
+    "bing.com",           // Bing
+    "duckduckgo.com",     // DuckDuckGo
+    "search.yahoo.com",   // Yahoo
+    "yandex.ru",          // Yandex
+    "baidu.com",          // Baidu
+    "ecosia.org",         // Ecosia
+    "qwant.com",          // Qwant
+    "startpage.com",      // Startpage
+    "ask.com",            // Ask
+    "aol.com",            // AOL
+    "sogou.com",          // Sogou
+    "naver.com",          // Naver
+    "brave.com",          // Brave Search
+    "exalead.com",        // Exalead
+    "seznam.cz"           // Seznam
+    };
 
     // Zoomstufen in Units statt Sekunden
     public class TimestampEntry
@@ -436,21 +456,21 @@
                 // Ein Heavy-Cluster erzeugt KEINE normalen „Domain-Wechsel“-Gruppen.
                 // Sondern alles wird EINEM gemeinsamen Cluster zugeordnet.
 
-                if (!summarized.Any(e => e.Domain == domain && e.IsHeavyCluster))
-                {
-                    summarized.Add(new DomainEntry
-                    {
-                        Domain = domain,
-                        Url = entry.Url,
-                        VisitTime = entry.VisitTime,
-                        IsDirect = entry.ReferrerUrl == null,
-                        IsSearch = entry.Url.Contains("google.") &&
-                                   (entry.Url.Contains("/search") || entry.Url.Contains("q=")),
+                // Prüfen, ob URL eine bekannte Suchmaschine ist
+                bool isSearch = searchEngines.Any(se => entry.Url.Contains(se)) &&
+                                (entry.Url.Contains("/search") || entry.Url.Contains("q=") || entry.Url.Contains("?q="));
 
-                        IsHeavyCluster = true,
-                        HeavyClusterIndex = heavyClusterIndices[domain],
-                    });
-                }
+                summarized.Add(new DomainEntry
+                {
+                    Domain = domain,
+                    Url = entry.Url,
+                    VisitTime = entry.VisitTime,
+                    IsDirect = entry.ReferrerUrl == null,
+                    IsSearch = isSearch,
+
+                    IsHeavyCluster = true,
+                    HeavyClusterIndex = heavyClusterIndices[domain],
+                });
 
                 // Füge jeden Eintrag als SubEntry hinzu
                 var cluster = summarized.First(e => e.Domain == domain && e.IsHeavyCluster);
@@ -464,17 +484,18 @@
                 current.Domain != domain ||
                 (entry.VisitTime - current.VisitTime).TotalSeconds > maxSecondsBetween)
             {
+
+                // Prüfen, ob URL eine bekannte Suchmaschine ist
+                bool isSearch = searchEngines.Any(se => entry.Url.Contains(se)) &&
+                                (entry.Url.Contains("/search") || entry.Url.Contains("q=") || entry.Url.Contains("?q="));
+
                 current = new DomainEntry
                 {
                     Domain = domain,
                     Url = entry.Url,
                     VisitTime = entry.VisitTime,
                     IsDirect = entry.ReferrerUrl == null,
-
-                    IsSearch =
-                        entry.Url != null &&
-                        entry.Url.Contains("google.") &&
-                        (entry.Url.Contains("/search") || entry.Url.Contains("q=")),
+                    IsSearch = isSearch,
                 };
 
                 // **Ersten Eintrag direkt als SubEntry hinzufügen**
@@ -994,6 +1015,7 @@
 
                         // Normale Linie
                         string topStyle = $"calc({baseTop}% - 12px)";
+                        string topStyleSquare = $"calc({baseTop}% + 5px)";
 
                         if (isHeavy)
                         {
@@ -1015,27 +1037,38 @@
                         }
 
                         // SubEntries anzeigen
-                        foreach (var sub in domainEntry.SubEntries)
+                        @foreach (var sub in domainEntry.SubEntries)
                         {
+                            bool isSearch = sub.Url.Contains("google.") || sub.Url.Contains("bing.com") || sub.Url.Contains("duckduckgo.com");
+
                             <div class="subentry"
                                  style="position: absolute;
-                                        left: calc(@($"{sub.Position}px - 6px"));
-                                        top:calc(@topStyle);
-                                        color:@GetColorForDomain(sub.Url);
-                                        cursor:pointer;
-                                        z-index:18;"
+                            left: calc(@($"{sub.Position}px - 6px"));
+                            top:calc(@topStyle);
+                            color:@GetColorForDomain(sub.Url);
+                            cursor:pointer;
+                            z-index:20;"
                                  @onclick="() => domainEntry.IsExpanded = !domainEntry.IsExpanded">
 
-                                @if (string.IsNullOrEmpty(sub.ReferrerUrl))
+                                @if (isSearch)
                                 {
+                                    // Hohles Quadrat für Suchmaschinen
+                                    <div class="domain-marker square"
+                                         style="width:12px; height:12px; color:@GetColorForDomain(sub.Url); top:calc(@topStyleSquare);">
+                                    </div>
+                                }
+                                else if (string.IsNullOrEmpty(sub.ReferrerUrl))
+                                {
+                                    // Hohles Dreieck
                                     <svg width="12" height="12" viewBox="0 0 12 12">
-                                        <polygon points="0,0 12,0 6,12" fill="currentColor" />
+                                        <polygon points="0,0 12,0 6,12" fill="none" stroke="currentColor" stroke-width="2" />
                                     </svg>
                                 }
                                 else
                                 {
+                                    // Gefülltes Dreieck
                                     <svg width="12" height="12" viewBox="0 0 12 12">
-                                        <polygon points="0,0 12,0 6,12" fill="none" stroke="currentColor" stroke-width="2" />
+                                        <polygon points="0,0 12,0 6,12" fill="currentColor" />
                                     </svg>
                                 }
 
@@ -1049,6 +1082,7 @@
                                 </div>
                             </div>
                         }
+
                     }
                 </div>
             }
