@@ -19,6 +19,9 @@
     // - Favicons Artefakte importieren und in der Timeline anzeigen
 	// 
 	// - Zusammenhänge im Verlauf mit Linie zum History Punkt verbinden
+    //    - Linie zur exakten Position des History Eintrags zeichnen!
+    //    - Cookies Zusammenhänge auch anhand des Namens erkennen!
+    //
     // - Beim anklicken einer Domänen-Zusammenfassung, alle domänen namen oberhalb der artefakte anzeigen als text.
     //
     // - Erkennen von zwielichtigen Suchmaschienen -> Pirate Bay etc... und Websiten per liste!!
@@ -1032,7 +1035,7 @@
                             width:@($"{lastPos - firstPos}px");
                             height:2px;
                             background-color:@color;
-                            z-index:15;">
+                            z-index:18;">
                             </div>
                         }
 
@@ -1047,7 +1050,7 @@
                             top:calc(@topStyle);
                             color:@GetColorForDomain(sub.Url);
                             cursor:pointer;
-                            z-index:20;"
+                            z-index:21;"
                                  @onclick="() => domainEntry.IsExpanded = !domainEntry.IsExpanded">
 
                                 @if (isSearch)
@@ -1148,6 +1151,91 @@
                     }
                 </div>
             }
+
+            <!-- SVG-Sammelcontainer für alle Linien -->
+            <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:18;">
+
+                @foreach (var artifact in State.BrowserCookies.Cast<object>()
+                                .Concat(State.AutofillEntries))
+                {
+                    string? artifactDomain = artifact switch
+                    {
+                        BrowserCookieEntry c => c.Host,
+                        WebDataAutofillEntry a => a.Name,
+                        _ => null
+                    };
+
+                    if (string.IsNullOrEmpty(artifactDomain))
+                        continue;
+
+                    DateTime artifactTime = artifact switch
+                    {
+                        BrowserCookieEntry c => c.Created,
+                        WebDataAutofillEntry a => a.DateCreated,
+                        _ => DateTime.MinValue
+                    };
+
+                    double artifactPosX = artifact switch
+                    {
+                        BrowserCookieEntry c => c.Position,
+                        WebDataAutofillEntry a => a.Position,
+                        _ => 0
+                    };
+
+                    // DomainEntry matching nach Zeit (max 5s) & Domain enthalten
+                    DomainEntry? matchingDomain = SummarizedEntries
+                    .Where(d => artifactDomain.Contains(d.Domain))
+                    .OrderBy(d => Math.Abs((artifactTime - d.VisitTime).TotalSeconds))
+                    .FirstOrDefault(d => Math.Abs((artifactTime - d.VisitTime).TotalSeconds) <= 10);
+
+                    if (matchingDomain == null)
+                        continue;
+
+                    // SubEntry matching nach Domain + Zeitnähe
+                    var matchingSub = matchingDomain.SubEntries?
+                    .Where(s => artifactDomain.Contains(s.Url))
+                    .OrderBy(s => Math.Abs((artifactTime - s.VisitTime).TotalSeconds))
+                    .FirstOrDefault();
+
+                    // X-Position der Domain/Subdomain
+                    double domainPosX = matchingSub?.Position ?? matchingDomain.Position;
+
+                    // Y-Position
+                    double domainPosY;
+
+                    if (matchingSub != null)
+                    {
+                        int subIndex = matchingDomain.SubEntries.IndexOf(matchingSub);
+                        bool isHeavy = matchingDomain.SubEntries.Count >= 10;
+
+                        double clusterOffset = isHeavy ? subIndex * 20 : 0;
+
+                        // SubEntry Linie (25% = DomainRow, +12 = SubRow)
+                        domainPosY = 25 + 12 + clusterOffset;
+                    }
+                    else
+                    {
+                        domainPosY = 25; // DomainEntry-Y
+                    }
+
+                    // Cookie/Autofill Y-Position
+                    double artifactPosY = 30;
+
+                    string color = GetColorForDomain(matchingDomain.Url);
+
+                    <!-- SVG-Linie vom Domain/SubEntry zum Artefakt -->
+                    <line x1="@domainPosX"
+                          y1="@($"{domainPosY}%")"
+                          x2="@artifactPosX"
+                          y2="@($"{artifactPosY}%")"
+                          stroke="@color"
+                          stroke-width="2" />
+                }
+
+            </svg>
+
+
+
         </div>
     </div>
 </div>
