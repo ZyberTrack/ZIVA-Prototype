@@ -19,7 +19,6 @@
     // - Favicons Artefakte importieren und in der Timeline anzeigen
     // 
     // - Zusammenhänge im Verlauf mit Linie zum History Punkt verbinden
-    //    - Linie zur exakten Position des History Eintrags zeichnen! - funkt außer fenstergröße wächselt...
     //    - Cookies Zusammenhänge auch anhand des Namens erkennen!
     //
     // - Beim anklicken einer Domänen-Zusammenfassung, alle domänen namen oberhalb der artefakte anzeigen als text.
@@ -1177,15 +1176,19 @@
                 @foreach (var artifact in State.BrowserCookies.Cast<object>()
                                 .Concat(State.AutofillEntries))
                 {
+
                     string? artifactDomain = artifact switch
                     {
-                        BrowserCookieEntry c => c.Host,
-                        WebDataAutofillEntry a => a.Name,
+                        BrowserCookieEntry c =>
+                        !string.IsNullOrWhiteSpace(c.Host) ? c.Host.TrimStart('.') :
+                        !string.IsNullOrWhiteSpace(c.Name) ? c.Name.TrimStart('.') : null,
+                        WebDataAutofillEntry a => a.Name.TrimStart('.'),
                         _ => null
                     };
 
                     if (string.IsNullOrEmpty(artifactDomain))
                         continue;
+
 
                     DateTime artifactTime = artifact switch
                     {
@@ -1201,11 +1204,26 @@
                         _ => 0
                     };
 
-                    // DomainEntry matching nach Zeit (max 5s) & Domain enthalten
+                    // DomainEntry matching nach Zeit (max 10s) & Domain/Name enthalten
                     DomainEntry? matchingDomain = SummarizedEntries
-                    .Where(d => artifactDomain.Contains(d.Domain))
+                    .Where(d =>
+                    {
+                        var domainNormalized = d.Domain.TrimStart('.').ToLower();
+                        var artifactNormalized = artifact switch
+                        {
+                            BrowserCookieEntry c => !string.IsNullOrWhiteSpace(c.Host) ? c.Host.TrimStart('.').ToLower() :
+                                        !string.IsNullOrWhiteSpace(c.Name) ? c.Name.TrimStart('.').ToLower() : "",
+                            WebDataAutofillEntry a => a.Name.TrimStart('.').ToLower(),
+                            _ => ""
+                        };
+
+                        return !string.IsNullOrEmpty(artifactNormalized) &&
+                                    (domainNormalized.EndsWith(artifactNormalized) || artifactNormalized.EndsWith(domainNormalized));
+                    })
                     .OrderBy(d => Math.Abs((artifactTime - d.VisitTime).TotalSeconds))
                     .FirstOrDefault(d => Math.Abs((artifactTime - d.VisitTime).TotalSeconds) <= 10);
+
+
 
                     if (matchingDomain == null)
                         continue;
