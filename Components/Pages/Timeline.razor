@@ -1,9 +1,12 @@
 ﻿@page "/"
 @inject IJSRuntime JS
 @implements IDisposable
-@using ZIVA_Prototype.Components.Models
+@using ZIVA_Prototype.Components.Models;
+@using ZIVA_Prototype.Services;
 @inject TimelineStateService State // Verwaltet States mehrerer Importierter Datenbanken
-@inject HistoryImportService Importer
+@inject HistoryImportService Importer   
+@inject PersistStateService PersistService // falls benötigt
+
 
 @code {
 
@@ -12,28 +15,80 @@
     // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. 
     // 
     // TO DO:
-	// 
-	// 
-	// -- Workaround fürs Zoom -> Pivoting between entrys.
+    // - Zoom Mittelpunkt zur Maus verschieben.
+    // - Favicons Artefakte importieren und in der Timeline anzeigen
     // 
+    // - Zusammenhänge im Verlauf mit Linie zum History Punkt verbinden
+    //    - Cookies Zusammenhänge auch anhand des Namens erkennen!
+    //
+    // - Beim anklicken einer Domänen-Zusammenfassung, alle domänen namen oberhalb der artefakte anzeigen als text.
+    //
+    // - Erkennen von zwielichtigen Suchmaschienen -> Pirate Bay etc... und Websiten per liste!!
     //
 
-    private bool isZooming = false; // Flag to indicate if zooming is in progress
-    private BrowserHistoryEntry? selectedEntry; // Aktuell ausgewählte Browser Artefakt Entry
-    private bool isProgrammaticScroll = false; //scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
+    private List<DomainEntry> SummarizedEntries { get; set; } = new();
+    private List<TimestampEntry> visibleEntries = new();
+    private static List<int> usedHues = new(); // Liste aller bisher vergebenen Hue-Werte
+    private static Dictionary<string, string> domainColors = new();
 
+    private BrowserHistoryEntry? selectedEntry; // Aktuell ausgewählte Browser History Artefakt Entry
+    private BrowserCookieEntry? selectedCookie; // Aktuell ausgewählte Browser Cookies Artefakt Entry selectedAutofill
+    private WebDataAutofillEntry? selectedAutofill;
+    private DotNetObjectReference<Timeline>? selfRef;
+
+    private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
+    private bool isZooming = false; // Flag to indicate if zooming is in progress
+
+    private DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
     private ElementReference scrollDivRef;
+
+    private TimeUnit CurrentTimeUnit => zoomLevels[currentZoomIndex].unit; // Zoomstufen in Units statt Sekunden
+
     private const int InitialOffsetPx = 2500000; // z. B. Mitte der 500000px Fläche Für zeitachse
+    private const int HueStep = 40; // Schrittweite zwischen Farben (z. B. 40° = gut unterscheidbar)
+    private const int Saturation = 75; // %  --> Sättigung und Luminanz für kräftige, aber nicht zu grelle Farben
+    private const int Lightness = 45;  // %  --> Sättigung und Luminanz für kräftige, aber nicht zu grelle Farben
     private double scrollIndex = 0;
+
     private int viewportWidth;
+	private int containerHeight; // für SVG Rendering
     private int startOffset = 70;
     private int spacing = 250;
     private int movableLayerWidth = 5000000;
     private int renderBuffer = 5;
     private int lastScrollIndex = int.MinValue;
-    private DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
+    private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
+    private int currentPivotIndex = 0; // Index in State.BrowserEntries
+    private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
 
+	// Suchmaschinen Domains für Erkennung
+    string[] searchEngines = new[]
+    {
+    "google.",            // Google (alle Länderdomains)
+    "bing.com",           // Bing
+    "duckduckgo.com",     // DuckDuckGo
+    "search.yahoo.com",   // Yahoo
+    "yandex.ru",          // Yandex
+    "baidu.com",          // Baidu
+    "ecosia.org",         // Ecosia
+    "qwant.com",          // Qwant
+    "startpage.com",      // Startpage
+    "ask.com",            // Ask
+    "aol.com",            // AOL
+    "sogou.com",          // Sogou
+    "naver.com",          // Naver
+    "brave.com",          // Brave Search
+    "exalead.com",        // Exalead
+    "seznam.cz"           // Seznam
+    };
 
+    // Zoomstufen in Units statt Sekunden
+    public class TimestampEntry
+    {
+        public int Index { get; set; }
+        public DateTime Time { get; set; }
+        public int Position { get; set; }
+    }
 
     // Alles was ZOOMEN angeht, wird hier definiert.
     enum TimeUnit
@@ -45,8 +100,6 @@
         Months,
         Years
     }
-
-    
 
     // neuer Ansatz: Zoomstufen definieren, die die Dauer eines Intervalls bestimmen
     private readonly (int seconds, TimeUnit unit)[] zoomLevels = new[]
@@ -67,39 +120,33 @@
         (2419200, TimeUnit.Days),
         (5184000, TimeUnit.Days),
         (7776000, TimeUnit.Months),
-        (10368000, TimeUnit.Months),
+        (10368000, TimeUnit.Months), 
         (15552000, TimeUnit.Months),
         (31104000, TimeUnit.Years),
         (63072000, TimeUnit.Years),
     };
 
-    private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
-    private int currentPivotIndex = 0; // Index in State.BrowserEntries
-    private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
-
-
-
-    // Neuer Ansatz: Zoomstufen in Units statt Sekunden
-    private TimeUnit CurrentTimeUnit => zoomLevels[currentZoomIndex].unit;
-
-    private DotNetObjectReference<Timeline>? selfRef;
-
-    private List<TimestampEntry> visibleEntries = new();
-    public class TimestampEntry
-    {
-        public int Index { get; set; }
-        public DateTime Time { get; set; }
-        public int Position { get; set; }
-    }
-
-
+    //------------------------------------------------------------
+	// Initial Render
+    //------------------------------------------------------------
 
     protected override async Task OnInitializedAsync()
     {
-        await UpdateViewportWidthAsync();
-        await LoadFromDatabase();
+        await UpdateViewportSizeAsync();
 
+        // Lade alles parallel im Hintergrund
+        var historyTask = LoadFromDatabase();
+        var cookieTask = LoadCookieDatabase();
+        var autofillTask = LoadAutofillDatabase();
+        var persistTask = PersistService.LoadPersistedStateAsync(State);
+
+        //await Task.WhenAll(historyTask, cookieTask, autofillTask, persistTask);
+
+        // Danach UI-Berechnungen
         RecalculatePositions();
+        RecalculateCookiePositions();
+        RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
         UpdateVisibleTimestamps();
     }
 
@@ -116,99 +163,17 @@
         }
     }
 
-    private async Task LoadFromDatabase()
+    //------------------------------------------------------------
+    // Positionsberechnungen und Renderberechnungen
+    //------------------------------------------------------------
+
+    private async Task UpdateViewportSizeAsync()
     {
-        var filePath = Path.Combine(FileSystem.AppDataDirectory, "history.sqlite");
+        viewportWidth = Math.Max(await JS.InvokeAsync<int>("getViewportWidth"), 300);
 
-        // sicherstellen, dass die Datei existiert
-        if (File.Exists(filePath))
-        {
-            var entries = Importer.LoadFromHistoryDatabase(filePath);
-            State.SetBrowserEntries(entries);
-        }
-        else
-        {
-            Console.WriteLine("Datei nicht gefunden: " + filePath);
-        }
+		// Für SVG Rendering
+        containerHeight = await JS.InvokeAsync<int>("getElementHeight", "scroll-container");
 
-        // Debugging
-        //await JS.InvokeVoidAsync("alert", $"Importiert: {State.BrowserEntries.Count} Einträge");
-        //await JS.InvokeVoidAsync("alert", $"Erste URL: {State.BrowserEntries.FirstOrDefault()?.Url}");
-
-
-        // Initiale Breite der beweglichen Ebene setzen
-        if (State.BrowserEntries is { Count: > 0 })
-        {
-            // Basiszeit auf den frühesten Zeitpunkt setzen
-            baseTime = State.BrowserEntries.Min(e => e.VisitTime);
-
-            // Viewport-Breite zuerst sicherstellen!
-            await UpdateViewportWidthAsync();
-
-            // Erstes Element ermitteln
-            var first = State.BrowserEntries.First();
-
-            // Zentriere den ersten Eintrag auf dem Bildschirm
-            var unitDistance = GetUnitDistance(baseTime, first.VisitTime);
-            var scrollTo = InitialOffsetPx + unitDistance * spacing;
-            scrollIndex = scrollTo - viewportWidth / 2;
-
-            // Jetzt scrollen
-            isProgrammaticScroll = true;
-            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
-            await Task.Delay(50); // Browser braucht kurz Zeit
-            isProgrammaticScroll = false;
-
-            visibleEntries.Clear();
-            UpdateVisibleTimestamps();
-            RecalculatePositions();
-            StateHasChanged();
-        }
-
-    }
-
-    // zentriert Timeline um ein entry.
-    private async Task CenterOnEntry(int index)
-    {
-        if (State.BrowserEntries == null || !State.BrowserEntries.Any())
-            return;
-
-        // Index clampen
-        index = Math.Clamp(index, 0, State.BrowserEntries.Count - 1);
-        currentPivotIndex = index;
-
-        var entry = State.BrowserEntries[currentPivotIndex];
-
-        // baseTime auf den Pivot-Entry setzen
-        baseTime = entry.VisitTime;
-
-        // scrollIndex so berechnen, dass Pivot in die Mitte des Viewports kommt
-        scrollIndex = TimeToPixel(entry.VisitTime) - viewportWidth / 2;
-
-        // Scrollgrenzen sichern
-        scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
-
-        // Anzeige aktualisieren
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        StateHasChanged();
-
-        // Optional: Browser scrollen, falls du einen externen Scroll-Container hast
-        await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
-    }
-
-
-    [JSInvokable("OnResize")] // Elemente werden Visuell dem Fenster angepasst
-    public async Task OnResizeAsync()
-    {
-        await UpdateViewportWidthAsync();
-        UpdateVisibleTimestamps();
-        StateHasChanged();
-    }
-
-    private async Task UpdateViewportWidthAsync()
-    {
-        viewportWidth = Math.Max(await JS.InvokeAsync<int>("getViewportWidth"), 300); // Minimum
     }
 
     // Nur Zeitstempel betreffend
@@ -235,7 +200,51 @@
         startOffset = -minIndex * spacing + 250; // z. B. 250px Puffer nach links
     }
 
-    
+
+    // Nur für Einträge in der Zeitachse
+    private void RecalculatePositions()
+    {
+        // Wird für jeden Eintrag gemacht
+        foreach (var historyEntry in State.BrowserEntries)
+        {
+            historyEntry.Position = (int)TimeToPixel(historyEntry.VisitTime) - scrollIndex; //Hier geht was schief wenn die position mit dsem zoom nicht stimmt
+        }
+    }
+
+    private void RecalculateCookiePositions()
+    {
+        if (State.BrowserCookies == null) return;
+
+        foreach (var cookie in State.BrowserCookies)
+        {
+            cookie.Position = (int)TimeToPixel(cookie.Created) - (int)scrollIndex;
+        }
+    }
+
+    private void RecalculateAutofillPositions()
+    {
+        if (State.AutofillEntries == null) return;
+
+        foreach (var entry in State.AutofillEntries)
+        {
+            entry.Position = (int)TimeToPixel(entry.DateCreated) - (int)scrollIndex;
+        }
+    }
+
+    private void RecalculateSummarizedPositions()
+    {
+        if (SummarizedEntries == null) return;
+
+        foreach (var entry in SummarizedEntries)
+        {
+            entry.Position = (int)TimeToPixel(entry.VisitTime) - (int)scrollIndex;
+        }
+    }
+
+    //------------------------------------------------------------
+	// Daten Laden und Initialisierung
+    //------------------------------------------------------------
+
     // Zeitstempel Einträge erstellen
     private TimestampEntry CreateEntry(int index)
     {
@@ -243,10 +252,10 @@
         {
             TimeUnit.Seconds => baseTime.AddSeconds(index * SecondsPerSpacing),
             TimeUnit.Minutes => baseTime.AddMinutes(index * (SecondsPerSpacing / 60.0)),
-            TimeUnit.Hours   => baseTime.AddHours(index * (SecondsPerSpacing / 3600.0)),
-            TimeUnit.Days    => baseTime.AddDays(index * (SecondsPerSpacing / 86400.0)),
-            TimeUnit.Months  => baseTime.AddMonths(index), // 1 Monat pro Intervall – Optional kannst du noch CurrentIntervalInMonths einführen
-            TimeUnit.Years   => baseTime.AddYears(index),
+            TimeUnit.Hours => baseTime.AddHours(index * (SecondsPerSpacing / 3600.0)),
+            TimeUnit.Days => baseTime.AddDays(index * (SecondsPerSpacing / 86400.0)),
+            TimeUnit.Months => baseTime.AddMonths(index), // 1 Monat pro Intervall – Optional kannst du noch CurrentIntervalInMonths einführen
+            TimeUnit.Years => baseTime.AddYears(index),
             _ => baseTime
         };
 
@@ -258,15 +267,472 @@
         };
     }
 
-    // Nur für Einträge in der Zeitachse
-    private void RecalculatePositions()
+    private async Task LoadFromDatabase()
     {
-        // Wird für jeden Eintrag gemacht
-        foreach (var historyEntry in State.BrowserEntries)
+        var filePath = Path.Combine(FileSystem.AppDataDirectory, "history.sqlite");
+
+        // sicherstellen, dass die Datei existiert
+        if (File.Exists(filePath))
         {
-			historyEntry.Position = (int)TimeToPixel(historyEntry.VisitTime) - scrollIndex; //Hier geht was schief wenn die position mit dsem zoom nicht stimmt
+            var entries = await Importer.LoadFromHistoryDatabaseAsync(filePath);
+            State.AddBrowserEntries(entries);
+        }
+        else
+        {
+            Console.WriteLine("Datei nicht gefunden: " + filePath);
+        }
+
+        // Initiale Breite der beweglichen Ebene setzen
+        if (State.BrowserEntries is { Count: > 0 })
+        {
+            // Basiszeit auf den frühesten Zeitpunkt setzen
+            baseTime = State.BrowserEntries.Min(e => e.VisitTime);
+
+            // Viewport-Breite zuerst sicherstellen!
+            await UpdateViewportSizeAsync();
+
+            // Erstes Element ermitteln
+            var first = State.BrowserEntries.First();
+
+            // Zentriere den ersten Eintrag auf dem Bildschirm
+            var unitDistance = GetUnitDistance(baseTime, first.VisitTime);
+            var scrollTo = InitialOffsetPx + unitDistance * spacing;
+            scrollIndex = scrollTo - viewportWidth / 2;
+
+            SummarizedEntries = SummarizeEntries(State.BrowserEntries, maxSecondsBetween: zoomLevels[currentZoomIndex].seconds); //Domänen Zusammenfassung erstellen
+
+            // Jetzt scrollen
+            isProgrammaticScroll = true;
+            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
+            await Task.Delay(50); // Browser braucht kurz Zeit
+            isProgrammaticScroll = false;
+
+            visibleEntries.Clear();
+            UpdateVisibleTimestamps();
+            RecalculatePositions();
+            RecalculateCookiePositions();
+            RecalculateAutofillPositions();
+            RecalculateSummarizedPositions();
+            await InvokeAsync(StateHasChanged);
         }
     }
+
+
+    private async Task LoadCookieDatabase()
+    {
+        var filePath = Path.Combine(FileSystem.AppDataDirectory, "cookies.sqlite");
+
+        // sicherstellen, dass die Datei existiert
+        if (File.Exists(filePath))
+        {
+            var cookieService = new CookieImportService();
+            var cookies = await cookieService.LoadFromCookieDatabaseAsync(filePath);
+            State.SetBrowserCookies(cookies);
+        }
+        else
+        {
+            Console.WriteLine("Cookie-Datei nicht gefunden: " + filePath);
+        }
+
+        // Initiale Breite der Timeline setzen
+        if (State.BrowserCookies is { Count: > 0 })
+        {
+            // Basiszeit: frühester "LastAccessed" (macht für Cookies am meisten Sinn)
+            baseTime = State.BrowserCookies
+                .Where(c => c.Created > DateTime.MinValue)
+                .Min(c => c.Created);
+
+            // Viewport-Breite aktualisieren
+            await UpdateViewportSizeAsync();
+
+            // Erstes Cookie — das neuste, entsprechend deiner ORDER BY last_access_utc DESC
+            var first = State.BrowserCookies.First();
+
+            // Zeitliche Distanz
+            var unitDistance = GetUnitDistance(baseTime, first.Created);
+
+            // Position berechnen
+            var scrollTo = InitialOffsetPx + unitDistance * spacing;
+            scrollIndex = scrollTo - viewportWidth / 2;
+
+            // Scrollen
+            isProgrammaticScroll = true;
+            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
+            await Task.Delay(50);
+            isProgrammaticScroll = false;
+
+            visibleEntries.Clear();
+            UpdateVisibleTimestamps();
+            RecalculatePositions();
+            RecalculateCookiePositions();
+            RecalculateAutofillPositions();
+            RecalculateSummarizedPositions();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+
+    private async Task LoadAutofillDatabase()
+    {
+        var filePath = Path.Combine(FileSystem.AppDataDirectory, "webdata_autofill.sqlite");
+
+        if (File.Exists(filePath))
+        {
+            var autofillService = new WebDataAutofillImportService();
+            var entries = await autofillService.LoadAutofillAsync(filePath);
+            State.SetAutofillEntries(entries);
+        }
+        else
+        {
+            Console.WriteLine("Autofill-Datei nicht gefunden: " + filePath);
+        }
+
+        // Timeline initialisieren
+        if (State.AutofillEntries is { Count: > 0 })
+        {
+            // Basiszeit: erstes erzeugtes Datenfeld
+            baseTime = State.AutofillEntries
+                .Where(a => a.DateCreated > DateTime.MinValue)
+                .Min(a => a.DateCreated);
+
+            // Viewport ermitteln
+            await UpdateViewportSizeAsync();
+
+            // Erstes Element der Liste (ordnungsgemäß nach letzter Nutzung sortiert)
+            var first = State.AutofillEntries.First();
+
+            // Zeitliche Distanz berechnen
+            var unitDistance = GetUnitDistance(baseTime, first.DateCreated);
+
+            // Position bestimmen
+            var scrollTo = InitialOffsetPx + unitDistance * spacing;
+            scrollIndex = scrollTo - viewportWidth / 2;
+
+            // Scrollen
+            isProgrammaticScroll = true;
+            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
+            await Task.Delay(50);
+            isProgrammaticScroll = false;
+
+            // Sichtbare Einträge neu berechnen
+            visibleEntries.Clear();
+            UpdateVisibleTimestamps();
+            RecalculateCookiePositions();
+            RecalculateAutofillPositions();
+            RecalculateSummarizedPositions();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    //------------------------------------------------------------
+    // Domänen Zusammenfassungen
+    //------------------------------------------------------------
+
+    private List<DomainEntry> SummarizeEntries(List<BrowserHistoryEntry> entries, int maxSecondsBetween = 10)
+    {
+        var summarized = new List<DomainEntry>();
+        DomainEntry? current = null;
+
+        // 1) VORVERARBEITUNG: Domain-Hit-Count
+        var domainCounts = entries
+            .GroupBy(e => new Uri(e.Url).Host.ToLower())
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // 2) Heavy-Cluster: alle Domains mit >10 Visits
+        var heavyDomains = domainCounts
+            .Where(kvp => kvp.Value > 10)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        // Mapping: domain -> cluster index
+        Dictionary<string, int> heavyClusterIndices = new();
+        int clusterCounter = 1; // 1 = erste Linie über dem normalen Strahl
+
+        foreach (var d in heavyDomains)
+            heavyClusterIndices[d] = clusterCounter++;
+
+        // ---- ORIGINAL Logik bleibt bestehen ----
+        foreach (var entry in entries.OrderBy(e => e.VisitTime))
+        {
+            string domain = new Uri(entry.Url).Host.ToLower();
+
+            bool isHeavy = heavyClusterIndices.ContainsKey(domain);
+
+            if (isHeavy)
+            {
+                // Ein Heavy-Cluster erzeugt KEINE normalen „Domain-Wechsel“-Gruppen.
+                // Sondern alles wird EINEM gemeinsamen Cluster zugeordnet.
+
+                // Prüfen, ob URL eine bekannte Suchmaschine ist
+                bool isSearch = searchEngines.Any(se => entry.Url.Contains(se)) &&
+                                (entry.Url.Contains("/search") || entry.Url.Contains("q=") || entry.Url.Contains("?q="));
+
+                summarized.Add(new DomainEntry
+                {
+                    Domain = domain,
+                    Url = entry.Url,
+                    VisitTime = entry.VisitTime,
+                    IsDirect = entry.ReferrerUrl == null,
+                    IsSearch = isSearch,
+
+                    IsHeavyCluster = true,
+                    HeavyClusterIndex = heavyClusterIndices[domain],
+                });
+
+                // Füge jeden Eintrag als SubEntry hinzu
+                var cluster = summarized.First(e => e.Domain == domain && e.IsHeavyCluster);
+                cluster.SubEntries.Add(entry);
+
+                continue;
+            }
+
+            // ---- Normale Zusammenfassung ----
+            if (current == null ||
+                current.Domain != domain ||
+                (entry.VisitTime - current.VisitTime).TotalSeconds > maxSecondsBetween)
+            {
+
+                // Prüfen, ob URL eine bekannte Suchmaschine ist
+                bool isSearch = searchEngines.Any(se => entry.Url.Contains(se)) &&
+                                (entry.Url.Contains("/search") || entry.Url.Contains("q=") || entry.Url.Contains("?q="));
+
+                current = new DomainEntry
+                {
+                    Domain = domain,
+                    Url = entry.Url,
+                    VisitTime = entry.VisitTime,
+                    IsDirect = entry.ReferrerUrl == null,
+                    IsSearch = isSearch,
+                };
+
+                // **Ersten Eintrag direkt als SubEntry hinzufügen**
+                current.SubEntries.Add(entry);
+
+                summarized.Add(current);
+            }
+            else
+            {
+                current.SubEntries.Add(entry);
+                if (entry.ReferrerUrl != null)
+                    current.IsDirect = false;
+            }
+        }
+
+        return summarized;
+    }
+
+    //------------------------------------------------------------
+    // Bessere Domain-Farbzuweisung mit maximaler Farbdistanz (HSL)
+    //------------------------------------------------------------
+
+    // Gibt HEX-Farbe aus HSL zurück
+    private string HslToRgb(int h, int s, int l)
+    {
+        double sat = s / 100.0;
+        double light = l / 100.0;
+        double c = (1 - Math.Abs(2 * light - 1)) * sat;
+        double x = c * (1 - Math.Abs((h / 60.0) % 2 - 1));
+        double m = light - c / 2;
+
+        double r = 0, g = 0, b = 0;
+
+        if (h < 60) { r = c; g = x; b = 0; }
+        else if (h < 120) { r = x; g = c; b = 0; }
+        else if (h < 180) { r = 0; g = c; b = x; }
+        else if (h < 240) { r = 0; g = x; b = c; }
+        else if (h < 300) { r = x; g = 0; b = c; }
+        else { r = c; g = 0; b = x; }
+
+        int R = (int)((r + m) * 255);
+        int G = (int)((g + m) * 255);
+        int B = (int)((b + m) * 255);
+
+        return $"rgb({R},{G},{B})";
+    }
+
+    // Gibt gut unterscheidbare Farbe für eine Domain zurück
+    private string GetColorForDomain(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return "rgb(200,200,200)";
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return "rgb(200,200,200)";
+
+        string domain = uri.Host.ToLower();
+
+        // Falls schon eine Farbe existiert → zurückgeben
+        if (domainColors.ContainsKey(domain))
+            return domainColors[domain];
+
+        // Neuen Hue-Wert wählen
+        int hue = (usedHues.Count * HueStep) % 360;
+        usedHues.Add(hue);
+
+        // Farbe generieren
+        string color = HslToRgb(hue, Saturation, Lightness);
+
+        domainColors[domain] = color;
+        return color;
+    }
+
+    //------------------------------------------------------------
+	// JavaScript Interop: Scrollen, Zoomen, Resizing
+    //------------------------------------------------------------
+
+    [JSInvokable("OnResize")] // Elemente werden Visuell dem Fenster angepasst
+    public async Task OnResizeAsync()
+    {
+        await UpdateViewportSizeAsync();
+        UpdateVisibleTimestamps();
+        RecalculatePositions();
+        RecalculateCookiePositions();
+        RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
+        StateHasChanged();
+    }
+
+    // Scroll Funktion
+    [JSInvokable("OnAsyncScroll")]
+    public async Task OnAsyncScroll(double scrollLeft)
+    {
+        if (isProgrammaticScroll || isZooming)
+        {
+            isProgrammaticScroll = false;
+            return;
+        }
+
+        scrollIndex = scrollLeft;
+
+        if (scrollIndex < 50000 || scrollIndex > movableLayerWidth - 50000)
+        {
+            double newOffset = movableLayerWidth / 2;
+            int indexShift = (int)((scrollIndex - newOffset) / spacing);
+
+            // Aktuelles ZoomLevel abrufen
+            var currentZoom = zoomLevels[currentZoomIndex];
+            var spacingTimeSpan = GetTimeSpanFromZoomLevel(currentZoom);
+
+            // Zeitbasis verschieben
+            baseTime = baseTime.AddTicks(spacingTimeSpan.Ticks * indexShift);
+
+            // Scrollposition korrigieren
+            scrollIndex = scrollIndex - indexShift * spacing;
+
+            isProgrammaticScroll = true;
+            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
+            await Task.Delay(50); // Browser braucht kurz Zeit
+            isProgrammaticScroll = false;
+
+            UpdateVisibleTimestamps();
+            RecalculatePositions();
+            StateHasChanged();
+            return;
+        }
+
+        UpdateVisibleTimestamps();
+        RecalculatePositions();
+        RecalculateCookiePositions();
+        RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
+        StateHasChanged();
+    }
+
+    [JSInvokable("OnZoom")]
+    public async Task OnZoomAsync(string direction)
+    {
+        isZooming = true; //zoom sperre Flag setzen
+
+        // Scrollgrenzen absichern
+        scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
+
+        // Mittelpunkt-Zeit merken (zentriert im Viewport)
+        double centerPx = scrollIndex + viewportWidth / 2;
+        DateTime centerTime = PixelToTime(centerPx);  // ACHTUNG: ERROR anfälligkeit hier!!
+
+        // Zoomstufe anpassen
+        if (direction == "in" && currentZoomIndex > 0)
+        {
+            currentZoomIndex--;
+            //pixelPerSecond *= 2; // Beispiel: 2x reinzoomen
+        }
+        else if (direction == "out" && currentZoomIndex < zoomLevels.Length - 1)
+        {
+            currentZoomIndex++;
+            //pixelPerSecond /= 2; // Beispiel: 2x rauszoomen
+        }
+
+        // Neue Scrollposition berechnen, sodass die Zeit gleich bleibt
+        double newCenterPx = TimeToPixel(centerTime);
+        double newScrollLeft = newCenterPx - viewportWidth / 2;
+
+        // Scrollgrenzen erneut absichern
+        newScrollLeft = Math.Clamp(newScrollLeft, 0, Math.Max(0, movableLayerWidth - viewportWidth));
+
+        // Darstellung aktualisieren
+        UpdateVisibleTimestamps();
+        RecalculatePositions();
+        RecalculateCookiePositions();
+        RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
+        StateHasChanged();
+
+        isZooming = false;
+    }
+
+    [JSInvokable("OnArrowRight")]
+    public async Task OnArrowRightAsync()
+    {
+        if (currentPivotIndex < State.BrowserEntries.Count - 1)
+            await CenterOnEntry(currentPivotIndex + 1);
+    }
+
+    [JSInvokable("OnArrowLeft")]
+    public async Task OnArrowLeftAsync()
+    {
+        if (currentPivotIndex > 0)
+            await CenterOnEntry(currentPivotIndex - 1);
+    }
+
+
+
+    //------------------------------------------------------------
+	// Verschiedene Hilfsmethoden
+    //------------------------------------------------------------
+
+    // zentriert Timeline um ein entry.
+    private async Task CenterOnEntry(int index)
+    {
+        if (State.BrowserEntries == null || !State.BrowserEntries.Any())
+            return;
+
+        // Index clampen
+        index = Math.Clamp(index, 0, State.BrowserEntries.Count - 1);
+        currentPivotIndex = index;
+
+        var entry = State.BrowserEntries[currentPivotIndex];
+
+        // baseTime auf den Pivot-Entry setzen
+        baseTime = entry.VisitTime;
+
+        // scrollIndex so berechnen, dass Pivot in die Mitte des Viewports kommt
+        scrollIndex = TimeToPixel(entry.VisitTime) - viewportWidth / 2;
+
+        // Scrollgrenzen sichern
+        scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
+
+        // Anzeige aktualisieren
+        UpdateVisibleTimestamps();
+        RecalculatePositions();
+        RecalculateCookiePositions();
+        RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
+        StateHasChanged();
+
+        // Optional: Browser scrollen, falls du einen externen Scroll-Container hast
+        await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
+    }
+
     private double GetPixelPerUnit()
     {
         // spacing bleibt fix
@@ -324,9 +790,6 @@
         return pixelPerUnit;
     }
 
-
-    //return spacing / zoomLevels[currentZoomIndex].seconds;  // Wert ist schon mal besser  -> Zoom ist nicht wirklich von spacing abhängig oder??
-
     private double TimeToPixel(DateTime t)
     {
         double secondsFromBase = (t - baseTime).TotalSeconds;
@@ -344,51 +807,6 @@
         double secondsFromBase = pixelsFromStart * secondsPerPixel;
 
         return baseTime.AddSeconds(secondsFromBase);
-    }
-
-
-
-    // Scroll Funktion
-    [JSInvokable("OnAsyncScroll")]
-    public async Task OnAsyncScroll(double scrollLeft)
-    {
-        if (isProgrammaticScroll || isZooming)
-        {
-            isProgrammaticScroll = false;
-            return;
-        }
-
-        scrollIndex = scrollLeft;
-
-        if (scrollIndex < 50000 || scrollIndex > movableLayerWidth - 50000)
-        {
-            double newOffset = movableLayerWidth / 2;
-            int indexShift = (int)((scrollIndex - newOffset) / spacing);
-
-            // Aktuelles ZoomLevel abrufen
-            var currentZoom = zoomLevels[currentZoomIndex];
-            var spacingTimeSpan = GetTimeSpanFromZoomLevel(currentZoom);
-
-            // Zeitbasis verschieben
-            baseTime = baseTime.AddTicks(spacingTimeSpan.Ticks * indexShift);
-
-            // Scrollposition korrigieren
-            scrollIndex = scrollIndex - indexShift * spacing;
-
-            isProgrammaticScroll = true;
-            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
-            await Task.Delay(50); // Browser braucht kurz Zeit
-            isProgrammaticScroll = false;
-
-            UpdateVisibleTimestamps();
-            RecalculatePositions();
-            StateHasChanged();
-            return;
-        }
-
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        StateHasChanged();
     }
 
     // Für scroll Funktion wird die Zeitspanne aus der Zoomstufe berechnet
@@ -421,64 +839,7 @@
                                 + (to.DayOfYear - from.DayOfYear) / 365.0,
             _ => 0
         };
-    }
-
-    [JSInvokable("OnArrowRight")]
-    public async Task OnArrowRightAsync()
-    {
-        if (currentPivotIndex < State.BrowserEntries.Count - 1)
-            await CenterOnEntry(currentPivotIndex + 1);
-    }
-
-    [JSInvokable("OnArrowLeft")]
-    public async Task OnArrowLeftAsync()
-    {
-        if (currentPivotIndex > 0)
-            await CenterOnEntry(currentPivotIndex - 1);
-    }
-
-
-    [JSInvokable("OnZoom")]
-    public async Task OnZoomAsync(string direction)
-    {
-        isZooming = true; //zoom sperre Flag setzen
-
-        // Scrollgrenzen absichern
-        scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
-
-        // Mittelpunkt-Zeit merken (zentriert im Viewport)
-        double centerPx = scrollIndex + viewportWidth / 2;
-        DateTime centerTime = PixelToTime(centerPx);  // ACHTUNG: ERROR anfälligkeit hier!!
-
-        // Zoomstufe anpassen
-        if (direction == "in" && currentZoomIndex > 0)
-        {
-            currentZoomIndex--;
-            //pixelPerSecond *= 2; // Beispiel: 2x reinzoomen
-        }
-        else if (direction == "out" && currentZoomIndex < zoomLevels.Length - 1)
-        {
-            currentZoomIndex++;
-            //pixelPerSecond /= 2; // Beispiel: 2x rauszoomen
-        }
-
-        // Neue Scrollposition berechnen, sodass die Zeit gleich bleibt
-        double newCenterPx = TimeToPixel(centerTime);
-        double newScrollLeft = newCenterPx - viewportWidth / 2;
-
-        // Scrollgrenzen erneut absichern
-        newScrollLeft = Math.Clamp(newScrollLeft, 0, Math.Max(0, movableLayerWidth - viewportWidth));
-
-        // Darstellung aktualisieren
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        StateHasChanged();
-
-        isZooming = false;
-    }
-
-
-
+    } 
 
     public void Dispose()
     {
@@ -488,10 +849,18 @@
 
 <!-- RAZOR MARKUP -->
 <div class="timeline-wrapper">
+    <!-- LEFT SIDE OF TIMELINE -->
     <div class="legend-area">
         <div class="timeline-area-static timeline-area-top">
-            <div class="timeline-label">Verlauf-Zeitachse</div>
+            <div class="timeline-label">Verlauf-Zeitachse</div> 
+            <div class="timeline-history-label">Website Verlauf</div>
             <div class="timeline"></div>
+            <div class="timeline-cookies-label">Cookies</div>
+            <div class="timeline-cookies"></div>
+            <div class="timeline-webdata-label">Web Data Autofill</div>
+            <div class="timeline-webdata"></div>
+            <div class="timeline-favicons-label">Favicons</div>
+            <div class="timeline-favicons"></div>
         </div>
         <div class="timeline-area-static timeline-area-bottom">
             <div class="timeline-label">Analyse-Zeitachse</div>
@@ -499,9 +868,13 @@
         </div>
     </div>
 
+    <!-- MOVABLE TIMELINE -->
     <div class="timeline-static">
         <div class="timeline-area-scroll timeline-area-top">
             <div class="timeline"></div>
+            <div class="timeline-cookies"></div>
+            <div class="timeline-webdata"></div>
+            <div class="timeline-favicons"></div>
         </div>
 
         <div class="timeline-area-scroll timeline-area-bottom">
@@ -509,25 +882,48 @@
         </div>
     </div>
 
+    <!-- RIGHT SIDE OF TIMELINE -->
     <div class="timeless-area">
-        <div class="timeline-area-static">
-            <div class="timeline-label">Zeitstempel Unbekannt</div>
-            <div class="timeline"></div>
-        </div>
-        <div class="timeline-area-static">
-            <div class="timeline"></div>
-        </div>
+        <div class="timeline-label">Werkzeug</div>
+
+        <button class="btn btn-sm" @onclick="ToggleAllDomains">
+            @(allExpanded ? "Alle einklappen" : "Alle ausklappen")
+        </button>
     </div>
 
-    <div style="position: fixed; top: 600px; left: 80px; background: yellow; z-index: 1000; padding: 4px;">
+    @code {
+        private bool allExpanded = false; // Status, ob aktuell alles ausgeklappt ist
+
+        private void ToggleAllDomains()
+        {
+            allExpanded = !allExpanded;
+
+            foreach (var entry in SummarizedEntries)
+            {
+                entry.IsExpanded = allExpanded;
+            }
+        }
+    }
+
+    <div style="position: fixed; top: 600px; left: 80px; background: yellow; z-index: 1000; padding: 40px;">
         DEBUG: SecondsPerSpacing = @SecondsPerSpacing
         DEBUG: scrollIndex = @scrollIndex
         DEBUG: baseTime = @baseTime
 		DEBUG: viewportWidth = @viewportWidth
-        DEBUG: movableLayerWidth = @movableLayerWidth
+        DEBUG: containerHeight = @containerHeight
         DEBUG: CurrentZoomIndex = @currentZoomIndex
         DEBUG: TimeStamp 0 @baseTime.AddHours(currentZoomIndex * (SecondsPerSpacing / 3600.0))
 
+        <!-- Debug-Ausgabe 
+        <div style="position: fixed; top: 10px; left: 10px; background: yellow; padding: 4px; z-index: 9999;">
+            <strong>DEBUG Heavy Cluster Position:</strong><br />
+            heavyClusterSpacingPx: 20 px<br />
+            HeavyClusterIndex: 4<br />
+            offsetPx: @offsetPx px<br />
+            containerHeight: @containerHeight px<br />
+            offsetPercent: @offsetPercent %<br />
+            domainPosY: @domainPosY %
+        </div>-->
 
         <div style="display: flex; gap: 20px; margin-top: 10px;">
             <div style="flex: 1;">
@@ -541,11 +937,36 @@
             </div>
 
             <div style="flex: 1;">
-                <strong>Visible Entries (@visibleEntries.Count):</strong>
+                <strong>Visible Cookie Entries (@State.AutofillEntries.Count):</strong>
                 <ul style="font-size: 12px; padding-left: 20px;">
-                    @foreach (var e in visibleEntries)
+                    @foreach (var e in State.AutofillEntries)
                     {
-                        <li>Index: @e.Index, Time: @e.Time, Pos: @e.Position</li>
+                        <li>Time: @e.DateCreated, Pos: @e.Position</li>
+                    }
+                </ul>
+            </div>
+
+            <div style="flex: 1;">
+                <strong>Visible Cookie Entries (@State.BrowserCookies.Count):</strong>
+                <ul style="font-size: 12px; padding-left: 20px;">
+                    @foreach (var e in State.BrowserCookies)
+                    {
+                        <li>Time: @e.LastAccessed, Pos: @e.Position</li>
+                    }
+                </ul>
+            </div>
+
+            <div style="flex: 1;">
+                @{
+                    var summarizedDomains = SummarizeEntries(State.BrowserEntries); // oder irgendeine andere Liste von BrowserHistoryEntry
+                }
+                <strong>BrowserEntries mit SubEntries:</strong>
+                <ul style="font-size: 12px; padding-left: 20px;">
+                    @foreach (var domain in summarizedDomains)
+                    {
+                        <li>
+                            Domain: @domain.Domain, HeavyOffset: @domain.HeavyOffset, HeavyClusterIndex: @domain.HeavyClusterIndex, IsHeavyCluster: @domain.IsHeavyCluster
+                        </li>
                     }
                 </ul>
             </div>
@@ -579,30 +1000,282 @@
             </div>
 
 
-            <!-- Einträge in der Zeitachse -->
-            @foreach (var data in State.BrowserEntries)
-            {
-                if (data.Position > -50 && data.Position < viewportWidth - 300)
-                {
-                    <div class="history-marker"
-                         style="left: calc(@($"{data.Position}px - 5px"))"
-                         data-url="@data.Url"
-                         data-time="@data.VisitTime"
-                         @onclick="() => selectedEntry = data">
-                    </div>
-                }
+            <!-- History Einträge in der Zeitachse -->
+            @{
+                int baseTop = 25; // Basislinie für normale Domains in %
+                int heavyClusterSpacingPx = 20; // Abstand jeder neuen Heavy Cluster-Linie nach oben
+                int heavyClusterIndex = 1; // Zähler für versetzte Heavy Cluster-Linien
             }
-            @if (selectedEntry != null)
+
+            @foreach (var domainEntry in SummarizedEntries)
             {
-                <div class="entry-details">
-                    <p><strong>Besuchszeit:</strong> @selectedEntry.VisitTime</p>
-                    <p><strong>URL:</strong> @selectedEntry.Url</p>
-                    @if (!string.IsNullOrEmpty(selectedEntry.Title))
+                var color = GetColorForDomain(domainEntry.Url);
+
+                <div class="domain-container">
+
+                    @if (!domainEntry.IsExpanded && !domainEntry.IsHeavyCluster)
                     {
-                        <p><strong>Titel:</strong> @selectedEntry.Title</p>
+                        // Normale Domain Marker
+                        string domainClass = domainEntry.IsSearch ? "domain-marker square" :
+                        domainEntry.IsDirect ? "domain-marker hollow" :
+                        "domain-marker filled";
+
+                        <div class="@domainClass"
+                             style="left: calc(@($"{domainEntry.Position}px - 6px")); color:@color"
+                             @onclick="() => domainEntry.IsExpanded = true">
+
+                            <div class="domaine-tooltip" style="background-color:@color;">
+                                <div><strong>Zeitstempel: @domainEntry.VisitTime</strong></div>
+                                <div>Domäne: @domainEntry.Domain</div>
+                            </div>
+                        </div>
+                    }
+                    else if (domainEntry.SubEntries.Any())
+                    {
+                        bool isHeavy = domainEntry.SubEntries.Count >= 10;
+
+                        // Normale Linie
+                        string topStyle = $"calc({baseTop}% - 12px)";
+                        string topStyleSquare = $"calc({baseTop}% + 5px)";
+
+                        if (isHeavy)
+                        {
+                            topStyle = $"calc({baseTop}% - 18px - {heavyClusterIndex * heavyClusterSpacingPx}px)";
+                            heavyClusterIndex++;
+
+                            double firstPos = domainEntry.SubEntries.First().Position;
+                            double lastPos = domainEntry.SubEntries.Last().Position;
+
+                            <div class="heavy-cluster-line"
+                                 style="position:absolute;
+                            top:@($"calc({baseTop}% + 12px - {heavyClusterIndex * heavyClusterSpacingPx}px)");
+                            left:@($"{firstPos}px");
+                            width:@($"{lastPos - firstPos}px");
+                            height:2px;
+                            background-color:@color;
+                            z-index:18;">
+                            </div>
+                        }
+
+                        // SubEntries anzeigen
+                        @foreach (var sub in domainEntry.SubEntries)
+                        {
+                            bool isSearch = sub.Url.Contains("google.") || sub.Url.Contains("bing.com") || sub.Url.Contains("duckduckgo.com");
+
+                            <div class="subentry"
+                                 style="position: absolute;
+                            left: calc(@($"{sub.Position}px - 6px"));
+                            top:calc(@topStyle);
+                            color:@GetColorForDomain(sub.Url);
+                            cursor:pointer;
+                            z-index:21;"
+                                 @onclick="() => domainEntry.IsExpanded = !domainEntry.IsExpanded">
+
+                                @if (isSearch)
+                                {
+                                    // Hohles Quadrat für Suchmaschinen
+                                    <div class="domain-marker square"
+                                         style="width:12px; height:12px; color:@GetColorForDomain(sub.Url); top:calc(@topStyleSquare);">
+                                    </div>
+                                }
+                                else if (string.IsNullOrEmpty(sub.ReferrerUrl))
+                                {
+                                    // Hohles Dreieck
+                                    <svg width="12" height="12" viewBox="0 0 12 12">
+                                        <polygon points="0,0 12,0 6,12" fill="none" stroke="currentColor" stroke-width="2" />
+                                    </svg>
+                                }
+                                else
+                                {
+                                    // Gefülltes Dreieck
+                                    <svg width="12" height="12" viewBox="0 0 12 12">
+                                        <polygon points="0,0 12,0 6,12" fill="currentColor" />
+                                    </svg>
+                                }
+
+                                <div class="subentry-tooltip" style="background-color:@color;">
+                                    <div><strong>Zeitstempel: @sub.VisitTime</strong></div>
+                                    <div>URL: @sub.Url</div>
+                                    @if (!string.IsNullOrEmpty(sub.ReferrerUrl))
+                                    {
+                                        <div>Verwiesen von: @sub.ReferrerUrl</div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
                     }
                 </div>
             }
+
+
+
+
+
+
+            <!-- Cookies Einträge in der Zeitachse -->
+            @foreach (var cookie in State.BrowserCookies)
+            {
+                if (cookie.Position > -50 && cookie.Position < viewportWidth - 300)
+                {
+                    <div class="cookie-marker"
+                         style="left: calc(@($"{cookie.Position}px - 5px"))"
+                         data-host="@cookie.Host"
+                         data-value="@cookie.EncryptedValue"
+                         data-time="@cookie.Created"
+                         @onclick="() => selectedCookie = cookie">
+                    </div>
+                }
+            }
+
+            @if (selectedCookie != null)
+            {
+                <div class="entry-details cookie-details">
+                    <p><strong>Host:</strong> @selectedCookie.Host</p>
+                    <p><strong>Name:</strong> @selectedCookie.Name</p>
+                    <p><strong>Created:</strong> @selectedCookie.Created</p>
+                    <p><strong>Last Accessed:</strong> @selectedCookie.LastAccessed</p>
+                    <p><strong>Expires:</strong> @selectedCookie.Expires</p>
+                </div>
+            }
+
+            <!-- Autofill Einträge in der Zeitachse -->
+            @foreach (var item in State.AutofillEntries)
+            {
+                if (item.Position > -50 && item.Position < viewportWidth - 300)
+                {
+                    <div class="autofill-marker"
+                         style="left: calc(@($"{item.Position}px - 5px"))"
+                         data-name="@item.Name"
+                         data-value="@item.Value"
+                         data-time="@item.DateCreated"
+                         @onclick="() => selectedAutofill = item">
+                    </div>
+                }
+            }
+
+            @if (selectedAutofill != null)
+            {
+                <div class="entry-details autofill-details">
+                    <p><strong>Name:</strong> @selectedAutofill.Name</p>
+                    <p><strong>Value:</strong> @selectedAutofill.Value</p>
+
+                    <p><strong>Created:</strong> @selectedAutofill.DateCreated</p>
+                    <p><strong>Last Used:</strong> @selectedAutofill.DateLastUsed</p>
+
+                    @if (@selectedAutofill.DateCreated > DateTime.MinValue)
+                    {
+                        <p><strong>Modified:</strong> @selectedAutofill.DateCreated</p>
+                    }
+                </div>
+            }
+
+            <!-- SVG-Sammelcontainer für alle Linien -->
+            <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:18;">
+
+                @foreach (var artifact in State.BrowserCookies.Cast<object>()
+                                .Concat(State.AutofillEntries))
+                {
+
+                    string? artifactDomain = artifact switch
+                    {
+                        BrowserCookieEntry c =>
+                        !string.IsNullOrWhiteSpace(c.Host) ? c.Host.TrimStart('.') :
+                        !string.IsNullOrWhiteSpace(c.Name) ? c.Name.TrimStart('.') : null,
+                        WebDataAutofillEntry a => a.Name.TrimStart('.'),
+                        _ => null
+                    };
+
+                    if (string.IsNullOrEmpty(artifactDomain))
+                        continue;
+
+
+                    DateTime artifactTime = artifact switch
+                    {
+                        BrowserCookieEntry c => c.Created,
+                        WebDataAutofillEntry a => a.DateCreated,
+                        _ => DateTime.MinValue
+                    };
+
+                    double artifactPosX = artifact switch
+                    {
+                        BrowserCookieEntry c => c.Position - 2 ,
+                        WebDataAutofillEntry a => a.Position - 2,
+                        _ => 0
+                    };
+
+                    // DomainEntry matching nach Zeit (max 10s) & Domain/Name enthalten
+                    DomainEntry? matchingDomain = SummarizedEntries
+                    .Where(d =>
+                    {
+                        var domainNormalized = d.Domain.TrimStart('.').ToLower();
+                        var artifactNormalized = artifact switch
+                        {
+                            BrowserCookieEntry c => !string.IsNullOrWhiteSpace(c.Host) ? c.Host.TrimStart('.').ToLower() :
+                                        !string.IsNullOrWhiteSpace(c.Name) ? c.Name.TrimStart('.').ToLower() : "",
+                            WebDataAutofillEntry a => a.Name.TrimStart('.').ToLower(),
+                            _ => ""
+                        };
+
+                        return !string.IsNullOrEmpty(artifactNormalized) &&
+                                    (domainNormalized.EndsWith(artifactNormalized) || artifactNormalized.EndsWith(domainNormalized));
+                    })
+                    .OrderBy(d => Math.Abs((artifactTime - d.VisitTime).TotalSeconds))
+                    .FirstOrDefault(d => Math.Abs((artifactTime - d.VisitTime).TotalSeconds) <= 10);
+
+
+
+                    if (matchingDomain == null)
+                        continue;
+
+
+                    @if (matchingDomain != null)
+                    {
+                        var matchingSub = matchingDomain.SubEntries?
+                        .Where(s => artifactDomain.Contains(s.Url))
+                        .OrderBy(s => Math.Abs((artifactTime - s.VisitTime).TotalSeconds))
+                        .FirstOrDefault();
+
+                        double domainPosX = matchingSub?.Position ?? matchingDomain.Position;
+
+                        double domainPosY;
+
+                        double offsetPx = 25 + heavyClusterSpacingPx * (matchingDomain.HeavyClusterIndex - 1);
+                        double offsetPercent = (offsetPx / containerHeight) * 100.0;
+
+
+                        if (matchingDomain.IsHeavyCluster)
+                        {
+                            domainPosY = baseTop - offsetPercent;
+                            domainPosY = Math.Round(domainPosY);
+
+                        }
+                        else
+                        {
+                            // Normale Domain oder SubEntry
+                            domainPosY = baseTop;
+                        }
+
+                        double artifactPosY = artifact switch
+                        {
+                            BrowserCookieEntry => 30,   // Cookies oben
+                            WebDataAutofillEntry => 32, // Autofill etwas darunter
+                            _ => 30
+                        };
+
+                        string color = GetColorForDomain(matchingDomain.Url);
+
+                        <line x1="@domainPosX"
+                              y1="@($"{domainPosY}%")"
+                              x2="@artifactPosX"
+                              y2="@($"{artifactPosY}%")"
+                              stroke="@color"
+                              stroke-width="2" />
+                    }
+                }
+
+            </svg>
+
 
         </div>
     </div>

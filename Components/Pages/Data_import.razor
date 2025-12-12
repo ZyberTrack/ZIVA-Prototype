@@ -1,16 +1,24 @@
 ﻿@page "/data_import"
 @using ZIVA_Prototype.Components.Models
-@inject HistoryImportService ImportService
+@using ZIVA_Prototype.Services;
+@inject HistoryImportService HistoryImportService
+@inject CookieImportService CookieImportService
+@inject WebDataAutofillImportService AutofillService
 @inject TimelineStateService State
+@inject PersistStateService PersistService
 @using Microsoft.Maui.Storage
 
-<h3>Import</h3>
+
+<h3>Import DBs</h3>
 
 <!-- Button zum Auswählen der Datei und Importieren -->
-<button @onclick="ImportDb">Importieren</button>
+<button @onclick="ImportHistoryDb">History DB Importieren</button>
+<button @onclick="ImportCookiesDb">Cookies DB Importieren</button>
+<button @onclick="ImportAutofillDb">Autofill DB Importieren</button>
+<button @onclick="ClearAllData">Daten Löschen</button>
 
 @code {
-    private async Task ImportDb()
+    private async Task ImportHistoryDb()
     {
         // Öffne den Dateimanager und lasse den Benutzer eine Datei auswählen
         var filePath = await SelectFileAsync();
@@ -18,8 +26,45 @@
         if (!string.IsNullOrEmpty(filePath))
         {
             // Falls eine Datei ausgewählt wurde, lade sie
-            var entries = ImportService.LoadFromHistoryDatabase(filePath);
-            State.SetBrowserEntries(entries);
+            var entries = await HistoryImportService.LoadFromHistoryDatabaseAsync(filePath);
+            State.AddBrowserEntries(entries); // ⚡ Hinzufügen statt ersetzen
+            await PersistService.PersistStateAsync(State);
+        }
+        else
+        {
+            // Fehlerbehandlung, falls keine Datei ausgewählt wurde
+            Console.WriteLine("Keine Datei ausgewählt.");
+        }
+    }
+
+    private async Task ImportCookiesDb()
+    {
+        // Öffne den Dateimanager und lasse den Benutzer eine Datei auswählen
+        var filePath = await SelectFileAsync();
+
+        if (!string.IsNullOrEmpty(filePath))
+        {
+            // Falls eine Datei ausgewählt wurde, lade sie
+            var entries = await CookieImportService.LoadFromCookieDatabaseAsync(filePath);
+            State.AddBrowserCookies(entries);
+            await PersistService.PersistStateAsync(State);
+        }
+        else
+        {
+            // Fehlerbehandlung, falls keine Datei ausgewählt wurde
+            Console.WriteLine("Keine Datei ausgewählt.");
+        }
+    }
+
+    private async Task ImportAutofillDb()
+    {
+        var filePath = await SelectFileAsync();
+
+        if (!string.IsNullOrEmpty(filePath))
+        {
+            var entries = await AutofillService.LoadAutofillAsync(filePath);
+            State.AddAutofillEntries(entries);
+            await PersistService.PersistStateAsync(State);
         }
         else
         {
@@ -40,5 +85,12 @@
         }
 
         return null; // Falls keine Datei ausgewählt wurde
+    }
+
+    // Neuer Button zum Löschen aller Daten
+    private async Task ClearAllData()
+    {
+        State.ClearAll();
+        await PersistService.PersistStateAsync(State);
     }
 }
