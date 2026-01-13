@@ -28,7 +28,7 @@
     top: 0;
     height: 100%;
     border-right: 2px solid #474747;
-    z-index: 20; /* Über der scrollbaren Zeitachse */
+    z-index: 30; /* Über der scrollbaren Zeitachse */
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -295,7 +295,7 @@
 .subentry-marker {
     position: absolute;
     cursor: pointer;
-    z-index: 19;
+    z-index: 21;
     width: 12px;
     height: 12px;
 }
@@ -396,7 +396,7 @@
     height: 20px;
     background-color: #25AAC1;
     border-radius: 50%;
-    z-index: 19;
+    z-index: 18;
     cursor: pointer;
     box-shadow: 0 0 3px rgba(0,0,0,0.3);
 }
