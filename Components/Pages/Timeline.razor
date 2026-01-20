@@ -1355,19 +1355,37 @@
                 </div>
             }
 
+            @code {
+                IEnumerable<double> GetAnomalyTargetPositions(DomainEntry domain)
+                {
+                    if (domain.IsHeavyCluster)
+                        return domain.SubEntries.Select(s => s.Position);
+
+                    if (domain.IsExpanded)
+                        return domain.SubEntries.Select(s => s.Position);
+
+                    return new[] { (double)domain.Position };
+                }
+            }
+
             <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:15;">
                 @foreach (var anomaly in Anomalies)
                 {
-                    <line x1="@anomaly.LinkedDomain.Position"
-                          y1="@($"{baseTop}%")"
-                          x2="@anomaly.Position"
-                          y2="75%"
-                          stroke="red"
-                          stroke-width="2"
-                          stroke-dasharray="4,3" />
+                    var domain = anomaly.LinkedDomain;
+                    if (domain == null) continue;
+
+                    foreach (var targetX in GetAnomalyTargetPositions(domain))
+                    {
+                        <line x1="@targetX"
+                              y1="@($"{baseTop}%")"
+                              x2="@anomaly.Position"
+                              y2="75%"
+                              stroke="red"
+                              stroke-width="2"
+                              stroke-dasharray="4,3" />
+                    }
                 }
             </svg>
-
         </div>
     </div>
 </div>
