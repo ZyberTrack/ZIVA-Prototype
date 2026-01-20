@@ -3,9 +3,11 @@
 @implements IDisposable
 @using ZIVA_Prototype.Components.Models;
 @using ZIVA_Prototype.Services;
+@using System.Text.Json;
 @inject TimelineStateService State // Verwaltet States mehrerer Importierter Datenbanken
 @inject HistoryImportService Importer   
 @inject PersistStateService PersistService // falls benötigt
+
 
 
 @code {
@@ -26,6 +28,8 @@
     // - Erkennen von zwielichtigen Suchmaschienen -> Pirate Bay etc... und Websiten per liste!!
     //
 
+    List<AnomalyEntry> Anomalies = new(); // Liste mit erkannten Anomalien
+    List<string> BlacklistDomains = new(); // Liste mit zwielichtigen Domains
     private List<DomainEntry> SummarizedEntries { get; set; } = new();
     private List<TimestampEntry> visibleEntries = new();
     private static List<int> usedHues = new(); // Liste aller bisher vergebenen Hue-Werte
@@ -51,7 +55,7 @@
     private double scrollIndex = 0;
 
     private int viewportWidth;
-	private int containerHeight; // für SVG Rendering
+    private int containerHeight; // für SVG Rendering
     private int startOffset = 70;
     private int spacing = 250;
     private int movableLayerWidth = 5000000;
@@ -61,7 +65,7 @@
     private int currentPivotIndex = 0; // Index in State.BrowserEntries
     private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
 
-	// Suchmaschinen Domains für Erkennung
+    // Suchmaschinen Domains für Erkennung
     string[] searchEngines = new[]
     {
     "google.",            // Google (alle Länderdomains)
@@ -127,7 +131,7 @@
     };
 
     //------------------------------------------------------------
-	// Initial Render
+    // Initial Render
     //------------------------------------------------------------
 
     protected override async Task OnInitializedAsync()
@@ -135,6 +139,7 @@
         await UpdateViewportSizeAsync();
 
         // Lade alles parallel im Hintergrund
+        await LoadBlacklistAsync();
         var historyTask = LoadFromDatabase();
         var cookieTask = LoadCookieDatabase();
         var autofillTask = LoadAutofillDatabase();
@@ -147,6 +152,7 @@
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
         RecalculateSummarizedPositions();
+        DetectAnomalies();
         UpdateVisibleTimestamps();
     }
 
@@ -161,6 +167,15 @@
             await JS.InvokeVoidAsync("registerZoomHandler", selfRef);
             await JS.InvokeVoidAsync("registerArrowKeys", selfRef);
         }
+    }
+
+    async Task LoadBlacklistAsync()
+    {
+        using var stream = await FileSystem.OpenAppPackageFileAsync("domain-blacklist.json");
+        using var reader = new StreamReader(stream);
+        var json = await reader.ReadToEndAsync();
+
+        BlacklistDomains = JsonSerializer.Deserialize<List<string>>(json)!;
     }
 
     //------------------------------------------------------------
@@ -266,6 +281,7 @@
             Position = 0
         };
     }
+
 
     private async Task LoadFromDatabase()
     {
@@ -421,6 +437,49 @@
             RecalculateAutofillPositions();
             RecalculateSummarizedPositions();
             await InvokeAsync(StateHasChanged);
+        }
+    }
+
+
+    // Anomalien detecten!
+    void DetectAnomalies()
+    {
+        if (BlacklistDomains.Count == 0) return;
+        if (SummarizedEntries.Count == 0) return;
+
+        Anomalies.Clear();
+
+        foreach (var domain in SummarizedEntries)
+        {
+            if (BlacklistDomains.Any(b =>
+                domain.Domain.Contains(b, StringComparison.OrdinalIgnoreCase)))
+            {
+                Anomalies.Add(new AnomalyEntry
+                {
+                    Time = domain.VisitTime,
+                    Url = domain.Url,
+                    Position = domain.Position,
+                    LinkedDomain = domain
+                });
+            }
+
+            foreach (var sub in domain.SubEntries)
+            {
+                if (BlacklistDomains.Any(b =>
+                    sub.Url.Contains(b, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Anomalies.Add(new AnomalyEntry
+                    {
+                        Time = domain.VisitTime,
+                        Url = domain.Url,
+                        Position = domain.Position,
+                        LinkedDomain = domain,
+                        Type = AnomalyType.BlacklistedDomain,
+                        Severity = 5,
+                        Description = "Domain befindet sich auf der Blacklist"
+                    });
+                }
+            }
         }
     }
 
@@ -589,6 +648,7 @@
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
         RecalculateSummarizedPositions();
+        DetectAnomalies();
         StateHasChanged();
     }
 
@@ -635,6 +695,7 @@
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
         RecalculateSummarizedPositions();
+        DetectAnomalies();
         StateHasChanged();
     }
 
@@ -675,6 +736,7 @@
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
         RecalculateSummarizedPositions();
+        DetectAnomalies();
         StateHasChanged();
 
         isZooming = false;
@@ -727,6 +789,7 @@
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
         RecalculateSummarizedPositions();
+        DetectAnomalies();
         StateHasChanged();
 
         // Optional: Browser scrollen, falls du einen externen Scroll-Container hast
@@ -1278,6 +1341,32 @@
 
             </svg>
 
+
+
+            <!-- ANOMALIE ZEITACHSE -->
+            @foreach (var anomaly in Anomalies)
+            {
+                <div class="anomaly-marker"
+                     style="left:@($"{anomaly.Position - 5}px"); top:75%;"
+                     data-time="@anomaly.Time"
+                     data-url="@anomaly.Url"
+                     data-type="@anomaly.Type"
+                     data-description="@anomaly.Description">
+                </div>
+            }
+
+            <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:15;">
+                @foreach (var anomaly in Anomalies)
+                {
+                    <line x1="@anomaly.LinkedDomain.Position"
+                          y1="@($"{baseTop}%")"
+                          x2="@anomaly.Position"
+                          y2="75%"
+                          stroke="red"
+                          stroke-width="2"
+                          stroke-dasharray="4,3" />
+                }
+            </svg>
 
         </div>
     </div>

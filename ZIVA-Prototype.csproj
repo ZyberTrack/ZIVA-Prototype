@@ -73,5 +73,9 @@
 		<PackageReference Include="Radzen.Blazor" Version="6.6.4" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="wwwroot\data\" />
+	</ItemGroup>
+
 
 </Project>
