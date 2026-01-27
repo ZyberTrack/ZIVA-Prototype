@@ -1,0 +1,11 @@
+[
+  "localhost",
+  "127.0.0.1",
+  ".local",
+  ".internal",
+  "dev.",
+  "test.",
+  "notube.net",
+  "notube.cc"
+]
+

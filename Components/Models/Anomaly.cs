@@ -1,6 +1,7 @@
-class AnomalyEntry
+ï»¿class AnomalyEntry
 {
-    public DateTime Time { get; set; }
+    public DateTime Time { get; set; }          // First detected
+    public DateTime LastSeen { get; set; }      // Optional, aber sehr sinnvoll
 
     public string Url { get; set; } = "";
 
@@ -12,9 +13,14 @@ class AnomalyEntry
 
     public string Description { get; set; } = "";
 
-    // Optional – extrem sinnvoll später
-    public int Severity { get; set; } = 1; // 1–5
+    public int Severity { get; set; } = 1;      // 1â€“5
+
+    public int Count { get; set; } = 1;         // neu
+
+    public double FirstPosition { get; set; }
+    public double LastPosition { get; set; }
 }
+
 
 public enum AnomalyType
 {

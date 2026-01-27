@@ -30,6 +30,7 @@
 
     List<AnomalyEntry> Anomalies = new(); // Liste mit erkannten Anomalien
     List<string> BlacklistDomains = new(); // Liste mit zwielichtigen Domains
+	List<string> SuspiciousDomains = new(); // Liste mit verdächtigen Domains
     private List<DomainEntry> SummarizedEntries { get; set; } = new();
     private List<TimestampEntry> visibleEntries = new();
     private static List<int> usedHues = new(); // Liste aller bisher vergebenen Hue-Werte
@@ -86,6 +87,7 @@
     "seznam.cz"           // Seznam
     };
 
+
     // Zoomstufen in Units statt Sekunden
     public class TimestampEntry
     {
@@ -139,7 +141,7 @@
         await UpdateViewportSizeAsync();
 
         // Lade alles parallel im Hintergrund
-        await LoadBlacklistAsync();
+        await LoadAnomalyListsAsync();
         var historyTask = LoadFromDatabase();
         var cookieTask = LoadCookieDatabase();
         var autofillTask = LoadAutofillDatabase();
@@ -169,13 +171,21 @@
         }
     }
 
-    async Task LoadBlacklistAsync()
-    {
-        using var stream = await FileSystem.OpenAppPackageFileAsync("domain-blacklist.json");
-        using var reader = new StreamReader(stream);
-        var json = await reader.ReadToEndAsync();
 
-        BlacklistDomains = JsonSerializer.Deserialize<List<string>>(json)!;
+    //------------------------------------------------------------
+    // Domäne Anomalie Listen Laden
+	//------------------------------------------------------------
+    async Task LoadAnomalyListsAsync()
+    {
+        BlacklistDomains = await LoadListAsync("domain-blacklist.json");
+        SuspiciousDomains = await LoadListAsync("domain-suspicious.json");
+    }
+
+    async Task<List<string>> LoadListAsync(string file)
+    {
+        using var stream = await FileSystem.OpenAppPackageFileAsync(file);
+        using var reader = new StreamReader(stream);
+        return JsonSerializer.Deserialize<List<string>>(await reader.ReadToEndAsync())!;
     }
 
     //------------------------------------------------------------
@@ -441,47 +451,114 @@
     }
 
 
+
+    //------------------------------------------------------------
+    // Anomalie Detection
+	//------------------------------------------------------------
+
+
+    string GetAnomalyKey(AnomalyType type, string domain)
+    => $"{type}:{domain.ToLower()}";
+
     // Anomalien detecten!
     void DetectAnomalies()
     {
-        if (BlacklistDomains.Count == 0) return;
-        if (SummarizedEntries.Count == 0) return;
+        if (!SummarizedEntries.Any()) return;
 
         Anomalies.Clear();
+        var anomalyIndex = new Dictionary<string, AnomalyEntry>();
 
         foreach (var domain in SummarizedEntries)
         {
+            // Alle relevanten Artefakt-Positionen sammeln
+            var artifactPositions = domain.SubEntries.Any()
+                ? domain.SubEntries.Select(s => (double)s.Position)
+                : new[] { (double)domain.Position };
+
+            // 🔴 Blacklist
             if (BlacklistDomains.Any(b =>
                 domain.Domain.Contains(b, StringComparison.OrdinalIgnoreCase)))
             {
-                Anomalies.Add(new AnomalyEntry
-                {
-                    Time = domain.VisitTime,
-                    Url = domain.Url,
-                    Position = domain.Position,
-                    LinkedDomain = domain
-                });
+                AddOrUpdateAnomaly(
+                    anomalyIndex,
+                    AnomalyType.BlacklistedDomain,
+                    domain,
+                    artifactPositions,
+                    severity: 5,
+                    description: "Domain befindet sich auf der Blacklist"
+                );
+
+                continue;
             }
 
-            foreach (var sub in domain.SubEntries)
+            // 🟠 Suspicious
+            if (SuspiciousDomains.Any(s =>
+                domain.Domain.Contains(s, StringComparison.OrdinalIgnoreCase)))
             {
-                if (BlacklistDomains.Any(b =>
-                    sub.Url.Contains(b, StringComparison.OrdinalIgnoreCase)))
-                {
-                    Anomalies.Add(new AnomalyEntry
-                    {
-                        Time = domain.VisitTime,
-                        Url = domain.Url,
-                        Position = domain.Position,
-                        LinkedDomain = domain,
-                        Type = AnomalyType.BlacklistedDomain,
-                        Severity = 5,
-                        Description = "Domain befindet sich auf der Blacklist"
-                    });
-                }
+                AddOrUpdateAnomaly(
+                    anomalyIndex,
+                    AnomalyType.SuspiciousRedirect,
+                    domain,
+                    artifactPositions,
+                    severity: 3,
+                    description: "Verdächtige interne oder lokale Domain"
+                );
             }
         }
+
+        Anomalies.AddRange(anomalyIndex.Values);
     }
+
+
+    void AddOrUpdateAnomaly(
+    Dictionary<string, AnomalyEntry> index,
+    AnomalyType type,
+    DomainEntry domain,
+    IEnumerable<double> artifactPositions,
+    int severity,
+    string description)
+    {
+        var key = $"{type}:{domain.Domain.ToLower()}";
+
+        double minX = artifactPositions.Min();
+        double maxX = artifactPositions.Max();
+        double centerX = (minX + maxX) / 2.0;
+
+        if (index.TryGetValue(key, out var existing))
+        {
+            existing.Count++;
+            existing.LastSeen = domain.VisitTime;
+
+            // Spannweite erweitern
+            existing.FirstPosition = Math.Min(existing.FirstPosition, minX);
+            existing.LastPosition = Math.Max(existing.LastPosition, maxX);
+
+            // Mittelpunkt neu berechnen
+            existing.Position = (existing.FirstPosition + existing.LastPosition) / 2.0;
+
+            existing.Severity = Math.Max(existing.Severity, severity);
+            return;
+        }
+
+        index[key] = new AnomalyEntry
+        {
+            Time = domain.VisitTime,
+            LastSeen = domain.VisitTime,
+            Url = domain.Url,
+            LinkedDomain = domain,
+            Type = type,
+            Severity = severity,
+            Description = description,
+            Count = 1,
+
+            FirstPosition = minX,
+            LastPosition = maxX,
+            Position = centerX
+        };
+    }
+
+
+
 
     //------------------------------------------------------------
     // Domänen Zusammenfassungen
@@ -702,35 +779,60 @@
     [JSInvokable("OnZoom")]
     public async Task OnZoomAsync(string direction)
     {
-        isZooming = true; //zoom sperre Flag setzen
+        isZooming = true;
 
-        // Scrollgrenzen absichern
-        scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
+        // 1️⃣ Scrollgrenzen für aktuellen Zustand absichern
+        scrollIndex = Math.Clamp(
+            scrollIndex,
+            0,
+            Math.Max(0, movableLayerWidth - viewportWidth)
+        );
 
-        // Mittelpunkt-Zeit merken (zentriert im Viewport)
+        // 2️⃣ Mittelpunkt-Zeit aus aktuellem Zustand ermitteln
         double centerPx = scrollIndex + viewportWidth / 2;
-        DateTime centerTime = PixelToTime(centerPx);  // ACHTUNG: ERROR anfälligkeit hier!!
+        DateTime centerTime = PixelToTime(centerPx);
 
-        // Zoomstufe anpassen
+        // 3️⃣ Zoomstufe ändern
         if (direction == "in" && currentZoomIndex > 0)
-        {
             currentZoomIndex--;
-            //pixelPerSecond *= 2; // Beispiel: 2x reinzoomen
-        }
         else if (direction == "out" && currentZoomIndex < zoomLevels.Length - 1)
-        {
             currentZoomIndex++;
-            //pixelPerSecond /= 2; // Beispiel: 2x rauszoomen
-        }
 
-        // Neue Scrollposition berechnen, sodass die Zeit gleich bleibt
+        // 4️⃣ Neue Scrollposition für dieselbe Zeit berechnen
         double newCenterPx = TimeToPixel(centerTime);
         double newScrollLeft = newCenterPx - viewportWidth / 2;
 
-        // Scrollgrenzen erneut absichern
-        newScrollLeft = Math.Clamp(newScrollLeft, 0, Math.Max(0, movableLayerWidth - viewportWidth));
+        // 5️⃣ 🔥 WICHTIG: neuen Scrollwert übernehmen
+        scrollIndex = Math.Clamp(
+            newScrollLeft,
+            0,
+            Math.Max(0, movableLayerWidth - viewportWidth)
+        );
 
-        // Darstellung aktualisieren
+        // 6️⃣ Optional: Scroll-Container synchronisieren
+        isProgrammaticScroll = true;
+        await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
+        await Task.Delay(1);
+        isProgrammaticScroll = false;
+
+        // 7️⃣ ALLE Pixel neu berechnen (JETZT korrekt!)
+        UpdateVisibleTimestamps();
+        RecalculatePositions();
+        RecalculateCookiePositions();
+        RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
+        DetectAnomalies();
+
+        StateHasChanged();
+        isZooming = false;
+    }
+
+
+    [JSInvokable("OnArrowRight")]
+    public async Task OnArrowRightAsync()
+    {
+        if (currentPivotIndex < State.BrowserEntries.Count - 1)
+            await CenterOnEntry(currentPivotIndex + 1);
         UpdateVisibleTimestamps();
         RecalculatePositions();
         RecalculateCookiePositions();
@@ -738,15 +840,6 @@
         RecalculateSummarizedPositions();
         DetectAnomalies();
         StateHasChanged();
-
-        isZooming = false;
-    }
-
-    [JSInvokable("OnArrowRight")]
-    public async Task OnArrowRightAsync()
-    {
-        if (currentPivotIndex < State.BrowserEntries.Count - 1)
-            await CenterOnEntry(currentPivotIndex + 1);
     }
 
     [JSInvokable("OnArrowLeft")]
@@ -754,6 +847,13 @@
     {
         if (currentPivotIndex > 0)
             await CenterOnEntry(currentPivotIndex - 1);
+        UpdateVisibleTimestamps();
+        RecalculatePositions();
+        RecalculateCookiePositions();
+        RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
+        DetectAnomalies();
+        StateHasChanged();
     }
 
 
@@ -1344,29 +1444,72 @@
 
 
             <!-- ANOMALIE ZEITACHSE -->
+            @code {
+
+                int baseTop = 25; // Basislinie für normale Domains in %
+                int heavyClusterSpacingPx = 20; // Abstand jeder neuen Heavy Cluster-Linie nach oben
+
+                string GetSeverityColor(int severity) => severity switch
+                {
+                    5 => "#ff2d2d",   // Rot – kritisch
+                    4 => "#ff6b00",   // Dunkelorange
+                    3 => "#ffb000",   // Orange
+                    2 => "#3fa9f5",   // Blau
+                    _ => "#9e9e9e"    // Grau
+                };
+
+                double GetDomainBaseYPercent(DomainEntry domain)
+                {
+                    if (!domain.IsHeavyCluster)
+                        return baseTop;
+
+                    double offsetPx = 25 + heavyClusterSpacingPx * (domain.HeavyClusterIndex - 1);
+                    double offsetPercent = (offsetPx / containerHeight) * 100.0;
+
+                    return Math.Round(baseTop - offsetPercent);
+                }
+
+
+                IEnumerable<(double x, double yPercent)> GetAnomalyTargetPoints(DomainEntry domain)
+                {
+                    double baseY = GetDomainBaseYPercent(domain);
+
+                    // Heavy Cluster → immer alle SubEntries
+                    if (domain.IsHeavyCluster)
+                    {
+                        foreach (var sub in domain.SubEntries)
+                            yield return (sub.Position, baseY);
+                        yield break;
+                    }
+
+                    // Expandiert → alle SubEntries
+                    if (domain.IsExpanded)
+                    {
+                        foreach (var sub in domain.SubEntries)
+                            yield return (sub.Position, baseY);
+                        yield break;
+                    }
+
+                    // Normal → nur Domain-Position
+                    yield return (domain.Position, baseY);
+                }
+
+            }
+
             @foreach (var anomaly in Anomalies)
             {
                 <div class="anomaly-marker"
                      style="left:@($"{anomaly.Position - 5}px"); top:75%;"
                      data-time="@anomaly.Time"
+                     data-lastseen="@anomaly.LastSeen"
                      data-url="@anomaly.Url"
                      data-type="@anomaly.Type"
-                     data-description="@anomaly.Description">
+                     data-description="@anomaly.Description"
+                     data-severity="@anomaly.Severity"
+                     data-count="@anomaly.Count">
                 </div>
             }
 
-            @code {
-                IEnumerable<double> GetAnomalyTargetPositions(DomainEntry domain)
-                {
-                    if (domain.IsHeavyCluster)
-                        return domain.SubEntries.Select(s => s.Position);
-
-                    if (domain.IsExpanded)
-                        return domain.SubEntries.Select(s => s.Position);
-
-                    return new[] { (double)domain.Position };
-                }
-            }
 
             <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:15;">
                 @foreach (var anomaly in Anomalies)
@@ -1374,18 +1517,22 @@
                     var domain = anomaly.LinkedDomain;
                     if (domain == null) continue;
 
-                    foreach (var targetX in GetAnomalyTargetPositions(domain))
+                    var color = GetSeverityColor(anomaly.Severity);
+
+                    foreach (var point in GetAnomalyTargetPoints(domain))
                     {
-                        <line x1="@targetX"
-                              y1="@($"{baseTop}%")"
+                        <line x1="@point.x"
+                              y1="@($"{point.yPercent}%")"
                               x2="@anomaly.Position"
                               y2="75%"
-                              stroke="red"
-                              stroke-width="2"
-                              stroke-dasharray="4,3" />
+                              stroke="@color"
+                              stroke-width="@(1 + anomaly.Severity)"
+                              stroke-dasharray="4,3"
+                              stroke-opacity="@(anomaly.Severity >= 4 ? "1" : "0.7")" />
                     }
                 }
             </svg>
+
         </div>
     </div>
 </div>
