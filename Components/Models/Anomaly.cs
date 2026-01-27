@@ -1,6 +1,6 @@
 ﻿class AnomalyEntry
 {
-    public DateTime Time { get; set; }          // First detected
+    public DateTime FirstSeen { get; set; }
     public DateTime LastSeen { get; set; }      // Optional, aber sehr sinnvoll
 
     public string Url { get; set; } = "";
@@ -17,8 +17,6 @@
 
     public int Count { get; set; } = 1;         // neu
 
-    public double FirstPosition { get; set; }
-    public double LastPosition { get; set; }
 }
 
 

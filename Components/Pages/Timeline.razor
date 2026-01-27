@@ -43,6 +43,7 @@
 
     private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
     private bool isZooming = false; // Flag to indicate if zooming is in progress
+	private bool isResizing = false; // Flag to indicate if resizing is in progress
 
     private DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
     private ElementReference scrollDivRef;
@@ -154,7 +155,7 @@
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
         RecalculateSummarizedPositions();
-        DetectAnomalies();
+        RecalculateAnomalyPositions();
         UpdateVisibleTimestamps();
     }
 
@@ -266,6 +267,29 @@
         }
     }
 
+    void RecalculateAnomalyPositions()
+    {
+        foreach (var a in Anomalies)
+        {
+            DateTime centerTime;
+
+            if (a.FirstSeen == a.LastSeen)
+            {
+                // Einzel-Hit → exakt
+                centerTime = a.FirstSeen;
+            }
+            else
+            {
+                // Zeitlicher Mittelpunkt
+                long ticks = (a.FirstSeen.Ticks + a.LastSeen.Ticks) / 2;
+                centerTime = new DateTime(ticks);
+            }
+
+            a.Position = (int)TimeToPixel(centerTime) - (int)scrollIndex;
+        }
+    }
+
+
     //------------------------------------------------------------
 	// Daten Laden und Initialisierung
     //------------------------------------------------------------
@@ -334,6 +358,7 @@
             isProgrammaticScroll = false;
 
             visibleEntries.Clear();
+            DetectAnomalies(); //Balcklist Anomalies
             UpdateVisibleTimestamps();
             RecalculatePositions();
             RecalculateCookiePositions();
@@ -470,10 +495,10 @@
 
         foreach (var domain in SummarizedEntries)
         {
-            // Alle relevanten Artefakt-Positionen sammeln
-            var artifactPositions = domain.SubEntries.Any()
-                ? domain.SubEntries.Select(s => (double)s.Position)
-                : new[] { (double)domain.Position };
+            // ✅ ZEITEN statt PIXEL
+            var artifactTimes = domain.SubEntries.Any()
+                ? domain.SubEntries.Select(s => s.VisitTime)
+                : new[] { domain.VisitTime };
 
             // 🔴 Blacklist
             if (BlacklistDomains.Any(b =>
@@ -483,7 +508,7 @@
                     anomalyIndex,
                     AnomalyType.BlacklistedDomain,
                     domain,
-                    artifactPositions,
+                    artifactTimes,   // ✅ RICHTIG
                     severity: 5,
                     description: "Domain befindet sich auf der Blacklist"
                 );
@@ -499,7 +524,7 @@
                     anomalyIndex,
                     AnomalyType.SuspiciousRedirect,
                     domain,
-                    artifactPositions,
+                    artifactTimes,   // ✅ RICHTIG
                     severity: 3,
                     description: "Verdächtige interne oder lokale Domain"
                 );
@@ -509,53 +534,41 @@
         Anomalies.AddRange(anomalyIndex.Values);
     }
 
-
     void AddOrUpdateAnomaly(
     Dictionary<string, AnomalyEntry> index,
     AnomalyType type,
     DomainEntry domain,
-    IEnumerable<double> artifactPositions,
+    IEnumerable<DateTime> artifactTimes,
     int severity,
     string description)
     {
         var key = $"{type}:{domain.Domain.ToLower()}";
 
-        double minX = artifactPositions.Min();
-        double maxX = artifactPositions.Max();
-        double centerX = (minX + maxX) / 2.0;
+        var first = artifactTimes.Min();
+        var last = artifactTimes.Max();
 
         if (index.TryGetValue(key, out var existing))
         {
             existing.Count++;
-            existing.LastSeen = domain.VisitTime;
-
-            // Spannweite erweitern
-            existing.FirstPosition = Math.Min(existing.FirstPosition, minX);
-            existing.LastPosition = Math.Max(existing.LastPosition, maxX);
-
-            // Mittelpunkt neu berechnen
-            existing.Position = (existing.FirstPosition + existing.LastPosition) / 2.0;
-
+            existing.FirstSeen = existing.FirstSeen < first ? existing.FirstSeen : first;
+            existing.LastSeen = existing.LastSeen > last ? existing.LastSeen : last;
             existing.Severity = Math.Max(existing.Severity, severity);
             return;
         }
 
         index[key] = new AnomalyEntry
         {
-            Time = domain.VisitTime,
-            LastSeen = domain.VisitTime,
-            Url = domain.Url,
+            FirstSeen = first,
+            LastSeen = last,
             LinkedDomain = domain,
             Type = type,
             Severity = severity,
             Description = description,
-            Count = 1,
-
-            FirstPosition = minX,
-            LastPosition = maxX,
-            Position = centerX
+            Count = 1
         };
     }
+
+
 
 
 
@@ -719,13 +732,21 @@
     [JSInvokable("OnResize")] // Elemente werden Visuell dem Fenster angepasst
     public async Task OnResizeAsync()
     {
+        isResizing = true;
+
         await UpdateViewportSizeAsync();
+
         UpdateVisibleTimestamps();
         RecalculatePositions();
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
         RecalculateSummarizedPositions();
-        DetectAnomalies();
+
+
+        DetectAnomalies();              // 1️⃣ FirstSeen / LastSeen korrekt
+        RecalculateAnomalyPositions();
+
+        isResizing = false;
         StateHasChanged();
     }
 
@@ -772,7 +793,7 @@
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
         RecalculateSummarizedPositions();
-        DetectAnomalies();
+        RecalculateAnomalyPositions();
         StateHasChanged();
     }
 
@@ -821,7 +842,7 @@
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
         RecalculateSummarizedPositions();
-        DetectAnomalies();
+        RecalculateAnomalyPositions();
 
         StateHasChanged();
         isZooming = false;
@@ -838,7 +859,7 @@
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
         RecalculateSummarizedPositions();
-        DetectAnomalies();
+        RecalculateAnomalyPositions();
         StateHasChanged();
     }
 
@@ -852,7 +873,7 @@
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
         RecalculateSummarizedPositions();
-        DetectAnomalies();
+        RecalculateAnomalyPositions();
         StateHasChanged();
     }
 
@@ -889,7 +910,7 @@
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
         RecalculateSummarizedPositions();
-        DetectAnomalies();
+        RecalculateAnomalyPositions();
         StateHasChanged();
 
         // Optional: Browser scrollen, falls du einen externen Scroll-Container hast
@@ -1081,7 +1102,7 @@
 
     @if (showDebug)
     {
-    <div style="
+        <div style="
         position: fixed;
         top: 600px;
         left: 80px;
@@ -1094,48 +1115,66 @@
         border: 1px solid #333;
         font-size: 12px;
         ">
-        <strong>DEBUG</strong><br />
+            <strong>DEBUG</strong><br />
 
-        SecondsPerSpacing = @SecondsPerSpacing<br />
-        scrollIndex = @scrollIndex<br />
-        baseTime = @baseTime<br />
-        viewportWidth = @viewportWidth<br />
-        containerHeight = @containerHeight<br />
-        <hr />
+            SecondsPerSpacing = @SecondsPerSpacing<br />
+            scrollIndex = @scrollIndex<br />
+            baseTime = @baseTime<br />
+            viewportWidth = @viewportWidth<br />
+            containerHeight = @containerHeight<br />
+            <hr />
 
-        <div style="display: flex; gap: 20px;">
-            <div>
-                <strong>History (@State.BrowserEntries.Count)</strong>
-                <ul>
-                    @foreach (var e in State.BrowserEntries)
-                    {
-                        <li>@e.VisitTime | @e.Position</li>
-                    }
-                </ul>
-            </div>
+            <div style="display: flex; gap: 20px; align-items:flex-start;">
+                <div>
+                    <strong>History (@State.BrowserEntries.Count)</strong>
+                    <ul>
+                        @foreach (var e in State.BrowserEntries)
+                        {
+                            <li>@e.VisitTime | px=@e.Position</li>
+                        }
+                    </ul>
+                </div>
 
-            <div>
-                <strong>Cookies (@State.BrowserCookies.Count)</strong>
-                <ul>
-                    @foreach (var e in State.BrowserCookies)
-                    {
-                        <li>@e.LastAccessed | @e.Position</li>
-                    }
-                </ul>
-            </div>
+                <div>
+                    <strong>Cookies (@State.BrowserCookies.Count)</strong>
+                    <ul>
+                        @foreach (var e in State.BrowserCookies)
+                        {
+                            <li>@e.LastAccessed | px=@e.Position</li>
+                        }
+                    </ul>
+                </div>
 
-            <div>
-                <strong>Autofill (@State.AutofillEntries.Count)</strong>
-                <ul>
-                    @foreach (var e in State.AutofillEntries)
-                    {
-                        <li>@e.DateCreated | @e.Position</li>
-                    }
-                </ul>
+                <div>
+                    <strong>Autofill (@State.AutofillEntries.Count)</strong>
+                    <ul>
+                        @foreach (var e in State.AutofillEntries)
+                        {
+                            <li>@e.DateCreated | px=@e.Position</li>
+                        }
+                    </ul>
+                </div>
+
+                <!-- 🔴 ANOMALIEN -->
+                <div>
+                    <strong>Anomalies (@Anomalies.Count)</strong>
+                    <ul>
+                        @foreach (var a in Anomalies)
+                        {
+                            <li>
+                                <strong>@a.Type</strong><br />
+                                first: @a.FirstSeen<br />
+                                last: @a.LastSeen<br />
+                                px: @Math.Round(a.Position, 1)<br />
+                                sev: @a.Severity | hits: @a.Count
+                            </li>
+                        }
+                    </ul>
+                </div>
             </div>
         </div>
-    </div>
     }
+
 
 
 
@@ -1458,7 +1497,8 @@
                     _ => "#9e9e9e"    // Grau
                 };
 
-                double GetDomainBaseYPercent(DomainEntry domain)
+				// Y-Position der Domain in Prozent
+                double GetDomainYPercent(DomainEntry domain)
                 {
                     if (!domain.IsHeavyCluster)
                         return baseTop;
@@ -1469,38 +1509,33 @@
                     return Math.Round(baseTop - offsetPercent);
                 }
 
+				// Y-Position der Anomalie in Pixel
+                double AnomalyYPercent => 75;
+
 
                 IEnumerable<(double x, double yPercent)> GetAnomalyTargetPoints(DomainEntry domain)
                 {
-                    double baseY = GetDomainBaseYPercent(domain);
+                    double y = GetDomainYPercent(domain);
 
-                    // Heavy Cluster → immer alle SubEntries
-                    if (domain.IsHeavyCluster)
+                    if (domain.IsHeavyCluster || domain.IsExpanded)
                     {
                         foreach (var sub in domain.SubEntries)
-                            yield return (sub.Position, baseY);
+                            yield return (sub.Position, y);
                         yield break;
                     }
 
-                    // Expandiert → alle SubEntries
-                    if (domain.IsExpanded)
-                    {
-                        foreach (var sub in domain.SubEntries)
-                            yield return (sub.Position, baseY);
-                        yield break;
-                    }
-
-                    // Normal → nur Domain-Position
-                    yield return (domain.Position, baseY);
+                    yield return (domain.Position, y);
                 }
+
 
             }
 
             @foreach (var anomaly in Anomalies)
             {
+
                 <div class="anomaly-marker"
-                     style="left:@($"{anomaly.Position - 5}px"); top:75%;"
-                     data-time="@anomaly.Time"
+                     style="left:@($"{anomaly.Position - 5}px"); top:@($"{AnomalyYPercent}%");"
+                     data-time="@anomaly.FirstSeen"
                      data-lastseen="@anomaly.LastSeen"
                      data-url="@anomaly.Url"
                      data-type="@anomaly.Type"
@@ -1524,7 +1559,7 @@
                         <line x1="@point.x"
                               y1="@($"{point.yPercent}%")"
                               x2="@anomaly.Position"
-                              y2="75%"
+                              y2="@($"{AnomalyYPercent}%")"
                               stroke="@color"
                               stroke-width="@(1 + anomaly.Severity)"
                               stroke-dasharray="4,3"

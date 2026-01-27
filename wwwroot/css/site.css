@@ -442,7 +442,7 @@
 }
 
     .anomaly-marker:hover::after {
-        content: "Detected: " attr(data-time) "\A Last seen: " attr(data-lastseen) "\A URL: " attr(data-url) "\A Type: " attr(data-type) "\A Severity: " attr(data-severity) "\A Hits: " attr(data-count) "\A Description: " attr(data-description);
+        content: "Detected: " attr(data-firstseen) "\A Last seen: " attr(data-lastseen) "\A URL: " attr(data-url) "\A Type: " attr(data-type) "\A Severity: " attr(data-severity) "\A Hits: " attr(data-count) "\A Description: " attr(data-description);
         white-space: pre;
         position: absolute;
         top: 28px;
