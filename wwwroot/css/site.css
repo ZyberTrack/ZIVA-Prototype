@@ -459,21 +459,22 @@
 
     /* Severity-Farben */
     .anomaly-marker[data-severity="5"] {
-        --sev-color: #ff2d2d;
+        --sev-color: #ff1f1f; /* Tiefrot – kritisch */
     }
 
     .anomaly-marker[data-severity="4"] {
-        --sev-color: #ff6b00;
+        --sev-color: #ff4a1a; /* Rot-Orange */
     }
 
     .anomaly-marker[data-severity="3"] {
-        --sev-color: #ffb000;
+        --sev-color: #ff7a1a; /* Orange mit Rotstich */
     }
 
     .anomaly-marker[data-severity="2"] {
-        --sev-color: #3fa9f5;
+        --sev-color: #ffb347; /* Warmes Gelb-Orange (noch klarer Alarmton) */
     }
 
     .anomaly-marker[data-severity="1"] {
-        --sev-color: #9e9e9e;
+        --sev-color: #c9c1bb; /* Warmes Grau mit leichtem Rotstich */
     }
+

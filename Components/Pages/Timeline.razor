@@ -1652,6 +1652,37 @@
                     yield return (domain.Position, y);
                 }
 
+				// Hilfsmethode: Zielpunkt der Anomalie ermitteln (z.B. Cookie oder Autofill)
+                (double x, double yPercent)? GetAnomalyTargetPoint(AnomalyEntry anomaly)
+                {
+                    switch (anomaly.Type)
+                    {
+                        case AnomalyType.DeletedHistoryIndicator:
+                            {
+                                // Cookie?
+                                var cookie = State.BrowserCookies?
+                                .FirstOrDefault(c =>
+                                Math.Abs((c.Created - anomaly.FirstSeen).TotalSeconds) <= 1);
+
+                                if (cookie != null)
+                                    return (cookie.Position, 30); // Cookie-Linie
+
+                                // Autofill?
+                                var autofill = State.AutofillEntries?
+                                .FirstOrDefault(a =>
+                                Math.Abs((a.DateCreated - anomaly.FirstSeen).TotalSeconds) <= 1);
+
+                                if (autofill != null)
+                                    return (autofill.Position, 32); // Autofill-Linie
+
+                                return null;
+                            }
+
+                        default:
+                            return null;
+                    }
+                }
+
 
             }
 
@@ -1674,24 +1705,42 @@
             <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:15;">
                 @foreach (var anomaly in Anomalies)
                 {
-                    var domain = anomaly.LinkedDomain;
-                    if (domain == null) continue;
-
                     var color = GetSeverityColor(anomaly.Severity);
 
-                    foreach (var point in GetAnomalyTargetPoints(domain))
+                    // 🧨 Deleted-History → Artefakt
+                    if (anomaly.Type == AnomalyType.DeletedHistoryIndicator)
                     {
-                        <line x1="@point.x"
-                              y1="@($"{point.yPercent}%")"
+                        var target = GetAnomalyTargetPoint(anomaly);
+                        if (target == null) continue;
+
+                        <line x1="@target.Value.x"
+                              y1="@($"{target.Value.yPercent}%")"
                               x2="@anomaly.Position"
                               y2="@($"{AnomalyYPercent}%")"
                               stroke="@color"
-                              stroke-width="@(1 + anomaly.Severity)"
-                              stroke-dasharray="4,3"
-                              stroke-opacity="@(anomaly.Severity >= 4 ? "1" : "0.7")" />
+                              stroke-width="@(0.7 + anomaly.Severity)"
+                              stroke-dasharray="4,3" />
+                    }
+                    // 🔴 Domain-basierte Anomalien
+                    else
+                    {
+                        var domain = anomaly.LinkedDomain;
+                        if (domain == null) continue;
+
+                        foreach (var point in GetAnomalyTargetPoints(domain))
+                        {
+                            <line x1="@point.x"
+                                  y1="@($"{point.yPercent}%")"
+                                  x2="@anomaly.Position"
+                                  y2="@($"{AnomalyYPercent}%")"
+                                  stroke="@color"
+                                  stroke-width="@(0.7 + anomaly.Severity)"
+                                  stroke-dasharray="4,3" />
+                        }
                     }
                 }
             </svg>
+
 
         </div>
     </div>
