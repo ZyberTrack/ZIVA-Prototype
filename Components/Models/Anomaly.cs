@@ -9,6 +9,15 @@
 
     public DomainEntry LinkedDomain { get; set; } = null!;
 
+    // 🔥 NEU
+    public AnomalyTargetType TargetType { get; set; }
+
+    // Ziel-Position (X)
+    public double TargetPosition { get; set; }
+
+    // Ziel-Y in Prozent
+    public double TargetYPercent { get; set; }
+
     public AnomalyType Type { get; set; }
 
     public string Description { get; set; } = "";
@@ -18,12 +27,19 @@
     public int Count { get; set; } = 1;         // neu
 
 }
-
+public enum AnomalyTargetType
+{
+    Domain,
+    Cookie,
+    Autofill
+}
 
 public enum AnomalyType
 {
     BlacklistedDomain,
     SuspiciousRedirect,
     ExcessiveRequests,
+    DeletedHistoryIndicator, // 🔥 NEU
     Unknown
 }
+

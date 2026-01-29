@@ -271,23 +271,33 @@
     {
         foreach (var a in Anomalies)
         {
-            DateTime centerTime;
+            DateTime positionTime;
 
-            if (a.FirstSeen == a.LastSeen)
+            switch (a.Type)
             {
-                // Einzel-Hit → exakt
-                centerTime = a.FirstSeen;
-            }
-            else
-            {
-                // Zeitlicher Mittelpunkt
-                long ticks = (a.FirstSeen.Ticks + a.LastSeen.Ticks) / 2;
-                centerTime = new DateTime(ticks);
+                case AnomalyType.DeletedHistoryIndicator:
+                    // 🔥 exakt am Artefakt
+                    positionTime = a.FirstSeen;
+                    break;
+
+                default:
+                    // 🔁 Mittelwert bei echten Zeitspannen
+                    if (a.FirstSeen == a.LastSeen)
+                    {
+                        positionTime = a.FirstSeen;
+                    }
+                    else
+                    {
+                        long ticks = (a.FirstSeen.Ticks + a.LastSeen.Ticks) / 2;
+                        positionTime = new DateTime(ticks);
+                    }
+                    break;
             }
 
-            a.Position = (int)TimeToPixel(centerTime) - (int)scrollIndex;
+            a.Position = (int)TimeToPixel(positionTime) - (int)scrollIndex;
         }
     }
+
 
 
     //------------------------------------------------------------
@@ -493,6 +503,15 @@
         Anomalies.Clear();
         var anomalyIndex = new Dictionary<string, AnomalyEntry>();
 
+        // 🔴 bestehende Domain-Anomalien
+        //DetectDomainAnomalies(anomalyIndex);
+
+        // 🧨 NEU: Gelöschter Verlauf – Cookies
+        DetectOrphanCookies(anomalyIndex);
+
+        // 🧨 NEU: Gelöschter Verlauf – Autofill
+        DetectOrphanAutofill(anomalyIndex);
+
         foreach (var domain in SummarizedEntries)
         {
             // ✅ ZEITEN statt PIXEL
@@ -534,18 +553,36 @@
         Anomalies.AddRange(anomalyIndex.Values);
     }
 
+    string GetAnomalyKey(
+    AnomalyType type,
+    DomainEntry domain,
+    DateTime time,
+    string? artifactId = null)
+    {
+        return type switch
+        {
+            AnomalyType.DeletedHistoryIndicator =>
+                $"{type}:{domain.Domain.ToLower()}:{time:yyyyMMddHHmmss}:{artifactId}",
+
+            _ =>
+                $"{type}:{domain.Domain.ToLower()}"
+        };
+    }
+
+
     void AddOrUpdateAnomaly(
     Dictionary<string, AnomalyEntry> index,
     AnomalyType type,
     DomainEntry domain,
     IEnumerable<DateTime> artifactTimes,
     int severity,
-    string description)
+    string description,
+    string? artifactId = null)
     {
-        var key = $"{type}:{domain.Domain.ToLower()}";
-
         var first = artifactTimes.Min();
         var last = artifactTimes.Max();
+
+        var key = GetAnomalyKey(type, domain, first, artifactId);
 
         if (index.TryGetValue(key, out var existing))
         {
@@ -568,6 +605,94 @@
         };
     }
 
+
+    string NormalizeDomain(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return "";
+
+        input = input.Trim().ToLower();
+
+        if (input.StartsWith("."))
+            input = input[1..];
+
+        // URLs erlauben
+        if (Uri.TryCreate(input, UriKind.Absolute, out var uri))
+            return uri.Host;
+
+        return input;
+    }
+
+    void DetectOrphanCookies(Dictionary<string, AnomalyEntry> anomalyIndex, int toleranceSeconds = 60)
+    {
+        if (State.BrowserCookies == null) return;
+
+        foreach (var cookie in State.BrowserCookies)
+        {
+            string cookieDomain = NormalizeDomain(cookie.Host);
+
+            bool hasMatchingHistory = SummarizedEntries.Any(domain =>
+            {
+                string domainNorm = NormalizeDomain(domain.Domain);
+
+                if (!domainNorm.EndsWith(cookieDomain) &&
+                    !cookieDomain.EndsWith(domainNorm))
+                    return false;
+
+                return Math.Abs((domain.VisitTime - cookie.Created).TotalSeconds)
+                       <= toleranceSeconds;
+            });
+
+            if (!hasMatchingHistory)
+            {
+                var linkedDomain = FindClosestDomain(cookie.Created);
+
+                AddOrUpdateAnomaly(
+                    anomalyIndex,
+                    AnomalyType.DeletedHistoryIndicator,
+                    linkedDomain ?? new DomainEntry { Domain = cookieDomain },
+                    new[] { cookie.Created },
+                    severity: 4,
+                    description: $"Cookie für Domain '{cookieDomain}' ohne passenden Verlaufseintrag"
+                );
+            }
+        }
+    }
+
+
+    DomainEntry? FindClosestDomain(DateTime time)
+    {
+        return SummarizedEntries
+            .OrderBy(d => Math.Abs((d.VisitTime - time).TotalSeconds))
+            .FirstOrDefault();
+    }
+
+    void DetectOrphanAutofill(Dictionary<string, AnomalyEntry> anomalyIndex, int toleranceSeconds = 120)
+    {
+        if (State.AutofillEntries == null) return;
+
+        foreach (var autofill in State.AutofillEntries)
+        {
+            bool hasMatchingDomain = SummarizedEntries.Any(domain =>
+                Math.Abs((domain.VisitTime - autofill.DateCreated).TotalSeconds)
+                <= toleranceSeconds
+            );
+
+            if (!hasMatchingDomain)
+            {
+                var linkedDomain = FindClosestDomain(autofill.DateCreated);
+
+                AddOrUpdateAnomaly(
+                    anomalyIndex,
+                    AnomalyType.DeletedHistoryIndicator,
+                    linkedDomain ?? new DomainEntry { Domain = "[unknown]" },
+                    new[] { autofill.DateCreated },
+                    severity: 5,
+                    description: $"Autofill '{autofill.Name}' ohne zugehörigen Seitenaufruf"
+                );
+            }
+        }
+    }
 
 
 
