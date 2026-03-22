@@ -59,7 +59,7 @@
     private int viewportWidth;
     private int containerHeight; // für SVG Rendering
     private int startOffset = 70;
-    private int spacing = 250;
+    private int spacing = 350;
     private int movableLayerWidth = 5000000;
     private int renderBuffer = 5;
     private int lastScrollIndex = int.MinValue;
@@ -108,30 +108,48 @@
         Years
     }
 
-    // neuer Ansatz: Zoomstufen definieren, die die Dauer eines Intervalls bestimmen
     private readonly (int seconds, TimeUnit unit)[] zoomLevels = new[]
-    {
-        (10, TimeUnit.Seconds),
-        (60, TimeUnit.Minutes),
-        (300, TimeUnit.Minutes),
-        (600, TimeUnit.Minutes),
-        (1200, TimeUnit.Minutes),
-        (1800, TimeUnit.Minutes),
-        (3600, TimeUnit.Hours),
-        (7200, TimeUnit.Hours),
-        (86400, TimeUnit.Hours),
-        (172800, TimeUnit.Days),
-        (259200, TimeUnit.Days),
-        (604800, TimeUnit.Days),
-        (1209600, TimeUnit.Days),
-        (2419200, TimeUnit.Days),
-        (5184000, TimeUnit.Days),
-        (7776000, TimeUnit.Months),
-        (10368000, TimeUnit.Months), 
-        (15552000, TimeUnit.Months),
-        (31104000, TimeUnit.Years),
-        (63072000, TimeUnit.Years),
-    };
+{
+    // Sub-second / very fine (optional je nach Usecase)
+    (1, TimeUnit.Seconds),
+    (2, TimeUnit.Seconds),
+    (5, TimeUnit.Seconds),
+
+    // Fine control
+    (10, TimeUnit.Seconds),
+    (15, TimeUnit.Seconds),
+    (30, TimeUnit.Seconds),
+
+    // Minutes
+    (60, TimeUnit.Seconds),   // 1 min
+    (120, TimeUnit.Seconds),  // 2 min
+    (300, TimeUnit.Seconds),  // 5 min
+    (600, TimeUnit.Seconds),  // 10 min
+    (900, TimeUnit.Seconds),  // 15 min
+    (1800, TimeUnit.Seconds), // 30 min
+
+    // Hours
+    (3600, TimeUnit.Seconds), // 1 h
+    (7200, TimeUnit.Seconds), // 2 h
+    (14400, TimeUnit.Seconds), // 4 h
+    (28800, TimeUnit.Seconds), // 8 h
+    (43200, TimeUnit.Seconds), // 12 h
+
+    // Days
+    (86400, TimeUnit.Seconds),   // 1 d
+    (172800, TimeUnit.Seconds),  // 2 d
+    (259200, TimeUnit.Seconds),  // 3 d
+    (604800, TimeUnit.Seconds),  // 7 d
+
+    // Weeks / Months
+    (1209600, TimeUnit.Seconds), // 14 d
+    (2419200, TimeUnit.Seconds), // 28 d (~1 month)
+    (5184000, TimeUnit.Seconds), // 60 d
+
+    // Years
+    (31536000, TimeUnit.Seconds), // 1 y
+    (63072000, TimeUnit.Seconds), // 2 y
+};
 
     //------------------------------------------------------------
     // Initial Render
@@ -1163,7 +1181,7 @@
         <div class="timeline-area-static timeline-area-top">
             <div class="timeline-label">Verlauf-Zeitachse</div> 
             <div class="timeline-history-label">Website Verlauf</div>
-            <div class="timeline"></div>
+            <div class="timeline-top-legend "></div>
             <div class="timeline-cookies-label">Cookies</div>
             <div class="timeline-cookies"></div>
             <div class="timeline-webdata-label">Web Data Autofill</div>
@@ -1173,21 +1191,21 @@
         </div>
         <div class="timeline-area-static timeline-area-bottom">
             <div class="timeline-label">Analyse-Zeitachse</div>
-            <div class="timeline"></div>
+            <div class="timeline-bottom-legend"></div>
         </div>
     </div>
 
     <!-- MOVABLE TIMELINE -->
     <div class="timeline-static">
         <div class="timeline-area-scroll timeline-area-top">
-            <div class="timeline"></div>
+            <div class="timeline-top"></div>
             <div class="timeline-cookies"></div>
             <div class="timeline-webdata"></div>
             <div class="timeline-favicons"></div>
         </div>
 
         <div class="timeline-area-scroll timeline-area-bottom">
-            <div class="timeline"></div>
+            <div class="timeline-bottom"></div>
         </div>
     </div>
 
@@ -1331,7 +1349,7 @@
 
             <!-- History Einträge in der Zeitachse -->
             @{
-                int baseTop = 25; // Basislinie für normale Domains in %
+                int baseTop = 33; // Basislinie für normale Domains in %
                 int heavyClusterSpacingPx = 20; // Abstand jeder neuen Heavy Cluster-Linie nach oben
                 int heavyClusterIndex = 1; // Zähler für versetzte Heavy Cluster-Linien
             }
@@ -1350,7 +1368,7 @@
                         "domain-marker filled";
 
                         <div class="@domainClass"
-                             style="left: calc(@($"{domainEntry.Position}px - 6px")); color:@color"
+                             style="left: calc(@($"{domainEntry.Position}px - 10px")); color:@color"
                              @onclick="() => domainEntry.IsExpanded = true">
 
                             <div class="domaine-tooltip" style="background-color:@color;">
@@ -1404,21 +1422,21 @@
                                 {
                                     // Hohles Quadrat für Suchmaschinen
                                     <div class="domain-marker square"
-                                         style="width:12px; height:12px; color:@GetColorForDomain(sub.Url); top:calc(@topStyleSquare);">
+                                         style="width:20px; height:20px; color:@GetColorForDomain(sub.Url); top:calc(@topStyleSquare);">
                                     </div>
                                 }
                                 else if (string.IsNullOrEmpty(sub.ReferrerUrl))
                                 {
                                     // Hohles Dreieck
-                                    <svg width="12" height="12" viewBox="0 0 12 12">
-                                        <polygon points="0,0 12,0 6,12" fill="none" stroke="currentColor" stroke-width="2" />
+                                    <svg width="18" height="20" viewBox="0 0 18 20">
+                                        <polygon points="0,0 18,0 10,20" fill="none" stroke="currentColor" stroke-width="2" />
                                     </svg>
                                 }
                                 else
                                 {
                                     // Gefülltes Dreieck
-                                    <svg width="12" height="12" viewBox="0 0 12 12">
-                                        <polygon points="0,0 12,0 6,12" fill="currentColor" />
+                                    <svg width="18" height="20" viewBox="0 0 18 20">
+                                        <polygon points="0,0 18,0 10,20" fill="currentColor" />
                                     </svg>
                                 }
 
@@ -1587,9 +1605,9 @@
 
                         double artifactPosY = artifact switch
                         {
-                            BrowserCookieEntry => 30,   // Cookies oben
-                            WebDataAutofillEntry => 32, // Autofill etwas darunter
-                            _ => 30
+                            BrowserCookieEntry => 43,   // Cookies oben
+                            WebDataAutofillEntry => 50, // Autofill etwas darunter
+                            _ => 33
                         };
 
                         string color = GetColorForDomain(matchingDomain.Url);
@@ -1610,7 +1628,7 @@
             <!-- ANOMALIE ZEITACHSE -->
             @code {
 
-                int baseTop = 25; // Basislinie für normale Domains in %
+                int baseTop = 33; // Basislinie für normale Domains in %
                 int heavyClusterSpacingPx = 20; // Abstand jeder neuen Heavy Cluster-Linie nach oben
 
                 string GetSeverityColor(int severity) => severity switch
@@ -1635,7 +1653,7 @@
                 }
 
 				// Y-Position der Anomalie in Pixel
-                double AnomalyYPercent => 75;
+                double AnomalyYPercent => 78;
 
 
                 IEnumerable<(double x, double yPercent)> GetAnomalyTargetPoints(DomainEntry domain)
@@ -1665,7 +1683,7 @@
                                 Math.Abs((c.Created - anomaly.FirstSeen).TotalSeconds) <= 1);
 
                                 if (cookie != null)
-                                    return (cookie.Position, 30); // Cookie-Linie
+                                    return (cookie.Position, 43); // Cookie-Linie
 
                                 // Autofill?
                                 var autofill = State.AutofillEntries?
@@ -1673,7 +1691,7 @@
                                 Math.Abs((a.DateCreated - anomaly.FirstSeen).TotalSeconds) <= 1);
 
                                 if (autofill != null)
-                                    return (autofill.Position, 32); // Autofill-Linie
+                                    return (autofill.Position, 50); // Autofill-Linie
 
                                 return null;
                             }
@@ -1688,9 +1706,15 @@
 
             @foreach (var anomaly in Anomalies)
             {
+                var color = GetSeverityColor(anomaly.Severity);
 
                 <div class="anomaly-marker"
-                     style="left:@($"{anomaly.Position - 5}px"); top:@($"{AnomalyYPercent}%");"
+                     style="position:absolute;
+                    left:@($"{anomaly.Position - 6}px");
+                    top:@($"{AnomalyYPercent}%");
+                    transform: translateY(-50%);
+                    color:@color;
+                    z-index:30;"
                      data-time="@anomaly.FirstSeen"
                      data-lastseen="@anomaly.LastSeen"
                      data-url="@anomaly.Url"
@@ -1698,6 +1722,12 @@
                      data-description="@anomaly.Description"
                      data-severity="@anomaly.Severity"
                      data-count="@anomaly.Count">
+
+                    <!-- 🔺 Gefülltes Dreieck -->
+                    <svg width="16" height="50" viewBox="0 0 16 50">
+                        <polygon points="0,0 16,0 8,50" fill="currentColor" />
+                    </svg>
+
                 </div>
             }
 
