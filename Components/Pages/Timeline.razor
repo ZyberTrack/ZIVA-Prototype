@@ -28,6 +28,9 @@
     // - Erkennen von zwielichtigen Suchmaschienen -> Pirate Bay etc... und Websiten per liste!!
     //
 
+    [CascadingParameter]
+    public bool isNavOpen { get; set; }  // Um sidebar auszublenden
+
     List<AnomalyEntry> Anomalies = new(); // Liste mit erkannten Anomalien
     List<string> BlacklistDomains = new(); // Liste mit zwielichtigen Domains
 	List<string> SuspiciousDomains = new(); // Liste mit verdächtigen Domains
@@ -1175,11 +1178,11 @@
 }
 
 <!-- RAZOR MARKUP -->
-<div class="timeline-wrapper">
+<div class="timeline-wrapper @(isNavOpen ? "shifted" : "full")">
     <!-- LEFT SIDE OF TIMELINE -->
-    <div class="legend-area">
+    <div class="legend-area @(isNavOpen ? "shifted" : "full")">
         <div class="timeline-area-static timeline-area-top">
-            <div class="timeline-label">Verlauf-Zeitachse</div> 
+            <div class="timeline-label">Verlauf-Zeitachse</div>
             <div class="timeline-history-label">Website Verlauf</div>
             <div class="timeline-top-legend "></div>
             <div class="timeline-cookies-label">Cookies</div>

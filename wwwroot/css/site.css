@@ -3,6 +3,46 @@
     margin: 0;
 }
 
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 250px;
+    height: 100%;
+    background: #1f1f1f;
+    transition: transform 0.3s ease;
+    z-index: 100;
+}
+
+    .sidebar.closed {
+        transform: translateX(-100%);
+    }
+
+/* Main Content */
+.main-shift {
+    margin-left: 250px;
+    transition: margin-left 0.3s ease;
+}
+
+.main-full {
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+}
+
+/* Button */
+.nav-toggle {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 200;
+}
+
+.navbar-brand {
+    margin-left: 40px;
+}
+
+
 .timeline-wrapper,
 .timeline-container,
 .scroll-wrapper,
@@ -31,7 +71,6 @@
 .legend-area {
     position: fixed;
     width: 200px; /* Fester Bereich für die Legende */
-    left: 250px;
     top: 0;
     height: 100%;
     border-right: 2px solid #474747;
@@ -42,10 +81,18 @@
     overflow: hidden;
 }
 
+    .legend-area.shifted {
+        left: 250px;
+    }
+
+    .legend-area.full {
+        left: 0;
+    }
+
 /* Zeitloser Bereich */
 .timeless-area {
     position: fixed;
-    width: 250px; /* Fester Bereich rechts */
+    width: 150px; /* Fester Bereich rechts */
     right: 0;
     top: 0;
     height: 100%;
@@ -103,13 +150,20 @@
 .scroll-wrapper {
     width: 100%;
     height: 100%;
-    left: 200px;
-    right: 250px;
     overflow-x: scroll;
     overflow-y: hidden;
     white-space: nowrap;
 }
 
+.timeline-wrapper.shifted {
+    left: 200px;
+    right: 0px;
+}
+
+.timeline-wrapper.full {
+    left: 0px;
+    right: 0;
+}
 
 
 .movable-layer {
@@ -222,8 +276,8 @@
 
 .timeline-label {
     position: absolute;
-    top: 10px;
     left: 10px;
+    top: 10px;
     font-size: 18px;
     font-weight: bold;
     color: #474747;
