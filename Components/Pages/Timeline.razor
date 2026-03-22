@@ -1023,6 +1023,30 @@
         StateHasChanged();
     }
 
+    async Task ExpandAndFocus(DomainEntry domainEntry)
+    {
+        domainEntry.IsExpanded = true;
+
+        // passenden Index finden
+        int index = State.BrowserEntries.FindIndex(e =>
+            Math.Abs((e.VisitTime - domainEntry.VisitTime).TotalSeconds) < 1);
+
+        if (index >= 0)
+        {
+            currentPivotIndex = index;
+            await CenterOnEntry(index);
+        }
+
+        UpdateVisibleTimestamps();
+        RecalculatePositions();
+        RecalculateCookiePositions();
+        RecalculateAutofillPositions();
+        RecalculateSummarizedPositions();
+        RecalculateAnomalyPositions();
+
+        StateHasChanged();
+    }
+
 
 
     //------------------------------------------------------------
@@ -1362,9 +1386,15 @@
                 var color = GetColorForDomain(domainEntry.Url);
 
                 <div class="domain-container">
+                    
 
                     @if (!domainEntry.IsExpanded && !domainEntry.IsHeavyCluster)
                     {
+
+                        <div class="domain-label"
+                             style="left:@($"{domainEntry.Position}px"); top: calc(33% - 35px);">
+                            @domainEntry.Domain
+                        </div>
                         // Normale Domain Marker
                         string domainClass = domainEntry.IsSearch ? "domain-marker square" :
                         domainEntry.IsDirect ? "domain-marker hollow" :
@@ -1372,7 +1402,7 @@
 
                         <div class="@domainClass"
                              style="left: calc(@($"{domainEntry.Position}px - 10px")); color:@color"
-                             @onclick="() => domainEntry.IsExpanded = true">
+                             @onclick="() => ExpandAndFocus(domainEntry)">
 
                             <div class="domaine-tooltip" style="background-color:@color;">
                                 <div><strong>Zeitstempel: @domainEntry.VisitTime</strong></div>
@@ -1407,6 +1437,21 @@
                             </div>
                         }
 
+                        /*
+                        string GetDomainFromUrl(string url)
+                        {
+                            try
+                            {
+                                var uri = new Uri(url);
+                                return uri.Host;
+                            }
+                            catch
+                            {
+                                return url;
+                            }
+                        }*/
+
+
                         // SubEntries anzeigen
                         @foreach (var sub in domainEntry.SubEntries)
                         {
@@ -1420,6 +1465,20 @@
                             cursor:pointer;
                             z-index:21;"
                                  @onclick="() => domainEntry.IsExpanded = !domainEntry.IsExpanded">
+
+                                <!-- 🔥 LABEL 
+                                <div class="domain-label"
+                                     style="
+                            position:absolute;
+                            left: 50%;
+                            top: -18px;
+                            transform: translateX(-50%);
+                            font-size:15px;
+                            white-space:nowrap;
+                            pointer-events:none;
+                            z-index:30;">
+                                    @GetDomainFromUrl(sub.Url)
+                                    </div>-->
 
                                 @if (isSearch)
                                 {

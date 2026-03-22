@@ -377,6 +377,18 @@
     }
 
 
+.domain-label {
+    position: absolute;
+    transform: translateX(-50%);
+    font-size: 15px;
+    z-index: 30;
+    color: #444;
+    opacity: 0.8;
+    white-space: nowrap;
+}
+
+
+
 .subentry-marker {
     position: absolute;
     cursor: pointer;
