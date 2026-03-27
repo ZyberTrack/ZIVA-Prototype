@@ -32,9 +32,10 @@
 
     List<AnomalyEntry> Anomalies = new(); // Liste mit erkannten Anomalien
     List<string> BlacklistDomains = new(); // Liste mit zwielichtigen Domains
-	List<string> SuspiciousDomains = new(); // Liste mit verdächtigen Domains
+    List<string> SuspiciousDomains = new(); // Liste mit verdächtigen Domains
     private List<DomainEntry> SummarizedEntries { get; set; } = new();
     private List<TimestampEntry> visibleEntries = new();
+    private List<UserInputEntry> UserInputs = new(); // kombinierte Liste der Keywords und Autofill Einträge
     private static List<int> usedHues = new(); // Liste aller bisher vergebenen Hue-Werte
     private static Dictionary<string, string> domainColors = new();
 
@@ -42,10 +43,11 @@
     private BrowserCookieEntry? selectedCookie; // Aktuell ausgewählte Browser Cookies Artefakt Entry selectedAutofill
     private WebDataAutofillEntry? selectedAutofill;
     private DotNetObjectReference<Timeline>? selfRef;
+    private UserInputEntry? selectedInput;
 
     private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
     private bool isZooming = false; // Flag to indicate if zooming is in progress
-	private bool isResizing = false; // Flag to indicate if resizing is in progress
+    private bool isResizing = false; // Flag to indicate if resizing is in progress
 
     private DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
     private ElementReference scrollDivRef;
@@ -167,7 +169,7 @@
 
         // Nur State laden – KEIN direktes DB-Laden mehr!
         await PersistService.LoadPersistedStateAsync(State);
-        
+
     }
 
     private void Refresh()
@@ -180,10 +182,18 @@
             );
         }
 
+        var aggregator = new UserInputAggregatorService();
+
+        UserInputs = aggregator.Build(
+            State.BrowserEntries,
+            State.AutofillEntries
+        );
+
         RecalculatePositions();
         RecalculateCookiePositions();
-        RecalculateAutofillPositions();
+        RecalculateUserInputPositions();
         RecalculateSummarizedPositions();
+        DetectAnomalies();
         RecalculateAnomalyPositions();
         UpdateVisibleTimestamps();
 
@@ -207,7 +217,7 @@
 
     //------------------------------------------------------------
     // Domäne Anomalie Listen Laden
-	//------------------------------------------------------------
+    //------------------------------------------------------------
     async Task LoadAnomalyListsAsync()
     {
         BlacklistDomains = await LoadListAsync("domain-blacklist.json");
@@ -229,7 +239,7 @@
     {
         viewportWidth = Math.Max(await JS.InvokeAsync<int>("getViewportWidth"), 300);
 
-		// Für SVG Rendering
+        // Für SVG Rendering
         containerHeight = await JS.InvokeAsync<int>("getElementHeight", "scroll-container");
 
     }
@@ -279,13 +289,13 @@
         }
     }
 
-    private void RecalculateAutofillPositions()
+    private void RecalculateUserInputPositions()
     {
-        if (State.AutofillEntries == null) return;
+        if (UserInputs == null) return;
 
-        foreach (var entry in State.AutofillEntries)
+        foreach (var entry in UserInputs)
         {
-            entry.Position = (int)TimeToPixel(entry.DateCreated) - (int)scrollIndex;
+            entry.Position = (int)TimeToPixel(entry.Time) - (int)scrollIndex;
         }
     }
 
@@ -333,7 +343,7 @@
 
 
     //------------------------------------------------------------
-	// Daten Laden und Initialisierung
+    // Daten Laden und Initialisierung
     //------------------------------------------------------------
 
     // Zeitstempel Einträge erstellen
@@ -400,12 +410,7 @@
             isProgrammaticScroll = false;
 
             visibleEntries.Clear();
-            DetectAnomalies(); //Balcklist Anomalies
-            UpdateVisibleTimestamps();
-            RecalculatePositions();
-            RecalculateCookiePositions();
-            RecalculateAutofillPositions();
-            RecalculateSummarizedPositions();
+            Refresh();
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -455,11 +460,7 @@
             isProgrammaticScroll = false;
 
             visibleEntries.Clear();
-            UpdateVisibleTimestamps();
-            RecalculatePositions();
-            RecalculateCookiePositions();
-            RecalculateAutofillPositions();
-            RecalculateSummarizedPositions();
+            Refresh();
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -509,10 +510,7 @@
 
             // Sichtbare Einträge neu berechnen
             visibleEntries.Clear();
-            UpdateVisibleTimestamps();
-            RecalculateCookiePositions();
-            RecalculateAutofillPositions();
-            RecalculateSummarizedPositions();
+            Refresh();
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -893,15 +891,7 @@
 
         await UpdateViewportSizeAsync();
 
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
-
-
-        DetectAnomalies();              // 1️⃣ FirstSeen / LastSeen korrekt
-        RecalculateAnomalyPositions();
+        Refresh();
 
         isResizing = false;
         StateHasChanged();
@@ -945,12 +935,7 @@
             return;
         }
 
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
-        RecalculateAnomalyPositions();
+        Refresh();
         StateHasChanged();
     }
 
@@ -994,12 +979,7 @@
         isProgrammaticScroll = false;
 
         // 7️⃣ ALLE Pixel neu berechnen (JETZT korrekt!)
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
-        RecalculateAnomalyPositions();
+        Refresh();
 
         StateHasChanged();
         isZooming = false;
@@ -1011,12 +991,7 @@
     {
         if (currentPivotIndex < State.BrowserEntries.Count - 1)
             await CenterOnEntry(currentPivotIndex + 1);
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
-        RecalculateAnomalyPositions();
+        Refresh();
         StateHasChanged();
     }
 
@@ -1025,12 +1000,7 @@
     {
         if (currentPivotIndex > 0)
             await CenterOnEntry(currentPivotIndex - 1);
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
-        RecalculateAnomalyPositions();
+        Refresh();
         StateHasChanged();
     }
 
@@ -1048,12 +1018,7 @@
             await CenterOnEntry(index);
         }
 
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
-        RecalculateAnomalyPositions();
+        Refresh();
 
         StateHasChanged();
     }
@@ -1086,12 +1051,7 @@
         scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
 
         // Anzeige aktualisieren
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
-        RecalculateAnomalyPositions();
+        Refresh();
         StateHasChanged();
 
         // Optional: Browser scrollen, falls du einen externen Scroll-Container hast
@@ -1218,14 +1178,16 @@
     <div class="legend-area @(isNavOpen ? "shifted" : "full")">
         <div class="timeline-area-static timeline-area-top">
             <div class="timeline-label">Verlauf-Zeitachse</div>
-            <div class="timeline-history-label">Website Verlauf</div>
+            <div class="timeline-history-label">History</div>
             <div class="timeline-top-legend "></div>
             <div class="timeline-cookies-label">Cookies</div>
             <div class="timeline-cookies"></div>
-            <div class="timeline-webdata-label">Web Data Autofill</div>
+            <div class="timeline-webdata-label">User Input</div>
             <div class="timeline-webdata"></div>
-            <div class="timeline-favicons-label">Favicons</div>
+            <div class="timeline-favicons-label">Storage</div>
             <div class="timeline-favicons"></div>
+            <div class="timeline-ext-label">Extensions</div>
+            <div class="timeline-ext"></div>
         </div>
         <div class="timeline-area-static timeline-area-bottom">
             <div class="timeline-label">Analyse-Zeitachse</div>
@@ -1240,6 +1202,7 @@
             <div class="timeline-cookies"></div>
             <div class="timeline-webdata"></div>
             <div class="timeline-favicons"></div>
+            <div class="timeline-ext"></div>
         </div>
 
         <div class="timeline-area-scroll timeline-area-bottom">
@@ -1402,10 +1365,10 @@
                     @if (!domainEntry.IsExpanded && !domainEntry.IsHeavyCluster)
                     {
 
-                        <div class="domain-label"
-                             style="left:@($"{domainEntry.Position}px"); top: calc(33% - 35px);">
-                            @domainEntry.Domain
-                        </div>
+                        //<div class="domain-label"
+                        //     style="left:@($"{domainEntry.Position}px"); top: calc(33% - 35px);">
+                        //   @domainEntry.Domain
+                        //</div>
                         // Normale Domain Marker
                         string domainClass = domainEntry.IsSearch ? "domain-marker square" :
                         domainEntry.IsDirect ? "domain-marker hollow" :
@@ -1541,7 +1504,8 @@
                     <div class="cookie-marker"
                          style="left: calc(@($"{cookie.Position}px - 5px"))"
                          data-host="@cookie.Host"
-                         data-value="@cookie.EncryptedValue"
+                         data-valueEncr="@cookie.EncryptedValue"
+                         data-value="@cookie.Value"
                          data-time="@cookie.Created"
                          @onclick="() => selectedCookie = cookie">
                     </div>
@@ -1559,36 +1523,31 @@
                 </div>
             }
 
+
+
             <!-- Autofill Einträge in der Zeitachse -->
-            @foreach (var item in State.AutofillEntries)
+            @foreach (var item in UserInputs)
             {
                 if (item.Position > -50 && item.Position < viewportWidth - 300)
                 {
-                    <div class="autofill-marker"
-                         style="left: calc(@($"{item.Position}px - 5px"))"
-                         data-name="@item.Name"
-                         data-value="@item.Value"
-                         data-time="@item.DateCreated"
-                         @onclick="() => selectedAutofill = item">
-                    </div>
+                <div class="userinput-marker @(item.Type == UserInputType.SearchQuery ? "search" : "autofill")"
+                     style="left: calc(@($"{item.Position}px - 5px"))"
+                     data-value="@item.Value"
+                     data-time="@item.Time"
+                     data-type="@item.Type"
+                     @onclick="() => selectedInput = item">
+                </div>
                 }
             }
 
-            @if (selectedAutofill != null)
-            {
-                <div class="entry-details autofill-details">
-                    <p><strong>Name:</strong> @selectedAutofill.Name</p>
-                    <p><strong>Value:</strong> @selectedAutofill.Value</p>
-
-                    <p><strong>Created:</strong> @selectedAutofill.DateCreated</p>
-                    <p><strong>Last Used:</strong> @selectedAutofill.DateLastUsed</p>
-
-                    @if (@selectedAutofill.DateCreated > DateTime.MinValue)
-                    {
-                        <p><strong>Modified:</strong> @selectedAutofill.DateCreated</p>
-                    }
-                </div>
-            }
+        @if (selectedInput != null)
+        {
+            <div class="entry-details autofill-details">
+                <p><strong>Type:</strong> @selectedInput.Type</p>
+                <p><strong>Value:</strong> @selectedInput.Value</p>
+                <p><strong>Time:</strong> @selectedInput.Time</p>
+            </div>
+        }
 
             <!-- SVG-Sammelcontainer für alle Linien -->
             <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:18;">

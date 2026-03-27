@@ -23,6 +23,7 @@ namespace ZIVA_Prototype
             builder.Services.AddScoped<WebDataAutofillImportService>();
             builder.Services.AddScoped<CookieImportService>();
             builder.Services.AddScoped<ChromeProfileLoader>();
+            builder.Services.AddScoped<UserInputAggregatorService>();
 
             builder.Services.AddSingleton<TimelineStateService>();
             builder.Services.AddSingleton<PersistStateService>();

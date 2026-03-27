@@ -272,6 +272,15 @@
     background-color: rgba(169, 169, 169, 1);
 }
 
+.timeline-ext {
+    position: absolute;
+    top: calc(95%);
+    width: 100%;
+    height: 2px;
+    display: flex;
+    background-color: rgba(169, 169, 169, 1);
+}
+
 /* --- Beschriftungen --- */
 
 .timeline-label {
@@ -313,6 +322,15 @@
 .timeline-favicons-label {
     position: absolute;
     top: calc(85% - 18px);
+    left: 10px;
+    font-size: 16px;
+    display: flex;
+    color: #474747;
+}
+
+.timeline-ext-label {
+    position: absolute;
+    top: calc(95% - 18px);
     left: 10px;
     font-size: 16px;
     display: flex;
@@ -470,7 +488,7 @@
 }
 
     .cookie-marker:hover::after {
-        content: "Created: " attr(data-time) "\A Name: " attr(data-host) "\A Value: " attr(data-encryptedvalue);
+        content: "Time: " attr(data-time) "\A Name: " attr(data-host) "\A Value Encrypted: " attr(data-valueEncr) "\A Value: " attr(data-value);
         white-space: pre; /* "\A" für Zeilenumbruch aktivieren */
         position: absolute;
         top: 28px;
@@ -485,27 +503,35 @@
     }
 
 
-.autofill-marker {
+.userinput-marker {
     position: absolute;
     top: calc(50% - 12px);
-    /*left: calc(-6px);  damit es auf der Achsenlinie liegt */
     width: 7px;
     height: 30px;
-    background-color: #25AAC1;
     border-radius: 50%;
     z-index: 18;
     cursor: pointer;
     box-shadow: 0 0 3px rgba(0,0,0,0.3);
 }
 
-    .autofill-marker:hover::after {
-        content: "Created: " attr(data-time) "\A Name: " attr(data-name) "\A Value: " attr(data-value);
-        white-space: pre; /* "\A" für Zeilenumbruch aktivieren */
+    /* Farben */
+    .userinput-marker.search {
+        background-color: #FFC1C1;
+    }
+
+    .userinput-marker.autofill {
+        background-color: #25AAC1;
+    }
+
+    /* Tooltip */
+    .userinput-marker:hover::after {
+        content: "Time: " attr(data-time) "\A Value: " attr(data-value) "\A Type: " attr(data-type);
+        white-space: pre;
         position: absolute;
         top: 28px;
         left: 50%;
         transform: translateX(-50%);
-        background-color: #25AAC1;
+        background-color: #333;
         color: white;
         padding: 4px 8px;
         border-radius: 4px;
@@ -513,12 +539,13 @@
         z-index: 999;
     }
 
-.artifact-line {
-    position: absolute;
-    height: 2px;
-    background-color: gray; /* wird dynamisch überschrieben */
-    z-index: 18;
-}
+
+    .artifact-line {
+        position: absolute;
+        height: 2px;
+        background-color: gray; /* wird dynamisch überschrieben */
+        z-index: 18;
+    }
 
 
 .anomaly-marker {
