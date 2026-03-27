@@ -17,8 +17,7 @@
     // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. 
     // 
     // TO DO:
-    // - Zoom Mittelpunkt zur Maus verschieben.
-    // - Favicons Artefakte importieren und in der Timeline anzeigen
+    // 
     // 
     // 
     //
@@ -162,23 +161,35 @@
     {
         await UpdateViewportSizeAsync();
 
-        // Lade alles parallel im Hintergrund
         await LoadAnomalyListsAsync();
-        var historyTask = LoadFromDatabase();
-        var cookieTask = LoadCookieDatabase();
-        var autofillTask = LoadAutofillDatabase();
-        var persistTask = PersistService.LoadPersistedStateAsync(State);
 
-        //await Task.WhenAll(historyTask, cookieTask, autofillTask, persistTask);
+        State.OnChange += Refresh;
 
-        // Danach UI-Berechnungen
+        // Nur State laden – KEIN direktes DB-Laden mehr!
+        await PersistService.LoadPersistedStateAsync(State);
+        
+    }
+
+    private void Refresh()
+    {
+        if (State.BrowserEntries.Any())
+        {
+            SummarizedEntries = SummarizeEntries(
+                State.BrowserEntries,
+                zoomLevels[currentZoomIndex].seconds
+            );
+        }
+
         RecalculatePositions();
         RecalculateCookiePositions();
         RecalculateAutofillPositions();
         RecalculateSummarizedPositions();
         RecalculateAnomalyPositions();
         UpdateVisibleTimestamps();
+
+        InvokeAsync(StateHasChanged);
     }
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
