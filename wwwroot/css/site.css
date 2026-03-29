@@ -552,7 +552,7 @@
 }
 
     .extension-marker:hover::after {
-        content: "Extension: " attr(data-name) "\A" "Description: " attr(data-description) "\A" "Version: " attr(data-version) "\A" "Installed: " attr(data-time) "\A" "Risk: " attr(data-risk);
+        content: "Extension: " attr(data-name) "\A" "Description: " attr(data-description) "\A" "ID: " attr(data-id) "\A" "Version: " attr(data-version) "\A" "Installed: " attr(data-time) "\A" "Risk: " attr(data-risk);
         white-space: pre;
         position: absolute;
         top: 28px;

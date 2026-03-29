@@ -1588,6 +1588,7 @@
                      style="left: calc(@($"{ext.Position}px - 5px"))"
                      data-name="@ext.Name"
 					 data-description="@ext.Description"
+                     data-id="@ext.Id"
                      data-version="@ext.Version"
                      data-time="@ext.InstallTime"
                      data-risk="@GetExtensionRiskLabel(ext)"
@@ -1602,6 +1603,7 @@
             <div class="entry-details extension-details">
                 <p><strong>Name:</strong> @selectedExtension.Name</p>
                 <p><strong>Description:</strong> @selectedExtension.Description</p>
+                <p><strong>ID:</strong> @selectedExtension.Id</p>
                 <p><strong>Version:</strong> @selectedExtension.Version</p>
                 <p><strong>Installiert:</strong> @selectedExtension.InstallTime</p>
 
@@ -1728,6 +1730,81 @@
                 }
 
             </svg>
+
+        <!-- 🔌 EXTENSION → WEB STORE VERBINDUNGEN -->
+        <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:18;">
+
+            @foreach (var ext in State.Extensions)
+            {
+                // 1️⃣ WebStore Visit finden (bleibt zeitbasiert → ok)
+                var matchingHistory = State.BrowserEntries
+                    .Where(h =>
+                        (h.Url.Contains("chrome.google.com/webstore") ||
+                         h.Url.Contains("chromewebstore.google.com")) &&
+                        Math.Abs((h.VisitTime - ext.InstallTime).TotalMinutes) <= 10
+                    )
+                    .OrderBy(h => Math.Abs((h.VisitTime - ext.InstallTime).TotalSeconds))
+                    .FirstOrDefault();
+
+                if (matchingHistory == null)
+                    continue;
+
+                // 2️⃣ 🔥 DomainEntry sauber über SubEntries matchen (KEIN Zeit-Hack mehr)
+                var matchingDomain = SummarizedEntries
+                    .FirstOrDefault(d =>
+                        d.SubEntries.Any(s => s.Url == matchingHistory.Url)
+                    );
+
+                // 🔁 Fallback (falls kein exakter Match)
+                if (matchingDomain == null)
+                {
+                    var host = new Uri(matchingHistory.Url).Host;
+
+                    matchingDomain = SummarizedEntries
+                        .FirstOrDefault(d =>
+                            host.Contains(d.Domain) || d.Domain.Contains(host)
+                        );
+                }
+
+                if (matchingDomain == null)
+                    continue;
+
+                // 3️⃣ Domain Position
+                double domainPosX = matchingDomain.Position;
+
+                double domainPosY;
+                double offsetPx = 25 + heavyClusterSpacingPx * (matchingDomain.HeavyClusterIndex - 1);
+                double offsetPercent = (offsetPx / containerHeight) * 100.0;
+
+                if (matchingDomain.IsHeavyCluster)
+                {
+                    domainPosY = baseTop - offsetPercent;
+                    domainPosY = Math.Round(domainPosY);
+                }
+                else
+                {
+                    domainPosY = baseTop;
+                }
+
+                // 4️⃣ Extension Position
+                double extensionPosX = ext.Position;
+                double extensionPosY = 57;
+
+                // 5️⃣ Farbe
+                string color = GetColorForDomain(matchingDomain.Url);
+
+                // 6️⃣ Linie
+                <line x1="@domainPosX"
+                      y1="@($"{domainPosY}%")"
+                      x2="@extensionPosX"
+                      y2="@($"{extensionPosY}%")"
+                      stroke="@color"
+                      stroke-width="2"
+                      stroke-dasharray="4,3"
+                      opacity="0.8" />
+            }
+
+        </svg>
 
 
 
