@@ -44,6 +44,7 @@
     private WebDataAutofillEntry? selectedAutofill;
     private DotNetObjectReference<Timeline>? selfRef;
     private UserInputEntry? selectedInput;
+    private BrowserExtensionEntry? selectedExtension;
 
     private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
     private bool isZooming = false; // Flag to indicate if zooming is in progress
@@ -155,6 +156,22 @@
     (63072000, TimeUnit.Seconds), // 2 y
 };
 
+    private string GetExtensionRiskLabel(BrowserExtensionEntry ext)
+    {
+        if (ext.Permissions.Contains("tabs") &&
+            ext.HostPermissions.Any(h => h.Contains("*://*/*")))
+        {
+            return "HIGH";
+        }
+
+        if (ext.HostPermissions.Any())
+        {
+            return "MEDIUM";
+        }
+
+        return "LOW";
+    }
+
     //------------------------------------------------------------
     // Initial Render
     //------------------------------------------------------------
@@ -193,6 +210,7 @@
         RecalculateCookiePositions();
         RecalculateUserInputPositions();
         RecalculateSummarizedPositions();
+        RecalculateExtensionPositions();
         DetectAnomalies();
         RecalculateAnomalyPositions();
         UpdateVisibleTimestamps();
@@ -306,6 +324,16 @@
         foreach (var entry in SummarizedEntries)
         {
             entry.Position = (int)TimeToPixel(entry.VisitTime) - (int)scrollIndex;
+        }
+    }
+
+    private void RecalculateExtensionPositions()
+    {
+        if (State.Extensions == null) return;
+
+        foreach (var ext in State.Extensions)
+        {
+            ext.Position = (int)TimeToPixel(ext.InstallTime) - (int)scrollIndex;
         }
     }
 
@@ -1546,6 +1574,52 @@
                 <p><strong>Type:</strong> @selectedInput.Type</p>
                 <p><strong>Value:</strong> @selectedInput.Value</p>
                 <p><strong>Time:</strong> @selectedInput.Time</p>
+            </div>
+        }
+
+
+
+        <!-- Extensions in der Zeitachse -->
+        @foreach (var ext in State.Extensions)
+        {
+            if (ext.Position > -50 && ext.Position < viewportWidth - 300)
+            {
+                <div class="extension-marker"
+                     style="left: calc(@($"{ext.Position}px - 5px"))"
+                     data-name="@ext.Name"
+					 data-description="@ext.Description"
+                     data-version="@ext.Version"
+                     data-time="@ext.InstallTime"
+                     data-risk="@GetExtensionRiskLabel(ext)"
+                     @onclick="() => selectedExtension = ext">
+                </div>
+            }
+        }
+
+
+        @if (selectedExtension != null)
+        {
+            <div class="entry-details extension-details">
+                <p><strong>Name:</strong> @selectedExtension.Name</p>
+                <p><strong>Description:</strong> @selectedExtension.Description</p>
+                <p><strong>Version:</strong> @selectedExtension.Version</p>
+                <p><strong>Installiert:</strong> @selectedExtension.InstallTime</p>
+
+                <p><strong>Permissions:</strong></p>
+                <ul>
+                    @foreach (var p in selectedExtension.Permissions)
+                    {
+                        <li>@p</li>
+                    }
+                </ul>
+
+                <p><strong>Host Permissions:</strong></p>
+                <ul>
+                    @foreach (var h in selectedExtension.HostPermissions)
+                    {
+                        <li>@h</li>
+                    }
+                </ul>
             </div>
         }
 

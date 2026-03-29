@@ -539,6 +539,32 @@
         z-index: 999;
     }
 
+.extension-marker {
+    position: absolute;
+    top: calc(56% - 10px); /* leicht unter Cookies */
+    width: 7px;
+    height: 30px;
+    background-color: #ff0565; /* neutral blau */
+    border-radius: 50%;
+    z-index: 19;
+    cursor: pointer;
+    box-shadow: 0 0 3px rgba(0,0,0,0.3);
+}
+
+    .extension-marker:hover::after {
+        content: "Extension: " attr(data-name) "\A" "Description: " attr(data-description) "\A" "Version: " attr(data-version) "\A" "Installed: " attr(data-time) "\A" "Risk: " attr(data-risk);
+        white-space: pre;
+        position: absolute;
+        top: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #ff0565;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: var(--tooltip-font-size);
+        z-index: 999;
+    }
 
     .artifact-line {
         position: absolute;

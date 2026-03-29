@@ -10,16 +10,19 @@ namespace ZIVA_Prototype.Services
         private readonly CookieImportService _cookies;
         private readonly WebDataAutofillImportService _autofill;
         private readonly TimelineStateService _state;
+        private readonly ExtensionImportService _extensions;
 
         public ChromeProfileLoader(
             HistoryImportService history,
             CookieImportService cookies,
             WebDataAutofillImportService autofill,
+            ExtensionImportService extensions,
             TimelineStateService state)
         {
             _history = history;
             _cookies = cookies;
             _autofill = autofill;
+            _extensions = extensions;
             _state = state;
         }
 
@@ -73,6 +76,18 @@ namespace ZIVA_Prototype.Services
                 Console.WriteLine($"➡️ Autofill Count: {autofill.Count}");
 
                 _state.SetAutofillEntries(autofill);
+            }
+
+            // ===== EXTENSIONS =====
+            if (profilePath != null)
+            {
+                Console.WriteLine($"✅ Web Data gefunden: {profilePath}");
+
+                
+                var extList = await _extensions.LoadExtensionsAsync(profilePath);
+                Console.WriteLine($"➡️ Extensions Count: {extList.Count}");
+
+                _state.SetExtensions(extList);
             }
             else
             {

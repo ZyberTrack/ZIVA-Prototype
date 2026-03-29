@@ -7,12 +7,16 @@ namespace ZIVA_Prototype.Services
 {
     public class TimelineStateService
     {
-        public event Action? OnChange; //Event hinzufügen, um Änderungen zu signalisieren
+        public event Action? OnChange;
 
+        // =========================================================
+        // SET ALL
+        // =========================================================
         public void SetAll(
-    List<BrowserHistoryEntry> history,
-    List<BrowserCookieEntry> cookies,
-    List<WebDataAutofillEntry> autofill)
+            List<BrowserHistoryEntry> history,
+            List<BrowserCookieEntry> cookies,
+            List<WebDataAutofillEntry> autofill,
+            List<BrowserExtensionEntry> extensions)
         {
             BrowserEntries.Clear();
             BrowserEntries.AddRange(history.OrderBy(e => e.VisitTime));
@@ -23,11 +27,15 @@ namespace ZIVA_Prototype.Services
             AutofillEntries.Clear();
             AutofillEntries.AddRange(autofill.OrderBy(a => a.DateLastUsed));
 
-            OnChange?.Invoke(); // EIN sauberer Trigger
+            Extensions.Clear();
+            Extensions.AddRange(extensions.OrderBy(e => e.InstallTime));
+
+            OnChange?.Invoke();
         }
 
-
-        // === HISTORY ===
+        // =========================================================
+        // HISTORY
+        // =========================================================
         public List<BrowserHistoryEntry> BrowserEntries { get; } = new();
 
         public void SetBrowserEntries(List<BrowserHistoryEntry> entries)
@@ -46,8 +54,9 @@ namespace ZIVA_Prototype.Services
             OnChange?.Invoke();
         }
 
-
-        // === COOKIES ===
+        // =========================================================
+        // COOKIES
+        // =========================================================
         public List<BrowserCookieEntry> BrowserCookies { get; } = new();
 
         public void SetBrowserCookies(List<BrowserCookieEntry> cookies)
@@ -66,8 +75,9 @@ namespace ZIVA_Prototype.Services
             OnChange?.Invoke();
         }
 
-
-        // === WebDataAutofill ===
+        // =========================================================
+        // AUTOFILL
+        // =========================================================
         public List<WebDataAutofillEntry> AutofillEntries { get; } = new();
 
         public void SetAutofillEntries(List<WebDataAutofillEntry> entries)
@@ -86,14 +96,38 @@ namespace ZIVA_Prototype.Services
             OnChange?.Invoke();
         }
 
-        // === Alles löschen ===
+        // =========================================================
+        // EXTENSIONS 🔥 (NEU)
+        // =========================================================
+        public List<BrowserExtensionEntry> Extensions { get; } = new();
+
+        public void SetExtensions(List<BrowserExtensionEntry> entries)
+        {
+            Extensions.Clear();
+            Extensions.AddRange(entries.OrderBy(e => e.InstallTime));
+
+            OnChange?.Invoke();
+        }
+
+        public void AddExtensions(List<BrowserExtensionEntry> entries)
+        {
+            Extensions.AddRange(entries);
+            Extensions.Sort((a, b) => a.InstallTime.CompareTo(b.InstallTime));
+
+            OnChange?.Invoke();
+        }
+
+        // =========================================================
+        // CLEAR ALL (FIX!)
+        // =========================================================
         public void ClearAll()
         {
             BrowserEntries.Clear();
             BrowserCookies.Clear();
             AutofillEntries.Clear();
+            Extensions.Clear(); // 🔥 wichtig
+
+            OnChange?.Invoke(); // 🔥 wichtig (hat bei dir gefehlt)
         }
     }
 }
-
-
