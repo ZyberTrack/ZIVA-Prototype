@@ -3,12 +3,59 @@
     margin: 0;
 }
 
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 250px;
+    height: 100%;
+    background: #1f1f1f;
+    transition: transform 0.3s ease;
+    z-index: 100;
+}
+
+    .sidebar.closed {
+        transform: translateX(-100%);
+    }
+
+/* Main Content */
+.main-shift {
+    margin-left: 250px;
+    transition: margin-left 0.3s ease;
+}
+
+.main-full {
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+}
+
+/* Button */
+.nav-toggle {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 200;
+}
+
+.navbar-brand {
+    margin-left: 40px;
+}
+
+
 .timeline-wrapper,
 .timeline-container,
 .scroll-wrapper,
 .movable-layer {
     height: 100%;
 }
+
+
+/* Variablen */
+:root {
+    --tooltip-font-size: 15px;
+}
+
 
 /* Wrapper für die gesamte Ansicht */
 .timeline-wrapper {
@@ -24,21 +71,28 @@
 .legend-area {
     position: fixed;
     width: 200px; /* Fester Bereich für die Legende */
-    left: 250px;
     top: 0;
     height: 100%;
     border-right: 2px solid #474747;
-    z-index: 20; /* Über der scrollbaren Zeitachse */
+    z-index: 30; /* Über der scrollbaren Zeitachse */
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     overflow: hidden;
 }
 
+    .legend-area.shifted {
+        left: 250px;
+    }
+
+    .legend-area.full {
+        left: 0;
+    }
+
 /* Zeitloser Bereich */
 .timeless-area {
     position: fixed;
-    width: 250px; /* Fester Bereich rechts */
+    width: 150px; /* Fester Bereich rechts */
     right: 0;
     top: 0;
     height: 100%;
@@ -96,13 +150,20 @@
 .scroll-wrapper {
     width: 100%;
     height: 100%;
-    left: 200px;
-    right: 250px;
     overflow-x: scroll;
     overflow-y: hidden;
     white-space: nowrap;
 }
 
+.timeline-wrapper.shifted {
+    left: 200px;
+    right: 0px;
+}
+
+.timeline-wrapper.full {
+    left: 0px;
+    right: 0;
+}
 
 
 .movable-layer {
@@ -144,32 +205,47 @@
 .timeline-area-top {
     background: rgb(201, 219, 216);
     border-bottom: 2px solid #474747;
+    flex: 2;
 }
 
 .timeline-area-bottom {
     background: rgb(216, 198, 198);
+    flex: 1;
 }
 
-.timeline {
+.timeline-top-legend {
     position: absolute;
     width: 100%;
     height: 2px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    top: 50%;
+    background-color: rgba(169, 169, 169, 1);
+}
+
+.timeline-bottom-legend {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    top: 33%;
+    background-color: rgba(169, 169, 169, 1);
+}
+
+.timeline-top {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    top: 50%;
+    background-color: rgba(169, 169, 169, 1);
+}
+
+.timeline-bottom {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    top: 33%;
     background-color: rgba(169, 169, 169, 1);
 }
 
 .timeline-cookies {
-    position: absolute;
-    top: calc(60%);
-    width: 100%;
-    height: 2px;
-    display: flex;
-    background-color: rgba(169, 169, 169, 1);
-}
-
-.timeline-webdata {
     position: absolute;
     top: calc(65%);
     width: 100%;
@@ -178,9 +254,27 @@
     background-color: rgba(169, 169, 169, 1);
 }
 
+.timeline-webdata {
+    position: absolute;
+    top: calc(75%);
+    width: 100%;
+    height: 2px;
+    display: flex;
+    background-color: rgba(169, 169, 169, 1);
+}
+
 .timeline-favicons {
     position: absolute;
-    top: calc(70%);
+    top: calc(85%);
+    width: 100%;
+    height: 2px;
+    display: flex;
+    background-color: rgba(169, 169, 169, 1);
+}
+
+.timeline-ext {
+    position: absolute;
+    top: calc(95%);
     width: 100%;
     height: 2px;
     display: flex;
@@ -191,8 +285,8 @@
 
 .timeline-label {
     position: absolute;
-    top: 10px;
     left: 10px;
+    top: 10px;
     font-size: 18px;
     font-weight: bold;
     color: #474747;
@@ -209,7 +303,7 @@
 
 .timeline-cookies-label {
     position: absolute;
-    top: calc(60% - 18px);
+    top: calc(65% - 18px);
     left: 10px;
     font-size: 16px;
     display: flex;
@@ -218,7 +312,7 @@
 
 .timeline-webdata-label {
     position: absolute;
-    top: calc(65% - 18px);
+    top: calc(75% - 18px);
     left: 10px;
     font-size: 16px;
     display: flex;
@@ -227,7 +321,16 @@
 
 .timeline-favicons-label {
     position: absolute;
-    top: calc(70% - 18px);
+    top: calc(85% - 18px);
+    left: 10px;
+    font-size: 16px;
+    display: flex;
+    color: #474747;
+}
+
+.timeline-ext-label {
+    position: absolute;
+    top: calc(95% - 18px);
     left: 10px;
     font-size: 16px;
     display: flex;
@@ -240,7 +343,7 @@
 .timeline-area-static {
     position: relative;
     width: 100%;
-    flex: 1;
+    /*flex: 1;*/
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -251,7 +354,7 @@
 .timeline-area-scroll {
     position: relative;
     width: 100%;
-    flex: 1;
+    /*flex: 1;*/
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -262,9 +365,9 @@
 /* Basis Marker */
 .domain-marker {
     position: absolute;
-    top: calc(25% - 6px);
-    width: 12px;
-    height: 12px;
+    top: calc(33% - 8px);
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     z-index: 20;
     cursor: pointer;
@@ -284,18 +387,30 @@
 
     /* Hohles Quadrat (Google / Suchmaschine) */
     .domain-marker.square {
-        width: 12px;
-        height: 12px;
+        width: 20px;
+        height: 20px;
         border: 2px solid currentColor;
         background: none;
         border-radius: 0;
     }
 
 
+.domain-label {
+    position: absolute;
+    transform: translateX(-50%);
+    font-size: 15px;
+    z-index: 30;
+    color: #444;
+    opacity: 0.8;
+    white-space: nowrap;
+}
+
+
+
 .subentry-marker {
     position: absolute;
     cursor: pointer;
-    z-index: 19;
+    z-index: 21;
     width: 12px;
     height: 12px;
 }
@@ -311,7 +426,7 @@
     padding: 6px 10px;
     color: white;
     border-radius: 4px;
-    font-size: 11px;
+    font-size: var(--tooltip-font-size);
     z-index: 999;
     white-space: nowrap;
     box-shadow: 0 2px 6px rgba(0,0,0,0.25);
@@ -326,7 +441,7 @@
     padding: 6px 10px;
     color: white;
     border-radius: 4px;
-    font-size: 11px;
+    font-size: var(--tooltip-font-size);
     z-index: 999;
     white-space: nowrap;
     box-shadow: 0 2px 6px rgba(0,0,0,0.25);
@@ -361,10 +476,10 @@
 
 .cookie-marker {
     position: absolute;
-    top: calc(30% - 10px);
+    top: calc(43% - 10px);
     /*left: calc(-6px);  damit es auf der Achsenlinie liegt */
-    width: 4px;
-    height: 20px;
+    width: 7px;
+    height: 30px;
     background-color: #6846FC;
     border-radius: 50%;
     z-index: 19;
@@ -373,7 +488,7 @@
 }
 
     .cookie-marker:hover::after {
-        content: "Created: " attr(data-time) "\A Name: " attr(data-host) "\A Value: " attr(data-encryptedvalue);
+        content: "Time: " attr(data-time) "\A Name: " attr(data-host) "\A Value Encrypted: " attr(data-valueEncr) "\A Value: " attr(data-value);
         white-space: pre; /* "\A" für Zeilenumbruch aktivieren */
         position: absolute;
         top: 28px;
@@ -383,42 +498,124 @@
         color: white;
         padding: 4px 8px;
         border-radius: 4px;
-        font-size: 10px;
+        font-size: var(--tooltip-font-size);
         z-index: 999;
     }
 
 
-.autofill-marker {
+.userinput-marker {
     position: absolute;
-    top: calc(32.5% - 10px);
-    /*left: calc(-6px);  damit es auf der Achsenlinie liegt */
-    width: 4px;
-    height: 20px;
-    background-color: #25AAC1;
+    top: calc(50% - 12px);
+    width: 7px;
+    height: 30px;
+    border-radius: 50%;
+    z-index: 18;
+    cursor: pointer;
+    box-shadow: 0 0 3px rgba(0,0,0,0.3);
+}
+
+    /* Farben */
+    .userinput-marker.search {
+        background-color: #FFC1C1;
+    }
+
+    .userinput-marker.autofill {
+        background-color: #25AAC1;
+    }
+
+    /* Tooltip */
+    .userinput-marker:hover::after {
+        content: "Time: " attr(data-time) "\A Value: " attr(data-value) "\A Type: " attr(data-type);
+        white-space: pre;
+        position: absolute;
+        top: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: var(--tooltip-font-size);
+        z-index: 999;
+    }
+
+.extension-marker {
+    position: absolute;
+    top: calc(56% - 10px); /* leicht unter Cookies */
+    width: 7px;
+    height: 30px;
+    background-color: #ff0565; /* neutral blau */
     border-radius: 50%;
     z-index: 19;
     cursor: pointer;
     box-shadow: 0 0 3px rgba(0,0,0,0.3);
 }
 
-    .autofill-marker:hover::after {
-        content: "Created: " attr(data-time) "\A Name: " attr(data-name) "\A Value: " attr(data-value);
-        white-space: pre; /* "\A" für Zeilenumbruch aktivieren */
+    .extension-marker:hover::after {
+        content: "Extension: " attr(data-name) "\A" "Description: " attr(data-description) "\A" "ID: " attr(data-id) "\A" "Version: " attr(data-version) "\A" "Installed: " attr(data-time) "\A" "Risk: " attr(data-risk);
+        white-space: pre;
         position: absolute;
         top: 28px;
         left: 50%;
         transform: translateX(-50%);
-        background-color: #25AAC1;
+        background-color: #ff0565;
         color: white;
         padding: 4px 8px;
         border-radius: 4px;
-        font-size: 10px;
+        font-size: var(--tooltip-font-size);
         z-index: 999;
     }
 
-.artifact-line {
+    .artifact-line {
+        position: absolute;
+        height: 2px;
+        background-color: gray; /* wird dynamisch überschrieben */
+        z-index: 18;
+    }
+
+
+.anomaly-marker {
     position: absolute;
-    height: 2px;
-    background-color: gray; /* wird dynamisch überschrieben */
-    z-index: 18;
+    width: 12px;
+    height: 12px;
+    cursor: pointer;
+    z-index: 30;
 }
+
+    .anomaly-marker:hover::after {
+        content: "Detected: " attr(data-firstseen) "\A Last seen: " attr(data-lastseen) "\A URL: " attr(data-url) "\A Type: " attr(data-type) "\A Severity: " attr(data-severity) "\A Hits: " attr(data-count) "\A Description: " attr(data-description);
+        white-space: pre;
+        position: absolute;
+        top: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: var(--sev-color, #9e9e9e);
+        color: white;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-size: var(--tooltip-font-size);
+        z-index: 999;
+        pointer-events: none;
+    }
+
+    /* Severity-Farben */
+    .anomaly-marker[data-severity="5"] {
+        --sev-color: #ff1f1f; /* Tiefrot – kritisch */
+    }
+
+    .anomaly-marker[data-severity="4"] {
+        --sev-color: #ff4a1a; /* Rot-Orange */
+    }
+
+    .anomaly-marker[data-severity="3"] {
+        --sev-color: #ff7a1a; /* Orange mit Rotstich */
+    }
+
+    .anomaly-marker[data-severity="2"] {
+        --sev-color: #ffb347; /* Warmes Gelb-Orange (noch klarer Alarmton) */
+    }
+
+    .anomaly-marker[data-severity="1"] {
+        --sev-color: #c9c1bb; /* Warmes Grau mit leichtem Rotstich */
+    }
+
