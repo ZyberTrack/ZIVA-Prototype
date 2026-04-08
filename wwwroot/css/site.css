@@ -541,7 +541,7 @@
 
 .extension-marker {
     position: absolute;
-    top: calc(56% - 10px); /* leicht unter Cookies */
+    top: calc(63% - 10px); /* leicht unter Cookies */
     width: 7px;
     height: 30px;
     background-color: #ff0565; /* neutral blau */
@@ -552,7 +552,7 @@
 }
 
     .extension-marker:hover::after {
-        content: "Extension: " attr(data-name) "\A" "Description: " attr(data-description) "\A" "ID: " attr(data-id) "\A" "Version: " attr(data-version) "\A" "Installed: " attr(data-time) "\A" "Risk: " attr(data-risk);
+        content: "Extension: " attr(data-name) "\A" "Risk: " attr(data-risk) " (" attr(data-score) ")" "\A" "Findings: " attr(data-findings) "\A" "Installed: " attr(data-time);
         white-space: pre;
         position: absolute;
         top: 28px;
@@ -619,3 +619,48 @@
         --sev-color: #c9c1bb; /* Warmes Grau mit leichtem Rotstich */
     }
 
+.entry-details {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    max-width: 500px;
+    max-height: 60vh;
+    background: #111;
+    color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+    overflow: hidden;
+    z-index: 9999;
+    font-size: 13px;
+}
+
+/* Header (Drag Area) */
+.entry-header {
+    background: #1e1e1e;
+    padding: 10px 12px;
+    cursor: move;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+
+/* Content */
+.entry-content {
+    padding: 12px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+/* Close Button */
+.close-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+    .close-btn:hover {
+        color: #ff3b3b;
+    }

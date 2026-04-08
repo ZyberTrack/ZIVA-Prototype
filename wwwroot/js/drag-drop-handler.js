@@ -42,4 +42,15 @@ window.registerDragHandler = function (dotNetHelper) {
         container.scrollLeft = scrollLeft - diffX; // Zeitachse verschieben basierend auf der Mausbewegung
         dotNetHelper.invokeMethodAsync('OnScroll', diffX < 0 ? 'right' : 'left'); // Informiere Blazor über die Bewegung
     });
+
+    container.addEventListener('mousedown', function (e) {
+
+        // IGNORIERE Panel + alles darin
+        if (e.target.closest('.entry-details')) return;
+
+        isDragging = true;
+        startX = e.clientX;
+        scrollLeft = container.scrollLeft;
+        container.style.cursor = 'grabbing';
+    });
 };

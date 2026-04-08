@@ -1,0 +1,37 @@
+<div class="entry-details extension-details">
+
+    <div class="entry-header">
+        <span>@Data.Name</span>
+        <button class="close-btn" @onclick="OnClose">✕</button>
+    </div>
+
+    <div class="entry-content">
+
+        <p><strong>Risk:</strong> @Data.RiskLevel (@Data.RiskScore)</p>
+
+        <p><strong>Findings:</strong></p>
+        <ul>
+            @foreach (var f in Data.Findings ?? Enumerable.Empty<Finding>())
+            {
+                <li>@f.Description</li>
+            }
+        </ul>
+
+        <p><strong>Critical Capabilities:</strong></p>
+        <ul>
+            @foreach (var p in Data.AllPermissions ?? Enumerable.Empty<string>())
+            {
+                if (p == "<all_urls>" || p == "webRequest" || p == "webRequestBlocking" || p == "cookies")
+                {
+                    <li>@p</li>
+                }
+            }
+        </ul>
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public BrowserExtensionEntry Data { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+}

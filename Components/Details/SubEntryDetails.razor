@@ -1,0 +1,23 @@
+﻿<div class="entry-details">
+
+    <div class="entry-header">
+        <span>Page Visit</span>
+        <button class="close-btn" @onclick="OnClose">✕</button>
+    </div>
+
+    <div class="entry-content">
+        <p><strong>URL:</strong> @(Data.Url ?? "-")</p>
+        <p><strong>Time:</strong> @Data.VisitTime</p>
+
+        @if (!string.IsNullOrEmpty(Data.ReferrerUrl))
+        {
+            <p><strong>Referrer:</strong> @Data.ReferrerUrl</p>
+        }
+    </div>
+
+</div>
+
+@code {
+    [Parameter] public BrowserHistoryEntry Data { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+}

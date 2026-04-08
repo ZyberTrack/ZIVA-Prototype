@@ -45,6 +45,8 @@
     private DotNetObjectReference<Timeline>? selfRef;
     private UserInputEntry? selectedInput;
     private BrowserExtensionEntry? selectedExtension;
+	private DomainEntry? selectedDomain;
+    private BrowserHistoryEntry? selectedSubEntry;
 
     private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
     private bool isZooming = false; // Flag to indicate if zooming is in progress
@@ -156,20 +158,74 @@
     (63072000, TimeUnit.Seconds), // 2 y
 };
 
-    private string GetExtensionRiskLabel(BrowserExtensionEntry ext)
+    //------------------------------------------------------------
+	// UX: Drag & Drop Panel, Close Button, Top Findings
+    //------------------------------------------------------------
+
+    private ElementReference panelRef;
+
+    private async Task StartDrag(MouseEventArgs e)
     {
-        if (ext.Permissions.Contains("tabs") &&
-            ext.HostPermissions.Any(h => h.Contains("*://*/*")))
-        {
-            return "HIGH";
-        }
+        await JS.InvokeVoidAsync(
+            "dragHelper.startDrag",
+            panelRef,
+            e.ClientX,
+            e.ClientY
+        );
+    }
 
-        if (ext.HostPermissions.Any())
-        {
-            return "MEDIUM";
-        }
+    void SelectInput(UserInputEntry item)
+    {
+        ResetSelection();
+        selectedInput = item;
+    }
 
-        return "LOW";
+    void SelectExtension(BrowserExtensionEntry ext)
+    {
+        ResetSelection();
+
+        selectedExtension = ext;
+    }
+
+    void SelectCookie(BrowserCookieEntry cookie)
+    {
+        ResetSelection();
+
+        selectedCookie = cookie;
+    }
+
+    void CloseAll()
+    {
+        selectedExtension = null;
+        selectedCookie = null;
+        selectedInput = null;
+        selectedSubEntry = null;
+    }
+
+    void SelectSubEntry(DomainEntry domainEntry, BrowserHistoryEntry sub)
+    {
+        ResetSelection();
+
+        selectedDomain = domainEntry;
+        selectedSubEntry = sub;
+    }
+
+    void ResetSelection()
+    {
+        selectedExtension = null;
+        selectedCookie = null;
+        selectedInput = null;
+        selectedDomain = null;
+        selectedSubEntry = null;
+    }
+
+    private string GetTopFindings(BrowserExtensionEntry ext)
+    {
+        return string.Join(" | ",
+            ext.Findings
+               .OrderByDescending(f => f.Weight)
+               .Take(2)
+               .Select(f => f.Description));
     }
 
     //------------------------------------------------------------
@@ -1269,6 +1325,8 @@
         {
             showDebug = !showDebug;
         }
+
+
     }
 
 
@@ -1466,21 +1524,7 @@
                             color:@GetColorForDomain(sub.Url);
                             cursor:pointer;
                             z-index:21;"
-                                 @onclick="() => domainEntry.IsExpanded = !domainEntry.IsExpanded">
-
-                                <!-- 🔥 LABEL 
-                                <div class="domain-label"
-                                     style="
-                            position:absolute;
-                            left: 50%;
-                            top: -18px;
-                            transform: translateX(-50%);
-                            font-size:15px;
-                            white-space:nowrap;
-                            pointer-events:none;
-                            z-index:30;">
-                                    @GetDomainFromUrl(sub.Url)
-                                    </div>-->
+                             @onclick="() => SelectSubEntry(domainEntry, sub)">
 
                                 @if (isSearch)
                                 {
@@ -1535,20 +1579,9 @@
                          data-valueEncr="@cookie.EncryptedValue"
                          data-value="@cookie.Value"
                          data-time="@cookie.Created"
-                         @onclick="() => selectedCookie = cookie">
+                         @onclick="() => SelectCookie(cookie)">
                     </div>
                 }
-            }
-
-            @if (selectedCookie != null)
-            {
-                <div class="entry-details cookie-details">
-                    <p><strong>Host:</strong> @selectedCookie.Host</p>
-                    <p><strong>Name:</strong> @selectedCookie.Name</p>
-                    <p><strong>Created:</strong> @selectedCookie.Created</p>
-                    <p><strong>Last Accessed:</strong> @selectedCookie.LastAccessed</p>
-                    <p><strong>Expires:</strong> @selectedCookie.Expires</p>
-                </div>
             }
 
 
@@ -1563,20 +1596,10 @@
                      data-value="@item.Value"
                      data-time="@item.Time"
                      data-type="@item.Type"
-                     @onclick="() => selectedInput = item">
+                     @onclick="() => SelectInput(item)">
                 </div>
                 }
             }
-
-        @if (selectedInput != null)
-        {
-            <div class="entry-details autofill-details">
-                <p><strong>Type:</strong> @selectedInput.Type</p>
-                <p><strong>Value:</strong> @selectedInput.Value</p>
-                <p><strong>Time:</strong> @selectedInput.Time</p>
-            </div>
-        }
-
 
 
         <!-- Extensions in der Zeitachse -->
@@ -1587,43 +1610,41 @@
                 <div class="extension-marker"
                      style="left: calc(@($"{ext.Position}px - 5px"))"
                      data-name="@ext.Name"
-					 data-description="@ext.Description"
-                     data-id="@ext.Id"
-                     data-version="@ext.Version"
+                     data-risk="@ext.RiskLevel"
+                     data-score="@ext.RiskScore"
+                     data-findings="@GetTopFindings(ext)"
                      data-time="@ext.InstallTime"
-                     data-risk="@GetExtensionRiskLabel(ext)"
-                     @onclick="() => selectedExtension = ext">
+                     @onclick="() => SelectExtension(ext)">
                 </div>
             }
         }
 
 
+
         @if (selectedExtension != null)
         {
-            <div class="entry-details extension-details">
-                <p><strong>Name:</strong> @selectedExtension.Name</p>
-                <p><strong>Description:</strong> @selectedExtension.Description</p>
-                <p><strong>ID:</strong> @selectedExtension.Id</p>
-                <p><strong>Version:</strong> @selectedExtension.Version</p>
-                <p><strong>Installiert:</strong> @selectedExtension.InstallTime</p>
-
-                <p><strong>Permissions:</strong></p>
-                <ul>
-                    @foreach (var p in selectedExtension.Permissions)
-                    {
-                        <li>@p</li>
-                    }
-                </ul>
-
-                <p><strong>Host Permissions:</strong></p>
-                <ul>
-                    @foreach (var h in selectedExtension.HostPermissions)
-                    {
-                        <li>@h</li>
-                    }
-                </ul>
-            </div>
+            <ExtensionDetails Data="selectedExtension" OnClose="CloseAll" />
         }
+        else if (selectedCookie != null)
+        {
+            <CookieDetails Data="selectedCookie" OnClose="CloseAll" />
+        }
+        else if (selectedInput != null)
+        {
+            <AutofillDetails Data="selectedInput" OnClose="CloseAll" />
+        }
+        else if (selectedSubEntry != null)
+        {
+            <SubEntryDetails Data="selectedSubEntry" OnClose="CloseAll" />
+        }
+        else if (selectedDomain != null)
+        {
+            <DomainDetails Data="selectedDomain" OnClose="CloseAll" />
+        }
+
+        
+
+
 
             <!-- SVG-Sammelcontainer für alle Linien -->
             <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:18;">
@@ -1788,7 +1809,7 @@
 
                 // 4️⃣ Extension Position
                 double extensionPosX = ext.Position;
-                double extensionPosY = 57;
+                double extensionPosY = 64;
 
                 // 5️⃣ Farbe
                 string color = GetColorForDomain(matchingDomain.Url);

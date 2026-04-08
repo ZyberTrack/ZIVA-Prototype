@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 using ZIVA_Prototype.Components.Models;
+using System.Linq;
 
 namespace ZIVA_Prototype.Services
 {
@@ -89,6 +90,56 @@ namespace ZIVA_Prototype.Services
                             // Installzeit (Folder Creation als Näherung)
                             entry.InstallTime = Directory.GetCreationTime(versionDir);
 
+                            // Optional Permissions
+                            if (root.TryGetProperty("optional_permissions", out var optPerms))
+                            {
+                                entry.OptionalPermissions = optPerms.EnumerateArray()
+                                    .Select(p => p.GetString() ?? "")
+                                    .ToList();
+                            }
+
+                            // Optional Host Permissions
+                            if (root.TryGetProperty("optional_host_permissions", out var optHostPerms))
+                            {
+                                entry.OptionalHostPermissions = optHostPerms.EnumerateArray()
+                                    .Select(p => p.GetString() ?? "")
+                                    .ToList();
+                            }
+
+                            // Externally Connectable (matches extrahieren)
+                            if (root.TryGetProperty("externally_connectable", out var extConn))
+                            {
+                                if (extConn.TryGetProperty("matches", out var matches))
+                                {
+                                    entry.ExternallyConnectableMatches = matches.EnumerateArray()
+                                        .Select(x => x.GetString() ?? "")
+                                        .ToList();
+                                }
+                            }
+
+                            // Web Accessible Resources (Manifest v3 Struktur!)
+                            if (root.TryGetProperty("web_accessible_resources", out var war))
+                            {
+                                foreach (var item in war.EnumerateArray())
+                                {
+                                    if (item.TryGetProperty("resources", out var res))
+                                    {
+                                        entry.WebAccessibleResources.AddRange(
+                                            res.EnumerateArray().Select(x => x.GetString() ?? "")
+                                        );
+                                    }
+                                }
+                            }
+
+                            // Commands
+                            if (root.TryGetProperty("commands", out var commands))
+                            {
+                                entry.Commands = commands.EnumerateObject()
+                                    .Select(c => c.Name)
+                                    .ToList();
+                            }
+
+                            AnalyzeRisk(entry); // Risk Score Berechnen
                             list.Add(entry);
                         }
                         catch
@@ -101,6 +152,74 @@ namespace ZIVA_Prototype.Services
 
                 return list;
             });
+        }
+
+        private void AnalyzeRisk(BrowserExtensionEntry entry)
+        {
+            entry.Findings.Clear();
+
+            var perms = entry.AllPermissions;
+
+            void AddFinding(string type, string desc, int weight)
+            {
+                entry.Findings.Add(new Finding
+                {
+                    Type = type,
+                    Description = desc,
+                    Weight = weight
+                });
+            }
+
+            // 🔥 HIGH RISK PERMISSIONS
+            if (perms.Contains("<all_urls>"))
+                AddFinding("AllUrls", "Access to all URLs", 40);
+
+            if (perms.Contains("webRequest"))
+                AddFinding("WebRequest", "Can intercept web traffic", 50);
+
+            if (perms.Contains("webRequestBlocking"))
+                AddFinding("WebRequestBlocking", "Can block/modify requests", 60);
+
+            if (perms.Contains("cookies"))
+                AddFinding("Cookies", "Access to cookies", 30);
+
+            if (perms.Contains("history"))
+                AddFinding("History", "Access to browsing history", 20);
+
+            if (perms.Contains("tabs"))
+                AddFinding("Tabs", "Access to tabs", 15);
+
+            // 🔥 COMBINATIONS
+            if (perms.Contains("webRequest") && perms.Contains("<all_urls>"))
+                AddFinding("FullInterception", "Full traffic interception capability", 50);
+
+            // 🔥 CONTENT SCRIPT INJECTION
+            if (entry.ContentScripts.Any() && perms.Contains("<all_urls>"))
+                AddFinding("ScriptInjection", "Injects scripts into all websites", 40);
+
+            // 🔥 BACKGROUND
+            if (!string.IsNullOrEmpty(entry.BackgroundScript))
+                AddFinding("Background", "Persistent background execution", 10);
+
+            // 🔥 EXTERNAL COMMUNICATION
+            if (entry.ExternallyConnectableMatches.Any())
+                AddFinding("ExternalConnect", "Externally connectable", 25);
+
+            // 🔥 DATA EXPOSURE
+            if (entry.WebAccessibleResources.Any())
+                AddFinding("WebResources", "Resources exposed to websites", 20);
+
+            // 🔢 SCORE
+            entry.RiskScore = entry.Findings.Sum(f => f.Weight);
+
+            // 🎯 LEVEL (Enum!)
+            entry.RiskLevel = entry.RiskScore switch
+            {
+                >= 120 => RiskLevel.Critical,
+                >= 80 => RiskLevel.High,
+                >= 40 => RiskLevel.Medium,
+                _ => RiskLevel.Low
+            };
         }
 
         private string ResolveExtensionName(string rawName, string versionDir, JsonElement root)
