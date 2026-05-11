@@ -2,6 +2,42 @@
   "version": 3,
   "targets": {
     "net10.0-windows10.0.19041": {
+      "CommunityToolkit.Maui/14.0.1": {
+        "type": "package",
+        "dependencies": {
+          "CommunityToolkit.Maui.Core": "14.0.1",
+          "Microsoft.Maui.Controls": "10.0.41"
+        },
+        "compile": {
+          "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.dll": {
+            "related": ".pri;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.dll": {
+            "related": ".pri;.xml"
+          }
+        }
+      },
+      "CommunityToolkit.Maui.Core/14.0.1": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Maui.Core": "10.0.41",
+          "Microsoft.Maui.Essentials": "10.0.41",
+          "Microsoft.WindowsAppSDK": "1.8.260101001",
+          "System.Speech": "10.0.1"
+        },
+        "compile": {
+          "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.Core.dll": {
+            "related": ".pri;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.Core.dll": {
+            "related": ".pri;.xml"
+          }
+        }
+      },
       "Microsoft.AspNetCore.Authorization/10.0.0": {
         "type": "package",
         "dependencies": {
@@ -108,7 +144,7 @@
           "buildMultiTargeting/Microsoft.AspNetCore.Components.WebView.props": {}
         }
       },
-      "Microsoft.AspNetCore.Components.WebView.Maui/10.0.60": {
+      "Microsoft.AspNetCore.Components.WebView.Maui/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.AspNetCore.Authorization": "10.0.0",
@@ -264,10 +300,10 @@
           }
         }
       },
-      "Microsoft.Data.Sqlite/10.0.7": {
+      "Microsoft.Data.Sqlite/10.0.5": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Data.Sqlite.Core": "10.0.7",
+          "Microsoft.Data.Sqlite.Core": "10.0.5",
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11",
           "SQLitePCLRaw.core": "2.1.11"
         },
@@ -278,7 +314,7 @@
           "lib/netstandard2.0/_._": {}
         }
       },
-      "Microsoft.Data.Sqlite.Core/10.0.7": {
+      "Microsoft.Data.Sqlite.Core/10.0.5": {
         "type": "package",
         "dependencies": {
           "SQLitePCLRaw.core": "2.1.11"
@@ -788,33 +824,33 @@
           }
         }
       },
-      "Microsoft.Maui.Controls/10.0.60": {
+      "Microsoft.Maui.Controls/10.0.51": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Build.Tasks": "10.0.60",
-          "Microsoft.Maui.Controls.Core": "10.0.60",
-          "Microsoft.Maui.Controls.Xaml": "10.0.60",
-          "Microsoft.Maui.Resizetizer": "10.0.60"
+          "Microsoft.Maui.Controls.Build.Tasks": "10.0.51",
+          "Microsoft.Maui.Controls.Core": "10.0.51",
+          "Microsoft.Maui.Controls.Xaml": "10.0.51",
+          "Microsoft.Maui.Resizetizer": "10.0.51"
         }
       },
-      "Microsoft.Maui.Controls.Build.Tasks/10.0.60": {
+      "Microsoft.Maui.Controls.Build.Tasks/10.0.51": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Core": "10.0.60",
-          "Microsoft.Maui.Controls.Xaml": "10.0.60"
+          "Microsoft.Maui.Controls.Core": "10.0.51",
+          "Microsoft.Maui.Controls.Xaml": "10.0.51"
         },
         "build": {
           "buildTransitive/net6.0-windows10.0.17763.0/Microsoft.Maui.Controls.Build.Tasks.props": {},
           "buildTransitive/net6.0-windows10.0.17763.0/Microsoft.Maui.Controls.Build.Tasks.targets": {}
         }
       },
-      "Microsoft.Maui.Controls.Compatibility/10.0.60": {
+      "Microsoft.Maui.Controls.Compatibility/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.60",
-          "Microsoft.Maui.Controls.Xaml": "10.0.60"
+          "Microsoft.Maui.Controls.Core": "10.0.51",
+          "Microsoft.Maui.Controls.Xaml": "10.0.51"
         },
         "compile": {
           "lib/net10.0-windows10.0.19041/Microsoft.Maui.Controls.Compatibility.dll": {
@@ -827,14 +863,14 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Core/10.0.60": {
+      "Microsoft.Maui.Controls.Core/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.DependencyInjection": "10.0.0",
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Core": "10.0.60"
+          "Microsoft.Maui.Core": "10.0.51"
         },
         "compile": {
           "lib/net10.0-windows10.0.19041/Microsoft.Maui.Controls.dll": {
@@ -951,12 +987,12 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Xaml/10.0.60": {
+      "Microsoft.Maui.Controls.Xaml/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.60",
-          "Microsoft.Maui.Core": "10.0.60"
+          "Microsoft.Maui.Controls.Core": "10.0.51",
+          "Microsoft.Maui.Core": "10.0.51"
         },
         "compile": {
           "lib/net10.0-windows10.0.19041/Microsoft.Maui.Controls.Xaml.dll": {
@@ -969,7 +1005,7 @@
           }
         }
       },
-      "Microsoft.Maui.Core/10.0.60": {
+      "Microsoft.Maui.Core/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
@@ -978,9 +1014,9 @@
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
           "Microsoft.Graphics.Win2D": "1.3.2",
-          "Microsoft.Maui.Essentials": "10.0.60",
-          "Microsoft.Maui.Graphics": "10.0.60",
-          "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop": "10.0.60",
+          "Microsoft.Maui.Essentials": "10.0.51",
+          "Microsoft.Maui.Graphics": "10.0.51",
+          "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop": "10.0.51",
           "Microsoft.Web.WebView2": "1.0.3179.45",
           "Microsoft.Windows.SDK.BuildTools": "10.0.26100.4654",
           "Microsoft.WindowsAppSDK": "1.8.251106002"
@@ -1000,10 +1036,10 @@
           "buildTransitive/net10.0-windows10.0.17763.0/Microsoft.Maui.Core.targets": {}
         }
       },
-      "Microsoft.Maui.Essentials/10.0.60": {
+      "Microsoft.Maui.Essentials/10.0.51": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Graphics": "10.0.60",
+          "Microsoft.Maui.Graphics": "10.0.51",
           "Microsoft.Web.WebView2": "1.0.3179.45",
           "Microsoft.WindowsAppSDK": "1.8.251106002"
         },
@@ -1018,7 +1054,7 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics/10.0.60": {
+      "Microsoft.Maui.Graphics/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.Graphics.Win2D": "1.3.2",
@@ -1036,11 +1072,11 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop/10.0.60": {
+      "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.Graphics.Win2D": "1.3.2",
-          "Microsoft.Maui.Graphics": "10.0.60",
+          "Microsoft.Maui.Graphics": "10.0.51",
           "Microsoft.WindowsAppSDK": "1.8.251106002"
         },
         "compile": {
@@ -1054,7 +1090,7 @@
           }
         }
       },
-      "Microsoft.Maui.Resizetizer/10.0.60": {
+      "Microsoft.Maui.Resizetizer/10.0.51": {
         "type": "package",
         "build": {
           "buildTransitive/Microsoft.Maui.Resizetizer.props": {},
@@ -1095,29 +1131,29 @@
           "buildTransitive/Microsoft.Windows.SDK.BuildTools.MSIX.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK/1.8.251106002": {
+      "Microsoft.WindowsAppSDK/1.8.260101001": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.AI": "[1.8.39]",
-          "Microsoft.WindowsAppSDK.Base": "[1.8.250831001]",
-          "Microsoft.WindowsAppSDK.DWrite": "[1.8.25090401]",
-          "Microsoft.WindowsAppSDK.Foundation": "[1.8.251104000]",
-          "Microsoft.WindowsAppSDK.InteractiveExperiences": "[1.8.251104001]",
-          "Microsoft.WindowsAppSDK.ML": "[1.8.2109]",
-          "Microsoft.WindowsAppSDK.Runtime": "[1.8.251106002]",
-          "Microsoft.WindowsAppSDK.Widgets": "[1.8.250904007]",
-          "Microsoft.WindowsAppSDK.WinUI": "[1.8.251105000]"
+          "Microsoft.WindowsAppSDK.AI": "[1.8.44]",
+          "Microsoft.WindowsAppSDK.Base": "[1.8.251216001]",
+          "Microsoft.WindowsAppSDK.DWrite": "[1.8.25122902]",
+          "Microsoft.WindowsAppSDK.Foundation": "[1.8.251220000]",
+          "Microsoft.WindowsAppSDK.InteractiveExperiences": "[1.8.251217001]",
+          "Microsoft.WindowsAppSDK.ML": "[1.8.2119]",
+          "Microsoft.WindowsAppSDK.Runtime": "[1.8.260101001]",
+          "Microsoft.WindowsAppSDK.Widgets": "[1.8.251231004]",
+          "Microsoft.WindowsAppSDK.WinUI": "[1.8.251222000]"
         },
         "build": {
           "buildTransitive/Microsoft.WindowsAppSDK.props": {},
           "buildTransitive/Microsoft.WindowsAppSDK.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.AI/1.8.39": {
+      "Microsoft.WindowsAppSDK.AI/1.8.44": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001",
-          "Microsoft.WindowsAppSDK.Foundation": "1.8.251104000"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001",
+          "Microsoft.WindowsAppSDK.Foundation": "1.8.251220000"
         },
         "compile": {
           "lib/net6.0-windows10.0.17763.0/Microsoft.Graphics.Imaging.Projection.dll": {},
@@ -1140,7 +1176,7 @@
           "buildTransitive/Microsoft.WindowsAppSDK.AI.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.Base/1.8.250831001": {
+      "Microsoft.WindowsAppSDK.Base/1.8.251216001": {
         "type": "package",
         "dependencies": {
           "Microsoft.Windows.SDK.BuildTools": "10.0.26100.4654",
@@ -1151,21 +1187,21 @@
           "buildTransitive/Microsoft.WindowsAppSDK.Base.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.DWrite/1.8.25090401": {
+      "Microsoft.WindowsAppSDK.DWrite/1.8.25122902": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001"
         },
         "build": {
           "buildTransitive/Microsoft.WindowsAppSDK.DWrite.props": {},
           "buildTransitive/Microsoft.WindowsAppSDK.DWrite.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.Foundation/1.8.251104000": {
+      "Microsoft.WindowsAppSDK.Foundation/1.8.251220000": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001",
-          "Microsoft.WindowsAppSDK.InteractiveExperiences": "1.8.251104001"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001",
+          "Microsoft.WindowsAppSDK.InteractiveExperiences": "1.8.251217001"
         },
         "compile": {
           "lib/net6.0-windows10.0.17763.0/Microsoft.Security.Authentication.OAuth.Projection.dll": {},
@@ -1296,10 +1332,10 @@
           }
         }
       },
-      "Microsoft.WindowsAppSDK.InteractiveExperiences/1.8.251104001": {
+      "Microsoft.WindowsAppSDK.InteractiveExperiences/1.8.251217001": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001"
         },
         "compile": {
           "lib/net6.0-windows10.0.18362.0/Microsoft.InteractiveExperiences.Projection.dll": {
@@ -1316,11 +1352,11 @@
           "buildTransitive/Microsoft.WindowsAppSDK.InteractiveExperiences.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.ML/1.8.2109": {
+      "Microsoft.WindowsAppSDK.ML/1.8.2119": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001",
-          "Microsoft.WindowsAppSDK.Foundation": "1.8.251104000",
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001",
+          "Microsoft.WindowsAppSDK.Foundation": "1.8.251220000",
           "System.Numerics.Tensors": "9.0.0"
         },
         "compile": {
@@ -1336,20 +1372,20 @@
           "buildTransitive/Microsoft.WindowsAppSDK.ML.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.Runtime/1.8.251106002": {
+      "Microsoft.WindowsAppSDK.Runtime/1.8.260101001": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001"
         },
         "build": {
           "buildTransitive/Microsoft.WindowsAppSDK.Runtime.props": {},
           "buildTransitive/Microsoft.WindowsAppSDK.Runtime.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.Widgets/1.8.250904007": {
+      "Microsoft.WindowsAppSDK.Widgets/1.8.251231004": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001"
         },
         "compile": {
           "lib/net6.0-windows10.0.17763.0/Microsoft.Windows.Widgets.Projection.dll": {
@@ -1366,13 +1402,13 @@
           "buildTransitive/Microsoft.WindowsAppSDK.Widgets.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.WinUI/1.8.251105000": {
+      "Microsoft.WindowsAppSDK.WinUI/1.8.251222000": {
         "type": "package",
         "dependencies": {
           "Microsoft.Web.WebView2": "1.0.3179.45",
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001",
-          "Microsoft.WindowsAppSDK.Foundation": "1.8.251104000",
-          "Microsoft.WindowsAppSDK.InteractiveExperiences": "1.8.251104001"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001",
+          "Microsoft.WindowsAppSDK.Foundation": "1.8.251220000",
+          "Microsoft.WindowsAppSDK.InteractiveExperiences": "1.8.251217001"
         },
         "compile": {
           "lib/net6.0-windows10.0.17763.0/Microsoft.WinUI.dll": {
@@ -1568,9 +1604,67 @@
         "build": {
           "buildTransitive/net8.0/_._": {}
         }
+      },
+      "System.Speech/10.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net10.0/System.Speech.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/System.Speech.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net8.0/_._": {}
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/net10.0/System.Speech.dll": {
+            "assetType": "runtime",
+            "rid": "win"
+          }
+        }
       }
     },
     "net10.0-windows10.0.19041/win-x64": {
+      "CommunityToolkit.Maui/14.0.1": {
+        "type": "package",
+        "dependencies": {
+          "CommunityToolkit.Maui.Core": "14.0.1",
+          "Microsoft.Maui.Controls": "10.0.41"
+        },
+        "compile": {
+          "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.dll": {
+            "related": ".pri;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.dll": {
+            "related": ".pri;.xml"
+          }
+        }
+      },
+      "CommunityToolkit.Maui.Core/14.0.1": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Maui.Core": "10.0.41",
+          "Microsoft.Maui.Essentials": "10.0.41",
+          "Microsoft.WindowsAppSDK": "1.8.260101001",
+          "System.Speech": "10.0.1"
+        },
+        "compile": {
+          "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.Core.dll": {
+            "related": ".pri;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.Core.dll": {
+            "related": ".pri;.xml"
+          }
+        }
+      },
       "Microsoft.AspNetCore.Authorization/10.0.0": {
         "type": "package",
         "dependencies": {
@@ -1677,7 +1771,7 @@
           "buildMultiTargeting/Microsoft.AspNetCore.Components.WebView.props": {}
         }
       },
-      "Microsoft.AspNetCore.Components.WebView.Maui/10.0.60": {
+      "Microsoft.AspNetCore.Components.WebView.Maui/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.AspNetCore.Authorization": "10.0.0",
@@ -1833,10 +1927,10 @@
           }
         }
       },
-      "Microsoft.Data.Sqlite/10.0.7": {
+      "Microsoft.Data.Sqlite/10.0.5": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Data.Sqlite.Core": "10.0.7",
+          "Microsoft.Data.Sqlite.Core": "10.0.5",
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11",
           "SQLitePCLRaw.core": "2.1.11"
         },
@@ -1847,7 +1941,7 @@
           "lib/netstandard2.0/_._": {}
         }
       },
-      "Microsoft.Data.Sqlite.Core/10.0.7": {
+      "Microsoft.Data.Sqlite.Core/10.0.5": {
         "type": "package",
         "dependencies": {
           "SQLitePCLRaw.core": "2.1.11"
@@ -2346,33 +2440,33 @@
           }
         }
       },
-      "Microsoft.Maui.Controls/10.0.60": {
+      "Microsoft.Maui.Controls/10.0.51": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Build.Tasks": "10.0.60",
-          "Microsoft.Maui.Controls.Core": "10.0.60",
-          "Microsoft.Maui.Controls.Xaml": "10.0.60",
-          "Microsoft.Maui.Resizetizer": "10.0.60"
+          "Microsoft.Maui.Controls.Build.Tasks": "10.0.51",
+          "Microsoft.Maui.Controls.Core": "10.0.51",
+          "Microsoft.Maui.Controls.Xaml": "10.0.51",
+          "Microsoft.Maui.Resizetizer": "10.0.51"
         }
       },
-      "Microsoft.Maui.Controls.Build.Tasks/10.0.60": {
+      "Microsoft.Maui.Controls.Build.Tasks/10.0.51": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Core": "10.0.60",
-          "Microsoft.Maui.Controls.Xaml": "10.0.60"
+          "Microsoft.Maui.Controls.Core": "10.0.51",
+          "Microsoft.Maui.Controls.Xaml": "10.0.51"
         },
         "build": {
           "buildTransitive/net6.0-windows10.0.17763.0/Microsoft.Maui.Controls.Build.Tasks.props": {},
           "buildTransitive/net6.0-windows10.0.17763.0/Microsoft.Maui.Controls.Build.Tasks.targets": {}
         }
       },
-      "Microsoft.Maui.Controls.Compatibility/10.0.60": {
+      "Microsoft.Maui.Controls.Compatibility/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.60",
-          "Microsoft.Maui.Controls.Xaml": "10.0.60"
+          "Microsoft.Maui.Controls.Core": "10.0.51",
+          "Microsoft.Maui.Controls.Xaml": "10.0.51"
         },
         "compile": {
           "lib/net10.0-windows10.0.19041/Microsoft.Maui.Controls.Compatibility.dll": {
@@ -2385,14 +2479,14 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Core/10.0.60": {
+      "Microsoft.Maui.Controls.Core/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.DependencyInjection": "10.0.0",
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Core": "10.0.60"
+          "Microsoft.Maui.Core": "10.0.51"
         },
         "compile": {
           "lib/net10.0-windows10.0.19041/Microsoft.Maui.Controls.dll": {
@@ -2509,12 +2603,12 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Xaml/10.0.60": {
+      "Microsoft.Maui.Controls.Xaml/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.60",
-          "Microsoft.Maui.Core": "10.0.60"
+          "Microsoft.Maui.Controls.Core": "10.0.51",
+          "Microsoft.Maui.Core": "10.0.51"
         },
         "compile": {
           "lib/net10.0-windows10.0.19041/Microsoft.Maui.Controls.Xaml.dll": {
@@ -2527,7 +2621,7 @@
           }
         }
       },
-      "Microsoft.Maui.Core/10.0.60": {
+      "Microsoft.Maui.Core/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
@@ -2536,9 +2630,9 @@
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
           "Microsoft.Graphics.Win2D": "1.3.2",
-          "Microsoft.Maui.Essentials": "10.0.60",
-          "Microsoft.Maui.Graphics": "10.0.60",
-          "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop": "10.0.60",
+          "Microsoft.Maui.Essentials": "10.0.51",
+          "Microsoft.Maui.Graphics": "10.0.51",
+          "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop": "10.0.51",
           "Microsoft.Web.WebView2": "1.0.3179.45",
           "Microsoft.Windows.SDK.BuildTools": "10.0.26100.4654",
           "Microsoft.WindowsAppSDK": "1.8.251106002"
@@ -2558,10 +2652,10 @@
           "buildTransitive/net10.0-windows10.0.17763.0/Microsoft.Maui.Core.targets": {}
         }
       },
-      "Microsoft.Maui.Essentials/10.0.60": {
+      "Microsoft.Maui.Essentials/10.0.51": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Graphics": "10.0.60",
+          "Microsoft.Maui.Graphics": "10.0.51",
           "Microsoft.Web.WebView2": "1.0.3179.45",
           "Microsoft.WindowsAppSDK": "1.8.251106002"
         },
@@ -2576,7 +2670,7 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics/10.0.60": {
+      "Microsoft.Maui.Graphics/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.Graphics.Win2D": "1.3.2",
@@ -2594,11 +2688,11 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop/10.0.60": {
+      "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop/10.0.51": {
         "type": "package",
         "dependencies": {
           "Microsoft.Graphics.Win2D": "1.3.2",
-          "Microsoft.Maui.Graphics": "10.0.60",
+          "Microsoft.Maui.Graphics": "10.0.51",
           "Microsoft.WindowsAppSDK": "1.8.251106002"
         },
         "compile": {
@@ -2612,7 +2706,7 @@
           }
         }
       },
-      "Microsoft.Maui.Resizetizer/10.0.60": {
+      "Microsoft.Maui.Resizetizer/10.0.51": {
         "type": "package",
         "build": {
           "buildTransitive/Microsoft.Maui.Resizetizer.props": {},
@@ -2642,29 +2736,29 @@
           "buildTransitive/Microsoft.Windows.SDK.BuildTools.MSIX.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK/1.8.251106002": {
+      "Microsoft.WindowsAppSDK/1.8.260101001": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.AI": "[1.8.39]",
-          "Microsoft.WindowsAppSDK.Base": "[1.8.250831001]",
-          "Microsoft.WindowsAppSDK.DWrite": "[1.8.25090401]",
-          "Microsoft.WindowsAppSDK.Foundation": "[1.8.251104000]",
-          "Microsoft.WindowsAppSDK.InteractiveExperiences": "[1.8.251104001]",
-          "Microsoft.WindowsAppSDK.ML": "[1.8.2109]",
-          "Microsoft.WindowsAppSDK.Runtime": "[1.8.251106002]",
-          "Microsoft.WindowsAppSDK.Widgets": "[1.8.250904007]",
-          "Microsoft.WindowsAppSDK.WinUI": "[1.8.251105000]"
+          "Microsoft.WindowsAppSDK.AI": "[1.8.44]",
+          "Microsoft.WindowsAppSDK.Base": "[1.8.251216001]",
+          "Microsoft.WindowsAppSDK.DWrite": "[1.8.25122902]",
+          "Microsoft.WindowsAppSDK.Foundation": "[1.8.251220000]",
+          "Microsoft.WindowsAppSDK.InteractiveExperiences": "[1.8.251217001]",
+          "Microsoft.WindowsAppSDK.ML": "[1.8.2119]",
+          "Microsoft.WindowsAppSDK.Runtime": "[1.8.260101001]",
+          "Microsoft.WindowsAppSDK.Widgets": "[1.8.251231004]",
+          "Microsoft.WindowsAppSDK.WinUI": "[1.8.251222000]"
         },
         "build": {
           "buildTransitive/Microsoft.WindowsAppSDK.props": {},
           "buildTransitive/Microsoft.WindowsAppSDK.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.AI/1.8.39": {
+      "Microsoft.WindowsAppSDK.AI/1.8.44": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001",
-          "Microsoft.WindowsAppSDK.Foundation": "1.8.251104000"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001",
+          "Microsoft.WindowsAppSDK.Foundation": "1.8.251220000"
         },
         "compile": {
           "lib/net6.0-windows10.0.17763.0/Microsoft.Graphics.Imaging.Projection.dll": {},
@@ -2687,7 +2781,7 @@
           "buildTransitive/Microsoft.WindowsAppSDK.AI.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.Base/1.8.250831001": {
+      "Microsoft.WindowsAppSDK.Base/1.8.251216001": {
         "type": "package",
         "dependencies": {
           "Microsoft.Windows.SDK.BuildTools": "10.0.26100.4654",
@@ -2698,21 +2792,21 @@
           "buildTransitive/Microsoft.WindowsAppSDK.Base.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.DWrite/1.8.25090401": {
+      "Microsoft.WindowsAppSDK.DWrite/1.8.25122902": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001"
         },
         "build": {
           "buildTransitive/Microsoft.WindowsAppSDK.DWrite.props": {},
           "buildTransitive/Microsoft.WindowsAppSDK.DWrite.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.Foundation/1.8.251104000": {
+      "Microsoft.WindowsAppSDK.Foundation/1.8.251220000": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001",
-          "Microsoft.WindowsAppSDK.InteractiveExperiences": "1.8.251104001"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001",
+          "Microsoft.WindowsAppSDK.InteractiveExperiences": "1.8.251217001"
         },
         "compile": {
           "lib/net6.0-windows10.0.17763.0/Microsoft.Security.Authentication.OAuth.Projection.dll": {},
@@ -2813,10 +2907,10 @@
           "buildTransitive/Microsoft.WindowsAppSDK.Foundation.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.InteractiveExperiences/1.8.251104001": {
+      "Microsoft.WindowsAppSDK.InteractiveExperiences/1.8.251217001": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001"
         },
         "compile": {
           "lib/net6.0-windows10.0.18362.0/Microsoft.InteractiveExperiences.Projection.dll": {
@@ -2833,11 +2927,11 @@
           "buildTransitive/Microsoft.WindowsAppSDK.InteractiveExperiences.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.ML/1.8.2109": {
+      "Microsoft.WindowsAppSDK.ML/1.8.2119": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001",
-          "Microsoft.WindowsAppSDK.Foundation": "1.8.251104000",
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001",
+          "Microsoft.WindowsAppSDK.Foundation": "1.8.251220000",
           "System.Numerics.Tensors": "9.0.0"
         },
         "compile": {
@@ -2853,20 +2947,20 @@
           "buildTransitive/Microsoft.WindowsAppSDK.ML.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.Runtime/1.8.251106002": {
+      "Microsoft.WindowsAppSDK.Runtime/1.8.260101001": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001"
         },
         "build": {
           "buildTransitive/Microsoft.WindowsAppSDK.Runtime.props": {},
           "buildTransitive/Microsoft.WindowsAppSDK.Runtime.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.Widgets/1.8.250904007": {
+      "Microsoft.WindowsAppSDK.Widgets/1.8.251231004": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001"
         },
         "compile": {
           "lib/net6.0-windows10.0.17763.0/Microsoft.Windows.Widgets.Projection.dll": {
@@ -2883,13 +2977,13 @@
           "buildTransitive/Microsoft.WindowsAppSDK.Widgets.targets": {}
         }
       },
-      "Microsoft.WindowsAppSDK.WinUI/1.8.251105000": {
+      "Microsoft.WindowsAppSDK.WinUI/1.8.251222000": {
         "type": "package",
         "dependencies": {
           "Microsoft.Web.WebView2": "1.0.3179.45",
-          "Microsoft.WindowsAppSDK.Base": "1.8.250831001",
-          "Microsoft.WindowsAppSDK.Foundation": "1.8.251104000",
-          "Microsoft.WindowsAppSDK.InteractiveExperiences": "1.8.251104001"
+          "Microsoft.WindowsAppSDK.Base": "1.8.251216001",
+          "Microsoft.WindowsAppSDK.Foundation": "1.8.251220000",
+          "Microsoft.WindowsAppSDK.InteractiveExperiences": "1.8.251217001"
         },
         "compile": {
           "lib/net6.0-windows10.0.17763.0/Microsoft.WinUI.dll": {
@@ -2994,10 +3088,77 @@
         "build": {
           "buildTransitive/net8.0/_._": {}
         }
+      },
+      "System.Speech/10.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net10.0/System.Speech.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "runtimes/win/lib/net10.0/System.Speech.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net8.0/_._": {}
+        }
       }
     }
   },
   "libraries": {
+    "CommunityToolkit.Maui/14.0.1": {
+      "sha512": "edQCjYChucj7IzmIIw76xAjLVBBBQKq+/5pBP3Vc3jathbmsOWqLMI4jkv6YKtuv/ajQaJHPhSGWXcCKVoPACQ==",
+      "type": "package",
+      "path": "communitytoolkit.maui/14.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "ReadMe.txt",
+        "analyzers/dotnet/cs/CommunityToolkit.Maui.Analyzers.CodeFixes.dll",
+        "analyzers/dotnet/cs/CommunityToolkit.Maui.Analyzers.dll",
+        "analyzers/dotnet/cs/CommunityToolkit.Maui.SourceGenerators.dll",
+        "communitytoolkit.maui.14.0.1.nupkg.sha512",
+        "communitytoolkit.maui.nuspec",
+        "icon.png",
+        "lib/net10.0-android36.0/CommunityToolkit.Maui.dll",
+        "lib/net10.0-android36.0/CommunityToolkit.Maui.xml",
+        "lib/net10.0-ios26.0/CommunityToolkit.Maui.dll",
+        "lib/net10.0-ios26.0/CommunityToolkit.Maui.xml",
+        "lib/net10.0-maccatalyst26.0/CommunityToolkit.Maui.dll",
+        "lib/net10.0-maccatalyst26.0/CommunityToolkit.Maui.xml",
+        "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.dll",
+        "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.pri",
+        "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.xml",
+        "lib/net10.0/CommunityToolkit.Maui.dll",
+        "lib/net10.0/CommunityToolkit.Maui.xml"
+      ]
+    },
+    "CommunityToolkit.Maui.Core/14.0.1": {
+      "sha512": "hlIInY0AKVSZicbYQOUuX8AMEtmFvsEDceLi2Jo5N0kuYX642XbJVIehs/fxs9yiP9RHQaRY/pjB3mM10fZtRg==",
+      "type": "package",
+      "path": "communitytoolkit.maui.core/14.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "ReadMe.txt",
+        "communitytoolkit.maui.core.14.0.1.nupkg.sha512",
+        "communitytoolkit.maui.core.nuspec",
+        "icon.png",
+        "lib/net10.0-android36.0/CommunityToolkit.Maui.Core.dll",
+        "lib/net10.0-android36.0/CommunityToolkit.Maui.Core.xml",
+        "lib/net10.0-ios26.0/CommunityToolkit.Maui.Core.dll",
+        "lib/net10.0-ios26.0/CommunityToolkit.Maui.Core.xml",
+        "lib/net10.0-maccatalyst26.0/CommunityToolkit.Maui.Core.dll",
+        "lib/net10.0-maccatalyst26.0/CommunityToolkit.Maui.Core.xml",
+        "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.Core.dll",
+        "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.Core.pri",
+        "lib/net10.0-windows10.0.19041/CommunityToolkit.Maui.Core.xml",
+        "lib/net10.0/CommunityToolkit.Maui.Core.dll",
+        "lib/net10.0/CommunityToolkit.Maui.Core.xml"
+      ]
+    },
     "Microsoft.AspNetCore.Authorization/10.0.0": {
       "sha512": "8qUwBAtUj9kX8RwqEPGJu3zGM/GlwF2bR9gsxk/+kiSmCB6aDYlYF7E2gM9VOYS9NDF6zxTSEgJxwD9kFbu8Sw==",
       "type": "package",
@@ -3098,10 +3259,10 @@
         "staticwebassets/blazor.webview.js"
       ]
     },
-    "Microsoft.AspNetCore.Components.WebView.Maui/10.0.60": {
-      "sha512": "bWOq0V7SpT1aXVeGElBRNj5aMPtQim7WwRi1iPMqDdQas46IgjncLdWMdPQ1s9QfGFd3suQcLXQyhObKce0lXg==",
+    "Microsoft.AspNetCore.Components.WebView.Maui/10.0.51": {
+      "sha512": "jTvRR7HpxwHHimqgohjY3yGw6yXZAfEmxvw+zpsf6Yw9w1e4bkXK4j6aD55FkSPr+9B0bqvBYiA1Njyi3yc3fQ==",
       "type": "package",
-      "path": "microsoft.aspnetcore.components.webview.maui/10.0.60",
+      "path": "microsoft.aspnetcore.components.webview.maui/10.0.51",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3131,7 +3292,7 @@
         "lib/net10.0/Microsoft.AspNetCore.Components.WebView.Maui.dll",
         "lib/net10.0/Microsoft.AspNetCore.Components.WebView.Maui.pdb",
         "lib/net10.0/Microsoft.AspNetCore.Components.WebView.Maui.xml",
-        "microsoft.aspnetcore.components.webview.maui.10.0.60.nupkg.sha512",
+        "microsoft.aspnetcore.components.webview.maui.10.0.51.nupkg.sha512",
         "microsoft.aspnetcore.components.webview.maui.nuspec"
       ]
     },
@@ -3877,24 +4038,24 @@
         "microsoft.codeanalysis.csharp.nuspec"
       ]
     },
-    "Microsoft.Data.Sqlite/10.0.7": {
-      "sha512": "DZ6G2QuyPrsh5VS+wfiZbNBtYT6p+CkxXjD0aZHF04xso7QsG/uk0JpG30hzYlK6u/wtTzta1Dqfgbc/Sl2sDA==",
+    "Microsoft.Data.Sqlite/10.0.5": {
+      "sha512": "y4noWO5q8tav8I/JyOhuWxII+1KrXCLuhjXdP1GRd3PvVf/IlgL+eQlikp9DyCrybQxS/0ZO7Me/X6c22MjSaQ==",
       "type": "package",
-      "path": "microsoft.data.sqlite/10.0.7",
+      "path": "microsoft.data.sqlite/10.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "PACKAGE.md",
         "lib/netstandard2.0/_._",
-        "microsoft.data.sqlite.10.0.7.nupkg.sha512",
+        "microsoft.data.sqlite.10.0.5.nupkg.sha512",
         "microsoft.data.sqlite.nuspec"
       ]
     },
-    "Microsoft.Data.Sqlite.Core/10.0.7": {
-      "sha512": "xVrtBg3M1wJlBDkoT0dXEYB/wSc8bIHJPYtw/bu1AqpWgF79uPSs87DAhERR/Ilumre6TKZa1cjMg3VUUObVLA==",
+    "Microsoft.Data.Sqlite.Core/10.0.5": {
+      "sha512": "jFYXnh7s0RShCw6Vkf+ReGCw+mVi7ISg1YaEzYCJcXnUifmbW+aqvCsRJuSRj2ZuQ+oqetpjxlZtbpMmk5FKqQ==",
       "type": "package",
-      "path": "microsoft.data.sqlite.core/10.0.7",
+      "path": "microsoft.data.sqlite.core/10.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3904,7 +4065,7 @@
         "lib/net8.0/Microsoft.Data.Sqlite.xml",
         "lib/netstandard2.0/Microsoft.Data.Sqlite.dll",
         "lib/netstandard2.0/Microsoft.Data.Sqlite.xml",
-        "microsoft.data.sqlite.core.10.0.7.nupkg.sha512",
+        "microsoft.data.sqlite.core.10.0.5.nupkg.sha512",
         "microsoft.data.sqlite.core.nuspec"
       ]
     },
@@ -4670,10 +4831,10 @@
         "microsoft.jsinterop.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls/10.0.60": {
-      "sha512": "roufyrdUAejA9xeMY4kEZHYyFyqCUvWNJ7QKMWNzJT0VBQlMFkK+kCVUr6glR6ZsmPDW2OOy4YyflTAW8UF4sQ==",
+    "Microsoft.Maui.Controls/10.0.51": {
+      "sha512": "TLYYNFKykbsoA2vm6sRjgf9bGPNhyzyvgH9B39knqomS3rj/1jy9CHEg8b6xwB0RttgmuSBk+l9QSCTDbhChxw==",
       "type": "package",
-      "path": "microsoft.maui.controls/10.0.60",
+      "path": "microsoft.maui.controls/10.0.51",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4681,14 +4842,14 @@
         "LICENSE.TXT",
         "README.md",
         "THIRD-PARTY-NOTICES.TXT",
-        "microsoft.maui.controls.10.0.60.nupkg.sha512",
+        "microsoft.maui.controls.10.0.51.nupkg.sha512",
         "microsoft.maui.controls.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls.Build.Tasks/10.0.60": {
-      "sha512": "4RI15IhLt8TYq9QcqeRC25X603VRdUXnUFiDO9zZRdEAmTo2FTrMwcguOfX+IQb9d7FF4Iu+tQwnA3Q2a9ncDA==",
+    "Microsoft.Maui.Controls.Build.Tasks/10.0.51": {
+      "sha512": "nUIQPuFDdeBa9DjQ+icri2aWgC7tE3wTapY5Yii7Tmq9E50qck1Gag3Bm4QtUpO6xPcW84gY44Lj5NnQmQc2dw==",
       "type": "package",
-      "path": "microsoft.maui.controls.build.tasks/10.0.60",
+      "path": "microsoft.maui.controls.build.tasks/10.0.51",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4770,14 +4931,14 @@
         "buildTransitive/netstandard2.0/zh-HK/Microsoft.Maui.Controls.Build.Tasks.resources.dll",
         "buildTransitive/netstandard2.0/zh-Hans/Microsoft.Maui.Controls.Build.Tasks.resources.dll",
         "buildTransitive/netstandard2.0/zh-Hant/Microsoft.Maui.Controls.Build.Tasks.resources.dll",
-        "microsoft.maui.controls.build.tasks.10.0.60.nupkg.sha512",
+        "microsoft.maui.controls.build.tasks.10.0.51.nupkg.sha512",
         "microsoft.maui.controls.build.tasks.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls.Compatibility/10.0.60": {
-      "sha512": "s68JB+Iw24rWv+93veZHPmIr0auxLRDIQOIAV5BQfF3ycRYupSIrv+vPnZFIbSVE21OtPmM9LaGVws3nW4jajA==",
+    "Microsoft.Maui.Controls.Compatibility/10.0.51": {
+      "sha512": "eZIFC5DzoUFsN3fbdY/6A8wsDII2hJn2OwzKR+dUK3g91sDiVG0/aPC8fDEVD68nhNc+Ow1sq496WJSvxfsbqw==",
       "type": "package",
-      "path": "microsoft.maui.controls.compatibility/10.0.60",
+      "path": "microsoft.maui.controls.compatibility/10.0.51",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4812,14 +4973,14 @@
         "lib/netstandard2.1/Microsoft.Maui.Controls.Compatibility.dll",
         "lib/netstandard2.1/Microsoft.Maui.Controls.Compatibility.pdb",
         "lib/netstandard2.1/Microsoft.Maui.Controls.Compatibility.xml",
-        "microsoft.maui.controls.compatibility.10.0.60.nupkg.sha512",
+        "microsoft.maui.controls.compatibility.10.0.51.nupkg.sha512",
         "microsoft.maui.controls.compatibility.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls.Core/10.0.60": {
-      "sha512": "UlxYEL8k26iEMTJAiti3rQffohHRx5+cx+S41Xw7KTNXss0Kty+LIysUlX9U51RmxPs9CXFXAbHFxKzQzqufLA==",
+    "Microsoft.Maui.Controls.Core/10.0.51": {
+      "sha512": "qstQi4JkE5aMbWn1vcAf7F8bmbeoEaRiHudwWB6GWFBwRbvW/INCUgWOW3o4U2wQ+kFk6umkARhYILgM6p7KQA==",
       "type": "package",
-      "path": "microsoft.maui.controls.core/10.0.60",
+      "path": "microsoft.maui.controls.core/10.0.51",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5142,14 +5303,14 @@
         "lib/netstandard2.1/zh-HK/Microsoft.Maui.Controls.resources.dll",
         "lib/netstandard2.1/zh-Hans/Microsoft.Maui.Controls.resources.dll",
         "lib/netstandard2.1/zh-Hant/Microsoft.Maui.Controls.resources.dll",
-        "microsoft.maui.controls.core.10.0.60.nupkg.sha512",
+        "microsoft.maui.controls.core.10.0.51.nupkg.sha512",
         "microsoft.maui.controls.core.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls.Xaml/10.0.60": {
-      "sha512": "BHyQ0F6zy4ZTOYjCexTsPNPW2fQyEXDG6uyn4//hYJsimffucJxCEbQgvs7S+mOFmMd25O6Ob/2FFfWGrQUmNg==",
+    "Microsoft.Maui.Controls.Xaml/10.0.51": {
+      "sha512": "mS8xpYrQnTLgxYkzLhUn5PBy//i+7a5KbrySHC9VJ9t3HIiJkQNE4Rw3EGXSaT8m4UrPuRTn4I++Q4slMOg5mg==",
       "type": "package",
-      "path": "microsoft.maui.controls.xaml/10.0.60",
+      "path": "microsoft.maui.controls.xaml/10.0.51",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5199,14 +5360,14 @@
         "lib/netstandard2.1/Microsoft.Maui.Controls.Xaml.dll",
         "lib/netstandard2.1/Microsoft.Maui.Controls.Xaml.pdb",
         "lib/netstandard2.1/Microsoft.Maui.Controls.Xaml.xml",
-        "microsoft.maui.controls.xaml.10.0.60.nupkg.sha512",
+        "microsoft.maui.controls.xaml.10.0.51.nupkg.sha512",
         "microsoft.maui.controls.xaml.nuspec"
       ]
     },
-    "Microsoft.Maui.Core/10.0.60": {
-      "sha512": "FzwLJdrlmHCPGXd1NB312amKKINNCC2ZBQKnWti8qLNaRNbV0qPyRcvRPlmDedqXojEf676rzssZjOhwSRSHRQ==",
+    "Microsoft.Maui.Core/10.0.51": {
+      "sha512": "lqxvceuYFwb2NN3ZYrqMFx2NmNOS7eyf4ERc/iuwH1XwJ6QnuG+vaYOCTlFiQDgw27KGlorw8o5o6vCzZFvceQ==",
       "type": "package",
-      "path": "microsoft.maui.core/10.0.60",
+      "path": "microsoft.maui.core/10.0.51",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5252,14 +5413,14 @@
         "lib/netstandard2.1/Microsoft.Maui.dll",
         "lib/netstandard2.1/Microsoft.Maui.pdb",
         "lib/netstandard2.1/Microsoft.Maui.xml",
-        "microsoft.maui.core.10.0.60.nupkg.sha512",
+        "microsoft.maui.core.10.0.51.nupkg.sha512",
         "microsoft.maui.core.nuspec"
       ]
     },
-    "Microsoft.Maui.Essentials/10.0.60": {
-      "sha512": "zrE6EmEwblpt0LOG6OcDfxmm6kQw6Ch9RjYuQBH7U4Kz6Sl03LXQ0N29h6/Ox58WwHolC5CTq03qr8iQtEOxcA==",
+    "Microsoft.Maui.Essentials/10.0.51": {
+      "sha512": "DrfNYW3DKevP5TmiIN2wBRmu/xC5Utyn5YmpaMmzdhAS/ZqCDTgj3BmLPwGsn0R+JYDNAv83q4TI5Ap2VyXvig==",
       "type": "package",
-      "path": "microsoft.maui.essentials/10.0.60",
+      "path": "microsoft.maui.essentials/10.0.51",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5294,14 +5455,14 @@
         "lib/netstandard2.1/Microsoft.Maui.Essentials.dll",
         "lib/netstandard2.1/Microsoft.Maui.Essentials.pdb",
         "lib/netstandard2.1/Microsoft.Maui.Essentials.xml",
-        "microsoft.maui.essentials.10.0.60.nupkg.sha512",
+        "microsoft.maui.essentials.10.0.51.nupkg.sha512",
         "microsoft.maui.essentials.nuspec"
       ]
     },
-    "Microsoft.Maui.Graphics/10.0.60": {
-      "sha512": "4SEY3I1sU/r3PD9B0fYXLL0ttqDibxl1kscWIKkqAmLi6fha0dFL7XMRL3P2mjwkCQQcKLB46iE+ZuI3F/1SHA==",
+    "Microsoft.Maui.Graphics/10.0.51": {
+      "sha512": "1oSojQn4xnSA7tVu6xILmxD24aAMqmiPqRKfavuhp3apCon4KV70Ic/5S3DvbQ67tFloAsv9JOybR2qa65m51g==",
       "type": "package",
-      "path": "microsoft.maui.graphics/10.0.60",
+      "path": "microsoft.maui.graphics/10.0.51",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5338,14 +5499,14 @@
         "lib/netstandard2.1/Microsoft.Maui.Graphics.dll",
         "lib/netstandard2.1/Microsoft.Maui.Graphics.pdb",
         "lib/netstandard2.1/Microsoft.Maui.Graphics.xml",
-        "microsoft.maui.graphics.10.0.60.nupkg.sha512",
+        "microsoft.maui.graphics.10.0.51.nupkg.sha512",
         "microsoft.maui.graphics.nuspec"
       ]
     },
-    "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop/10.0.60": {
-      "sha512": "8Cc9OSyYmelQiOL5jVQmWAvuKEUvXWYbsCj2AjAtIfcKkdrlk58kyFs3t8sGMklcC0sWKHk2bSh0dJNDWPF7Sg==",
+    "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop/10.0.51": {
+      "sha512": "M0JIGi5VVHVjDwU3AqfqHH2GN+gKXATU87Z/laLPnF6sUpuCqkvDOAlPjWtbdDIA/txE9hLnHMEvJoXkpfJipA==",
       "type": "package",
-      "path": "microsoft.maui.graphics.win2d.winui.desktop/10.0.60",
+      "path": "microsoft.maui.graphics.win2d.winui.desktop/10.0.51",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5359,14 +5520,14 @@
         "lib/net10.0-windows10.0.20348/Microsoft.Maui.Graphics.Win2D.WinUI.Desktop.dll",
         "lib/net10.0-windows10.0.20348/Microsoft.Maui.Graphics.Win2D.WinUI.Desktop.pdb",
         "lib/net10.0-windows10.0.20348/Microsoft.Maui.Graphics.Win2D.WinUI.Desktop.pri",
-        "microsoft.maui.graphics.win2d.winui.desktop.10.0.60.nupkg.sha512",
+        "microsoft.maui.graphics.win2d.winui.desktop.10.0.51.nupkg.sha512",
         "microsoft.maui.graphics.win2d.winui.desktop.nuspec"
       ]
     },
-    "Microsoft.Maui.Resizetizer/10.0.60": {
-      "sha512": "mKuM50Fuu+DUSAf7NY4lVxtvDWgmT6WTRhUvFvomaNvZ1VzzbxlmwniJdWk53RJDnyuAUgFm9FVvAP+41x7rVQ==",
+    "Microsoft.Maui.Resizetizer/10.0.51": {
+      "sha512": "ublCz8lzZEuG0/Nc5Dy+Y8bLPpbB/bCJ684HHRlHcsDE72rcK3CWJqW0HUMfvZsHqYqhfivgOpUgf+NyId0MNA==",
       "type": "package",
-      "path": "microsoft.maui.resizetizer/10.0.60",
+      "path": "microsoft.maui.resizetizer/10.0.51",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5415,7 +5576,7 @@
         "buildTransitive/x64/libSkiaSharp.so",
         "buildTransitive/x86/libHarfBuzzSharp.dll",
         "buildTransitive/x86/libSkiaSharp.dll",
-        "microsoft.maui.resizetizer.10.0.60.nupkg.sha512",
+        "microsoft.maui.resizetizer.10.0.51.nupkg.sha512",
         "microsoft.maui.resizetizer.nuspec"
       ]
     },
@@ -5788,10 +5949,10 @@
         "tools/net6.0/Newtonsoft.Json.dll"
       ]
     },
-    "Microsoft.WindowsAppSDK/1.8.251106002": {
-      "sha512": "IiDYOHJahku9GuajXLCNWkrhsG+Fbd2GsWpINLXhm3nF8mXzGPmFtateotJWnE0BKCa4Ua1+O4nYJ4gUC9+NXg==",
+    "Microsoft.WindowsAppSDK/1.8.260101001": {
+      "sha512": "sXb7YljdIpG2MFG/i/es69lxOdfcTYKj+85jhOQU815imDFU+tk4LmT8eRDZUEmDNHyQMtAEZdGWecbA+Hu3QQ==",
       "type": "package",
-      "path": "microsoft.windowsappsdk/1.8.251106002",
+      "path": "microsoft.windowsappsdk/1.8.260101001",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5806,14 +5967,14 @@
         "buildTransitive/native/Microsoft.WindowsAppSDK.props",
         "buildTransitive/native/Microsoft.WindowsAppSDK.targets",
         "license.txt",
-        "microsoft.windowsappsdk.1.8.251106002.nupkg.sha512",
+        "microsoft.windowsappsdk.1.8.260101001.nupkg.sha512",
         "microsoft.windowsappsdk.nuspec"
       ]
     },
-    "Microsoft.WindowsAppSDK.AI/1.8.39": {
-      "sha512": "jYx8PqQZjB59MU+/IcelwWa0iUnNYkSIWyirDLb50/6uaSVK+FMKsdvV5ZxVuQmBIBUjqReOLRAdlsxxOVAE1Q==",
+    "Microsoft.WindowsAppSDK.AI/1.8.44": {
+      "sha512": "6b9ib6x5IMF+WMqypCReB7CItqEpyV0eViZ0jX1d00Po60/xAYvEiFSSSj99c8p+Qb1rlAq9tbrCLLCiIR0cpg==",
       "type": "package",
-      "path": "microsoft.windowsappsdk.ai/1.8.39",
+      "path": "microsoft.windowsappsdk.ai/1.8.44",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5839,7 +6000,7 @@
         "metadata/Microsoft.Windows.AI.Text.winmd",
         "metadata/Microsoft.Windows.AI.winmd",
         "metadata/Microsoft.Windows.Workloads.winmd",
-        "microsoft.windowsappsdk.ai.1.8.39.nupkg.sha512",
+        "microsoft.windowsappsdk.ai.1.8.44.nupkg.sha512",
         "microsoft.windowsappsdk.ai.nuspec",
         "runtimes-framework/package.appxfragment",
         "runtimes-framework/win-arm64/native/Microsoft.Graphics.Imaging.dll",
@@ -5865,6 +6026,7 @@
         "runtimes-framework/win-arm64/native/Microsoft.Windows.Workloads.pri",
         "runtimes-framework/win-arm64/native/NpuDetect/NPUDetect.dll",
         "runtimes-framework/win-arm64/native/SessionHandleIPCProxyStub.dll",
+        "runtimes-framework/win-arm64/native/workloads.j32.json",
         "runtimes-framework/win-arm64/native/workloads.json",
         "runtimes-framework/win-arm64/native/workloads.qnn.json",
         "runtimes-framework/win-arm64ec/native/Microsoft.Graphics.Imaging.dll",
@@ -5892,6 +6054,7 @@
         "runtimes-framework/win-arm64ec/native/NpuDetect/NPUDetect.dll",
         "runtimes-framework/win-arm64ec/native/SessionHandleIPCProxyStub.dll",
         "runtimes-framework/win-arm64ec/native/workloads.365.json",
+        "runtimes-framework/win-arm64ec/native/workloads.j32.json",
         "runtimes-framework/win-arm64ec/native/workloads.json",
         "runtimes-framework/win-arm64ec/native/workloads.lnl.json",
         "runtimes-framework/win-arm64ec/native/workloads.qnn.json",
@@ -5921,16 +6084,17 @@
         "runtimes-framework/win-x64/native/NpuDetect/NPUDetect.dll",
         "runtimes-framework/win-x64/native/SessionHandleIPCProxyStub.dll",
         "runtimes-framework/win-x64/native/workloads.365.json",
+        "runtimes-framework/win-x64/native/workloads.j32.json",
         "runtimes-framework/win-x64/native/workloads.json",
         "runtimes-framework/win-x64/native/workloads.lnl.json",
         "runtimes-framework/win-x64/native/workloads.qnn.json",
         "runtimes-framework/win-x64/native/workloads.stx.json"
       ]
     },
-    "Microsoft.WindowsAppSDK.Base/1.8.250831001": {
-      "sha512": "8LlfXBS2Hpw+OoVXViJmIOPXl0nMbqMaFR3j6+QHFNc62VULwPEcXiMRcP2WbV/+mtC7W2LH6yx6uu/Hrr9lVw==",
+    "Microsoft.WindowsAppSDK.Base/1.8.251216001": {
+      "sha512": "PS1wriuFknz3W2F2P/e6RvOTM35w89Lsj/f0QmUEPrJjKnc+jM0JLX1vfdytI14y1gNRUTm9uclwP0aH/SVU5w==",
       "type": "package",
-      "path": "microsoft.windowsappsdk.base/1.8.250831001",
+      "path": "microsoft.windowsappsdk.base/1.8.251216001",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5953,14 +6117,14 @@
         "buildTransitive/native/Microsoft.WindowsAppSDK.Base.props",
         "buildTransitive/native/Microsoft.WindowsAppSDK.Base.targets",
         "license.txt",
-        "microsoft.windowsappsdk.base.1.8.250831001.nupkg.sha512",
+        "microsoft.windowsappsdk.base.1.8.251216001.nupkg.sha512",
         "microsoft.windowsappsdk.base.nuspec"
       ]
     },
-    "Microsoft.WindowsAppSDK.DWrite/1.8.25090401": {
-      "sha512": "WJ0p9yMgiNYqU2O5ZKCXcb7FBjryIUUopgeYMvnlf1yBUYgdjMFMkoJqYVqkz866wnntiB2IZhLxEzhFzvVs1A==",
+    "Microsoft.WindowsAppSDK.DWrite/1.8.25122902": {
+      "sha512": "zFNn07i7Cyz62Y8FnPQAyzeZK7ww3m9t42i9pzy4C04pNbyUDQ4fG7pB6VSh6n4EyFuYtuFQuDzt4mKmXFrkrg==",
       "type": "package",
-      "path": "microsoft.windowsappsdk.dwrite/1.8.25090401",
+      "path": "microsoft.windowsappsdk.dwrite/1.8.25122902",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5980,7 +6144,7 @@
         "lib/native/x64/DWriteCore.lib",
         "lib/native/x86/DWriteCore.lib",
         "license.txt",
-        "microsoft.windowsappsdk.dwrite.1.8.25090401.nupkg.sha512",
+        "microsoft.windowsappsdk.dwrite.1.8.25122902.nupkg.sha512",
         "microsoft.windowsappsdk.dwrite.nuspec",
         "runtimes-framework/win-arm64/native/DWriteCore.dll",
         "runtimes-framework/win-arm64ec/native/DWriteCore.dll",
@@ -5988,10 +6152,10 @@
         "runtimes-framework/win-x86/native/DWriteCore.dll"
       ]
     },
-    "Microsoft.WindowsAppSDK.Foundation/1.8.251104000": {
-      "sha512": "vvL3zpC8klGcaxUA7RbMuUMVAABD7jEMFhNKGAewOvey18i64mslbU0aIQM3+Bu4tQKsaGXSWYrJFsAU/Op4OA==",
+    "Microsoft.WindowsAppSDK.Foundation/1.8.251220000": {
+      "sha512": "3S64+LoMIXLO/488auf1/qk1gt5Hr7RpdF0iUb82A+NoByX+6eScNhL3kZf2TIiOcwxfGjtefYJC4MOqXD2IrA==",
       "type": "package",
-      "path": "microsoft.windowsappsdk.foundation/1.8.251104000",
+      "path": "microsoft.windowsappsdk.foundation/1.8.251220000",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -6135,7 +6299,7 @@
         "metadata/Microsoft.Windows.System.Power.xml",
         "metadata/Microsoft.Windows.System.winmd",
         "metadata/Microsoft.Windows.System.xml",
-        "microsoft.windowsappsdk.foundation.1.8.251104000.nupkg.sha512",
+        "microsoft.windowsappsdk.foundation.1.8.251220000.nupkg.sha512",
         "microsoft.windowsappsdk.foundation.nuspec",
         "runtimes-framework/package.appxfragment",
         "runtimes-framework/win-arm64/native/DeploymentAgent.exe",
@@ -6176,10 +6340,10 @@
         "runtimes/win-x86/native/Microsoft.WindowsAppRuntime.Bootstrap.dll"
       ]
     },
-    "Microsoft.WindowsAppSDK.InteractiveExperiences/1.8.251104001": {
-      "sha512": "t4Vs1eMJqUpa5CbZ5SvO4j5VdyhNwtarNfYJAWar8dHejpNol3g+/t0l0ovKye+DKQpinWdGkuQSUX8Oc8M3ug==",
+    "Microsoft.WindowsAppSDK.InteractiveExperiences/1.8.251217001": {
+      "sha512": "npyHn+Qi8/DD0xBASL8+Ga9iWYz4P9M8BeiYYCRWOY8DMZkYQd8PCuJkA81Qm+2yNXGcn7osz7RgycZiIv0ONQ==",
       "type": "package",
-      "path": "microsoft.windowsappsdk.interactiveexperiences/1.8.251104001",
+      "path": "microsoft.windowsappsdk.interactiveexperiences/1.8.251217001",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -6254,7 +6418,7 @@
         "metadata/10.0.18362.0/Microsoft.Graphics.xml",
         "metadata/10.0.18362.0/Microsoft.UI.winmd",
         "metadata/10.0.18362.0/Microsoft.UI.xml",
-        "microsoft.windowsappsdk.interactiveexperiences.1.8.251104001.nupkg.sha512",
+        "microsoft.windowsappsdk.interactiveexperiences.1.8.251217001.nupkg.sha512",
         "microsoft.windowsappsdk.interactiveexperiences.nuspec",
         "runtimes-framework/package.appxfragment",
         "runtimes-framework/win-arm64/native/CoreMessagingXP.dll",
@@ -6327,10 +6491,10 @@
         "runtimes-framework/win-x86/native/wuceffectsi.dll"
       ]
     },
-    "Microsoft.WindowsAppSDK.ML/1.8.2109": {
-      "sha512": "gfsSXBJrlsfnl1IID3AEasUvZXFFZk6n4iD2JP5BfheySaoWr/1JJVbqKYyRr7APe2kRzyztVW3eaj7KMfgR5A==",
+    "Microsoft.WindowsAppSDK.ML/1.8.2119": {
+      "sha512": "hIOkLSBBVxp/MfK3NwU1H1y7x6fDFS2Fn+HDQHYVroDYV1QJ43GFuKW6BAUb0OFZveyK0vGiEFWF7Zp9q6vUIg==",
       "type": "package",
-      "path": "microsoft.windowsappsdk.ml/1.8.2109",
+      "path": "microsoft.windowsappsdk.ml/1.8.2119",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -6372,7 +6536,7 @@
         "lib/net8.0-windows10.0.17763.0/Microsoft.Windows.AI.MachineLearning.Projection.dll",
         "license.txt",
         "metadata/Microsoft.Windows.AI.MachineLearning.winmd",
-        "microsoft.windowsappsdk.ml.1.8.2109.nupkg.sha512",
+        "microsoft.windowsappsdk.ml.1.8.2119.nupkg.sha512",
         "microsoft.windowsappsdk.ml.nuspec",
         "runtimes-framework/package.appxfragment",
         "runtimes-framework/win-arm64/native/DirectML.dll",
@@ -6388,10 +6552,10 @@
         "runtimes-framework/win-x64/native/onnxruntime_providers_shared.dll"
       ]
     },
-    "Microsoft.WindowsAppSDK.Runtime/1.8.251106002": {
-      "sha512": "5piaqsoXOTFXdtiGoqLhVPkG0HE3UD0g/S4D2i7I8MPO48eoaESJ4y/oUHzZFmSaqLQROWe8NJ9rXXNxxiL/gw==",
+    "Microsoft.WindowsAppSDK.Runtime/1.8.260101001": {
+      "sha512": "owDHXr1nmfO1V8mH/fCGT6izgkDZlufBAt7mUP335GpqkDPQ6RiRdAnEp2PWQiLrCcom1fL7WKyhrA3vN5ERZw==",
       "type": "package",
-      "path": "microsoft.windowsappsdk.runtime/1.8.251106002",
+      "path": "microsoft.windowsappsdk.runtime/1.8.260101001",
       "hasTools": true,
       "files": [
         ".nupkg.metadata",
@@ -6417,7 +6581,7 @@
         "include/WindowsAppSDK-VersionInfo.cs",
         "include/WindowsAppSDK-VersionInfo.h",
         "license.txt",
-        "microsoft.windowsappsdk.runtime.1.8.251106002.nupkg.sha512",
+        "microsoft.windowsappsdk.runtime.1.8.260101001.nupkg.sha512",
         "microsoft.windowsappsdk.runtime.nuspec",
         "tools/MSIX/win10-arm64/MSIX.inventory",
         "tools/MSIX/win10-arm64/Microsoft.WindowsAppRuntime.1.8.msix",
@@ -6438,10 +6602,10 @@
         "tools/MSIX/win10-x86/Microsoft.WindowsAppRuntime.Singleton.1.8.msix"
       ]
     },
-    "Microsoft.WindowsAppSDK.Widgets/1.8.250904007": {
-      "sha512": "sgwdXYhb8S4JjBmWWiFxALT1xK0fJeAbisolctmodMX7tlvBXDgUyvl/GHfTQ61DGIiW+kokX61WR46L2YlhAA==",
+    "Microsoft.WindowsAppSDK.Widgets/1.8.251231004": {
+      "sha512": "bIWqQYR8DCoB1SoPOMil5AtgtkTn438wJTdpsHgyO/6o7Eh7PMP5BzrR0KbDsFqy+4LhPWQ4vtwko5k93fECcA==",
       "type": "package",
-      "path": "microsoft.windowsappsdk.widgets/1.8.250904007",
+      "path": "microsoft.windowsappsdk.widgets/1.8.251231004",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -6458,7 +6622,7 @@
         "license.txt",
         "metadata/Microsoft.Windows.Widgets.winmd",
         "metadata/Microsoft.Windows.Widgets.xml",
-        "microsoft.windowsappsdk.widgets.1.8.250904007.nupkg.sha512",
+        "microsoft.windowsappsdk.widgets.1.8.251231004.nupkg.sha512",
         "microsoft.windowsappsdk.widgets.nuspec",
         "runtimes-framework/package.appxfragment",
         "runtimes-framework/win-arm64/native/Microsoft.Windows.Widgets.dll",
@@ -6467,10 +6631,10 @@
         "runtimes-framework/win-x86/native/Microsoft.Windows.Widgets.dll"
       ]
     },
-    "Microsoft.WindowsAppSDK.WinUI/1.8.251105000": {
-      "sha512": "G/f0Z27ALjjrrfjCUPxPSBkG6eLB20pBja8AFIOI87oYMGUKGwuMuZn7LqPkeQJMFPo04FonfljdJCIpsfnnbw==",
+    "Microsoft.WindowsAppSDK.WinUI/1.8.251222000": {
+      "sha512": "IbokgSGS7od6SJL5VD5PvA+EdZpoO+b9vDxxc6Myjspnhba3iYv53iM2q2MgxPGPvElKjpQrSx9+Q7ToFNeHpw==",
       "type": "package",
-      "path": "microsoft.windowsappsdk.winui/1.8.251105000",
+      "path": "microsoft.windowsappsdk.winui/1.8.251222000",
       "hasTools": true,
       "files": [
         ".nupkg.metadata",
@@ -6531,7 +6695,7 @@
         "metadata/Microsoft.UI.Text.xml",
         "metadata/Microsoft.UI.Xaml.winmd",
         "metadata/Microsoft.UI.Xaml.xml",
-        "microsoft.windowsappsdk.winui.1.8.251105000.nupkg.sha512",
+        "microsoft.windowsappsdk.winui.1.8.251222000.nupkg.sha512",
         "microsoft.windowsappsdk.winui.nuspec",
         "runtimes-framework/package.appxfragment",
         "runtimes-framework/win-arm64/native/Microsoft.UI.Xaml.Controls.dll",
@@ -7487,10 +7651,43 @@
         "system.numerics.tensors.nuspec",
         "useSharedDesignerContext.txt"
       ]
+    },
+    "System.Speech/10.0.1": {
+      "sha512": "Sra5Gv7qcZzLuQW4alVglQpnDgJiqeGmbwz8WLZa1QdqmTo4bi7FYQP5CJAzlwLDcmHrBS2L7+W6HqFT14HBTA==",
+      "type": "package",
+      "path": "system.speech/10.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "PACKAGE.md",
+        "THIRD-PARTY-NOTICES.TXT",
+        "buildTransitive/net8.0/_._",
+        "buildTransitive/netcoreapp2.0/System.Speech.targets",
+        "lib/net10.0/System.Speech.dll",
+        "lib/net10.0/System.Speech.xml",
+        "lib/net462/_._",
+        "lib/net8.0/System.Speech.dll",
+        "lib/net8.0/System.Speech.xml",
+        "lib/net9.0/System.Speech.dll",
+        "lib/net9.0/System.Speech.xml",
+        "lib/netstandard2.0/System.Speech.dll",
+        "lib/netstandard2.0/System.Speech.xml",
+        "runtimes/win/lib/net10.0/System.Speech.dll",
+        "runtimes/win/lib/net10.0/System.Speech.xml",
+        "runtimes/win/lib/net8.0/System.Speech.dll",
+        "runtimes/win/lib/net8.0/System.Speech.xml",
+        "runtimes/win/lib/net9.0/System.Speech.dll",
+        "runtimes/win/lib/net9.0/System.Speech.xml",
+        "system.speech.10.0.1.nupkg.sha512",
+        "system.speech.nuspec",
+        "useSharedDesignerContext.txt"
+      ]
     }
   },
   "projectFileDependencyGroups": {
     "net10.0-windows10.0.19041": [
+      "CommunityToolkit.Maui >= 14.0.1",
       "Microsoft.AspNetCore.Components.WebView.Maui >= 10.*",
       "Microsoft.Data.Sqlite >= 10.*",
       "Microsoft.Extensions.Logging.Debug >= 8.0.0",
@@ -7551,6 +7748,10 @@
       "net10.0-windows10.0.19041": {
         "targetAlias": "net10.0-windows10.0.19041.0",
         "dependencies": {
+          "CommunityToolkit.Maui": {
+            "target": "Package",
+            "version": "[14.0.1, )"
+          },
           "Microsoft.AspNetCore.Components.WebView.Maui": {
             "target": "Package",
             "version": "[10.*, )"

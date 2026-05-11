@@ -1,23 +1,86 @@
-﻿@page "/data_import"
+﻿<!-- dotnet add package CommunityToolkit.Maui installieren für Folder Picker -->
+
+@page "/data_import"
+@inject NavigationManager NavigationManager
 @using ZIVA_Prototype.Components.Models
 @using ZIVA_Prototype.Services;
+@using Microsoft.Maui.Storage;
 @inject HistoryImportService HistoryImportService
 @inject CookieImportService CookieImportService
 @inject WebDataAutofillImportService AutofillService
 @inject TimelineStateService State
 @inject PersistStateService PersistService
-@using Microsoft.Maui.Storage
+@inject ChromeProfileLoader Loader
+@using Microsoft.Maui.ApplicationModel;
+@using CommunityToolkit.Maui.Storage; <!-- Für FolderPicker -->
 
 
 <h3>Import DBs</h3>
 
 <!-- Button zum Auswählen der Datei und Importieren -->
-<button @onclick="ImportHistoryDb">History DB Importieren</button>
-<button @onclick="ImportCookiesDb">Cookies DB Importieren</button>
-<button @onclick="ImportAutofillDb">Autofill DB Importieren</button>
+<button @onclick="ImportChromeProfile">Chrome Profil laden</button>
 <button @onclick="ClearAllData">Daten Löschen</button>
 
+<p>Aktuelles Profil: @CurrentProfilePath</p>
+
 @code {
+
+    string? CurrentProfilePath; // Current folder Path
+
+    private async Task ImportChromeProfile()
+    {
+        var folderPath = await SelectProfileFolderFromFile();
+
+        if (!string.IsNullOrEmpty(folderPath))
+        {
+            CurrentProfilePath = folderPath;
+
+            await Loader.LoadProfileAsync(folderPath);
+            await PersistService.PersistStateAsync(State);
+
+            //NavigationManager.NavigateTo("/");
+        }
+    }
+
+
+    private async Task<string?> SelectProfileFolderFromFile()
+    {
+        var file = await FilePicker.Default.PickAsync();
+
+        if (file != null)
+        {
+            return Path.GetDirectoryName(file.FullPath);
+        }
+
+        return null;
+    }
+
+
+
+
+
+
+
+
+    /* FUNKT NICHT
+    private async Task<string?> SelectFolderAsync()
+    {
+        var result = await FolderPicker.Default.PickAsync();
+
+        Console.WriteLine($"Success: {result.IsSuccessful}");
+
+        if (result.IsSuccessful)
+        {
+            Console.WriteLine($"Path: {result.Folder.Path}");
+            return result.Folder.Path;
+        }
+
+        Console.WriteLine("FolderPicker FAILED");
+        return null;
+    }*/
+
+
+    /*
     private async Task ImportHistoryDb()
     {
         // Öffne den Dateimanager und lasse den Benutzer eine Datei auswählen
@@ -85,7 +148,7 @@
         }
 
         return null; // Falls keine Datei ausgewählt wurde
-    }
+    }*/
 
     // Neuer Button zum Löschen aller Daten
     private async Task ClearAllData()

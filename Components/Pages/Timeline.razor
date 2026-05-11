@@ -3,9 +3,11 @@
 @implements IDisposable
 @using ZIVA_Prototype.Components.Models;
 @using ZIVA_Prototype.Services;
+@using System.Text.Json;
 @inject TimelineStateService State // Verwaltet States mehrerer Importierter Datenbanken
 @inject HistoryImportService Importer   
 @inject PersistStateService PersistService // falls benötigt
+
 
 
 @code {
@@ -15,8 +17,7 @@
     // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. 
     // 
     // TO DO:
-    // - Zoom Mittelpunkt zur Maus verschieben.
-    // - Favicons Artefakte importieren und in der Timeline anzeigen
+    // 
     // 
     // 
     //
@@ -26,8 +27,15 @@
     // - Erkennen von zwielichtigen Suchmaschienen -> Pirate Bay etc... und Websiten per liste!!
     //
 
+    [CascadingParameter]
+    public bool isNavOpen { get; set; }  // Um sidebar auszublenden
+
+    List<AnomalyEntry> Anomalies = new(); // Liste mit erkannten Anomalien
+    List<string> BlacklistDomains = new(); // Liste mit zwielichtigen Domains
+    List<string> SuspiciousDomains = new(); // Liste mit verdächtigen Domains
     private List<DomainEntry> SummarizedEntries { get; set; } = new();
     private List<TimestampEntry> visibleEntries = new();
+    private List<UserInputEntry> UserInputs = new(); // kombinierte Liste der Keywords und Autofill Einträge
     private static List<int> usedHues = new(); // Liste aller bisher vergebenen Hue-Werte
     private static Dictionary<string, string> domainColors = new();
 
@@ -35,9 +43,14 @@
     private BrowserCookieEntry? selectedCookie; // Aktuell ausgewählte Browser Cookies Artefakt Entry selectedAutofill
     private WebDataAutofillEntry? selectedAutofill;
     private DotNetObjectReference<Timeline>? selfRef;
+    private UserInputEntry? selectedInput;
+    private BrowserExtensionEntry? selectedExtension;
+	private DomainEntry? selectedDomain;
+    private BrowserHistoryEntry? selectedSubEntry;
 
     private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
     private bool isZooming = false; // Flag to indicate if zooming is in progress
+    private bool isResizing = false; // Flag to indicate if resizing is in progress
 
     private DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
     private ElementReference scrollDivRef;
@@ -51,9 +64,9 @@
     private double scrollIndex = 0;
 
     private int viewportWidth;
-	private int containerHeight; // für SVG Rendering
+    private int containerHeight; // für SVG Rendering
     private int startOffset = 70;
-    private int spacing = 250;
+    private int spacing = 350;
     private int movableLayerWidth = 5000000;
     private int renderBuffer = 5;
     private int lastScrollIndex = int.MinValue;
@@ -61,7 +74,7 @@
     private int currentPivotIndex = 0; // Index in State.BrowserEntries
     private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
 
-	// Suchmaschinen Domains für Erkennung
+    // Suchmaschinen Domains für Erkennung
     string[] searchEngines = new[]
     {
     "google.",            // Google (alle Länderdomains)
@@ -82,6 +95,7 @@
     "seznam.cz"           // Seznam
     };
 
+
     // Zoomstufen in Units statt Sekunden
     public class TimestampEntry
     {
@@ -101,54 +115,165 @@
         Years
     }
 
-    // neuer Ansatz: Zoomstufen definieren, die die Dauer eines Intervalls bestimmen
     private readonly (int seconds, TimeUnit unit)[] zoomLevels = new[]
-    {
-        (10, TimeUnit.Seconds),
-        (60, TimeUnit.Minutes),
-        (300, TimeUnit.Minutes),
-        (600, TimeUnit.Minutes),
-        (1200, TimeUnit.Minutes),
-        (1800, TimeUnit.Minutes),
-        (3600, TimeUnit.Hours),
-        (7200, TimeUnit.Hours),
-        (86400, TimeUnit.Hours),
-        (172800, TimeUnit.Days),
-        (259200, TimeUnit.Days),
-        (604800, TimeUnit.Days),
-        (1209600, TimeUnit.Days),
-        (2419200, TimeUnit.Days),
-        (5184000, TimeUnit.Days),
-        (7776000, TimeUnit.Months),
-        (10368000, TimeUnit.Months), 
-        (15552000, TimeUnit.Months),
-        (31104000, TimeUnit.Years),
-        (63072000, TimeUnit.Years),
-    };
+{
+    // Sub-second / very fine (optional je nach Usecase)
+    (1, TimeUnit.Seconds),
+    (2, TimeUnit.Seconds),
+    (5, TimeUnit.Seconds),
+
+    // Fine control
+    (10, TimeUnit.Seconds),
+    (15, TimeUnit.Seconds),
+    (30, TimeUnit.Seconds),
+
+    // Minutes
+    (60, TimeUnit.Seconds),   // 1 min
+    (120, TimeUnit.Seconds),  // 2 min
+    (300, TimeUnit.Seconds),  // 5 min
+    (600, TimeUnit.Seconds),  // 10 min
+    (900, TimeUnit.Seconds),  // 15 min
+    (1800, TimeUnit.Seconds), // 30 min
+
+    // Hours
+    (3600, TimeUnit.Seconds), // 1 h
+    (7200, TimeUnit.Seconds), // 2 h
+    (14400, TimeUnit.Seconds), // 4 h
+    (28800, TimeUnit.Seconds), // 8 h
+    (43200, TimeUnit.Seconds), // 12 h
+
+    // Days
+    (86400, TimeUnit.Seconds),   // 1 d
+    (172800, TimeUnit.Seconds),  // 2 d
+    (259200, TimeUnit.Seconds),  // 3 d
+    (604800, TimeUnit.Seconds),  // 7 d
+
+    // Weeks / Months
+    (1209600, TimeUnit.Seconds), // 14 d
+    (2419200, TimeUnit.Seconds), // 28 d (~1 month)
+    (5184000, TimeUnit.Seconds), // 60 d
+
+    // Years
+    (31536000, TimeUnit.Seconds), // 1 y
+    (63072000, TimeUnit.Seconds), // 2 y
+};
 
     //------------------------------------------------------------
-	// Initial Render
+	// UX: Drag & Drop Panel, Close Button, Top Findings
+    //------------------------------------------------------------
+
+    private ElementReference panelRef;
+
+    private async Task StartDrag(MouseEventArgs e)
+    {
+        await JS.InvokeVoidAsync(
+            "dragHelper.startDrag",
+            panelRef,
+            e.ClientX,
+            e.ClientY
+        );
+    }
+
+    void SelectInput(UserInputEntry item)
+    {
+        ResetSelection();
+        selectedInput = item;
+    }
+
+    void SelectExtension(BrowserExtensionEntry ext)
+    {
+        ResetSelection();
+
+        selectedExtension = ext;
+    }
+
+    void SelectCookie(BrowserCookieEntry cookie)
+    {
+        ResetSelection();
+
+        selectedCookie = cookie;
+    }
+
+    void CloseAll()
+    {
+        selectedExtension = null;
+        selectedCookie = null;
+        selectedInput = null;
+        selectedSubEntry = null;
+    }
+
+    void SelectSubEntry(DomainEntry domainEntry, BrowserHistoryEntry sub)
+    {
+        ResetSelection();
+
+        selectedDomain = domainEntry;
+        selectedSubEntry = sub;
+    }
+
+    void ResetSelection()
+    {
+        selectedExtension = null;
+        selectedCookie = null;
+        selectedInput = null;
+        selectedDomain = null;
+        selectedSubEntry = null;
+    }
+
+    private string GetTopFindings(BrowserExtensionEntry ext)
+    {
+        return string.Join(" | ",
+            ext.Findings
+               .OrderByDescending(f => f.Weight)
+               .Take(2)
+               .Select(f => f.Description));
+    }
+
+    //------------------------------------------------------------
+    // Initial Render
     //------------------------------------------------------------
 
     protected override async Task OnInitializedAsync()
     {
         await UpdateViewportSizeAsync();
 
-        // Lade alles parallel im Hintergrund
-        var historyTask = LoadFromDatabase();
-        var cookieTask = LoadCookieDatabase();
-        var autofillTask = LoadAutofillDatabase();
-        var persistTask = PersistService.LoadPersistedStateAsync(State);
+        await LoadAnomalyListsAsync();
 
-        //await Task.WhenAll(historyTask, cookieTask, autofillTask, persistTask);
+        State.OnChange += Refresh;
 
-        // Danach UI-Berechnungen
+        // Nur State laden – KEIN direktes DB-Laden mehr!
+        await PersistService.LoadPersistedStateAsync(State);
+
+    }
+
+    private void Refresh()
+    {
+        if (State.BrowserEntries.Any())
+        {
+            SummarizedEntries = SummarizeEntries(
+                State.BrowserEntries,
+                zoomLevels[currentZoomIndex].seconds
+            );
+        }
+
+        var aggregator = new UserInputAggregatorService();
+
+        UserInputs = aggregator.Build(
+            State.BrowserEntries,
+            State.AutofillEntries
+        );
+
         RecalculatePositions();
         RecalculateCookiePositions();
-        RecalculateAutofillPositions();
+        RecalculateUserInputPositions();
         RecalculateSummarizedPositions();
+        RecalculateExtensionPositions();
+        DetectAnomalies();
+        RecalculateAnomalyPositions();
         UpdateVisibleTimestamps();
+
+        InvokeAsync(StateHasChanged);
     }
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -163,6 +288,23 @@
         }
     }
 
+
+    //------------------------------------------------------------
+    // Domäne Anomalie Listen Laden
+    //------------------------------------------------------------
+    async Task LoadAnomalyListsAsync()
+    {
+        BlacklistDomains = await LoadListAsync("domain-blacklist.json");
+        SuspiciousDomains = await LoadListAsync("domain-suspicious.json");
+    }
+
+    async Task<List<string>> LoadListAsync(string file)
+    {
+        using var stream = await FileSystem.OpenAppPackageFileAsync(file);
+        using var reader = new StreamReader(stream);
+        return JsonSerializer.Deserialize<List<string>>(await reader.ReadToEndAsync())!;
+    }
+
     //------------------------------------------------------------
     // Positionsberechnungen und Renderberechnungen
     //------------------------------------------------------------
@@ -171,7 +313,7 @@
     {
         viewportWidth = Math.Max(await JS.InvokeAsync<int>("getViewportWidth"), 300);
 
-		// Für SVG Rendering
+        // Für SVG Rendering
         containerHeight = await JS.InvokeAsync<int>("getElementHeight", "scroll-container");
 
     }
@@ -221,13 +363,13 @@
         }
     }
 
-    private void RecalculateAutofillPositions()
+    private void RecalculateUserInputPositions()
     {
-        if (State.AutofillEntries == null) return;
+        if (UserInputs == null) return;
 
-        foreach (var entry in State.AutofillEntries)
+        foreach (var entry in UserInputs)
         {
-            entry.Position = (int)TimeToPixel(entry.DateCreated) - (int)scrollIndex;
+            entry.Position = (int)TimeToPixel(entry.Time) - (int)scrollIndex;
         }
     }
 
@@ -241,8 +383,51 @@
         }
     }
 
+    private void RecalculateExtensionPositions()
+    {
+        if (State.Extensions == null) return;
+
+        foreach (var ext in State.Extensions)
+        {
+            ext.Position = (int)TimeToPixel(ext.InstallTime) - (int)scrollIndex;
+        }
+    }
+
+    void RecalculateAnomalyPositions()
+    {
+        foreach (var a in Anomalies)
+        {
+            DateTime positionTime;
+
+            switch (a.Type)
+            {
+                case AnomalyType.DeletedHistoryIndicator:
+                    // 🔥 exakt am Artefakt
+                    positionTime = a.FirstSeen;
+                    break;
+
+                default:
+                    // 🔁 Mittelwert bei echten Zeitspannen
+                    if (a.FirstSeen == a.LastSeen)
+                    {
+                        positionTime = a.FirstSeen;
+                    }
+                    else
+                    {
+                        long ticks = (a.FirstSeen.Ticks + a.LastSeen.Ticks) / 2;
+                        positionTime = new DateTime(ticks);
+                    }
+                    break;
+            }
+
+            a.Position = (int)TimeToPixel(positionTime) - (int)scrollIndex;
+        }
+    }
+
+
+
     //------------------------------------------------------------
-	// Daten Laden und Initialisierung
+    // Daten Laden und Initialisierung
     //------------------------------------------------------------
 
     // Zeitstempel Einträge erstellen
@@ -266,6 +451,7 @@
             Position = 0
         };
     }
+
 
     private async Task LoadFromDatabase()
     {
@@ -308,11 +494,7 @@
             isProgrammaticScroll = false;
 
             visibleEntries.Clear();
-            UpdateVisibleTimestamps();
-            RecalculatePositions();
-            RecalculateCookiePositions();
-            RecalculateAutofillPositions();
-            RecalculateSummarizedPositions();
+            Refresh();
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -362,11 +544,7 @@
             isProgrammaticScroll = false;
 
             visibleEntries.Clear();
-            UpdateVisibleTimestamps();
-            RecalculatePositions();
-            RecalculateCookiePositions();
-            RecalculateAutofillPositions();
-            RecalculateSummarizedPositions();
+            Refresh();
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -416,13 +594,223 @@
 
             // Sichtbare Einträge neu berechnen
             visibleEntries.Clear();
-            UpdateVisibleTimestamps();
-            RecalculateCookiePositions();
-            RecalculateAutofillPositions();
-            RecalculateSummarizedPositions();
+            Refresh();
             await InvokeAsync(StateHasChanged);
         }
     }
+
+
+
+    //------------------------------------------------------------
+    // Anomalie Detection
+	//------------------------------------------------------------
+
+
+    string GetAnomalyKey(AnomalyType type, string domain)
+    => $"{type}:{domain.ToLower()}";
+
+    // Anomalien detecten!
+    void DetectAnomalies()
+    {
+        if (!SummarizedEntries.Any()) return;
+
+        Anomalies.Clear();
+        var anomalyIndex = new Dictionary<string, AnomalyEntry>();
+
+        // 🔴 bestehende Domain-Anomalien
+        //DetectDomainAnomalies(anomalyIndex);
+
+        // 🧨 NEU: Gelöschter Verlauf – Cookies
+        DetectOrphanCookies(anomalyIndex);
+
+        // 🧨 NEU: Gelöschter Verlauf – Autofill
+        DetectOrphanAutofill(anomalyIndex);
+
+        foreach (var domain in SummarizedEntries)
+        {
+            // ✅ ZEITEN statt PIXEL
+            var artifactTimes = domain.SubEntries.Any()
+                ? domain.SubEntries.Select(s => s.VisitTime)
+                : new[] { domain.VisitTime };
+
+            // 🔴 Blacklist
+            if (BlacklistDomains.Any(b =>
+                domain.Domain.Contains(b, StringComparison.OrdinalIgnoreCase)))
+            {
+                AddOrUpdateAnomaly(
+                    anomalyIndex,
+                    AnomalyType.BlacklistedDomain,
+                    domain,
+                    artifactTimes,   // ✅ RICHTIG
+                    severity: 5,
+                    description: "Domain befindet sich auf der Blacklist"
+                );
+
+                continue;
+            }
+
+            // 🟠 Suspicious
+            if (SuspiciousDomains.Any(s =>
+                domain.Domain.Contains(s, StringComparison.OrdinalIgnoreCase)))
+            {
+                AddOrUpdateAnomaly(
+                    anomalyIndex,
+                    AnomalyType.SuspiciousRedirect,
+                    domain,
+                    artifactTimes,   // ✅ RICHTIG
+                    severity: 3,
+                    description: "Verdächtige interne oder lokale Domain"
+                );
+            }
+        }
+
+        Anomalies.AddRange(anomalyIndex.Values);
+    }
+
+    string GetAnomalyKey(
+    AnomalyType type,
+    DomainEntry domain,
+    DateTime time,
+    string? artifactId = null)
+    {
+        return type switch
+        {
+            AnomalyType.DeletedHistoryIndicator =>
+                $"{type}:{domain.Domain.ToLower()}:{time:yyyyMMddHHmmss}:{artifactId}",
+
+            _ =>
+                $"{type}:{domain.Domain.ToLower()}"
+        };
+    }
+
+
+    void AddOrUpdateAnomaly(
+    Dictionary<string, AnomalyEntry> index,
+    AnomalyType type,
+    DomainEntry domain,
+    IEnumerable<DateTime> artifactTimes,
+    int severity,
+    string description,
+    string? artifactId = null)
+    {
+        var first = artifactTimes.Min();
+        var last = artifactTimes.Max();
+
+        var key = GetAnomalyKey(type, domain, first, artifactId);
+
+        if (index.TryGetValue(key, out var existing))
+        {
+            existing.Count++;
+            existing.FirstSeen = existing.FirstSeen < first ? existing.FirstSeen : first;
+            existing.LastSeen = existing.LastSeen > last ? existing.LastSeen : last;
+            existing.Severity = Math.Max(existing.Severity, severity);
+            return;
+        }
+
+        index[key] = new AnomalyEntry
+        {
+            FirstSeen = first,
+            LastSeen = last,
+            LinkedDomain = domain,
+            Type = type,
+            Severity = severity,
+            Description = description,
+            Count = 1
+        };
+    }
+
+
+    string NormalizeDomain(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return "";
+
+        input = input.Trim().ToLower();
+
+        if (input.StartsWith("."))
+            input = input[1..];
+
+        // URLs erlauben
+        if (Uri.TryCreate(input, UriKind.Absolute, out var uri))
+            return uri.Host;
+
+        return input;
+    }
+
+    void DetectOrphanCookies(Dictionary<string, AnomalyEntry> anomalyIndex, int toleranceSeconds = 60)
+    {
+        if (State.BrowserCookies == null) return;
+
+        foreach (var cookie in State.BrowserCookies)
+        {
+            string cookieDomain = NormalizeDomain(cookie.Host);
+
+            bool hasMatchingHistory = SummarizedEntries.Any(domain =>
+            {
+                string domainNorm = NormalizeDomain(domain.Domain);
+
+                if (!domainNorm.EndsWith(cookieDomain) &&
+                    !cookieDomain.EndsWith(domainNorm))
+                    return false;
+
+                return Math.Abs((domain.VisitTime - cookie.Created).TotalSeconds)
+                       <= toleranceSeconds;
+            });
+
+            if (!hasMatchingHistory)
+            {
+                var linkedDomain = FindClosestDomain(cookie.Created);
+
+                AddOrUpdateAnomaly(
+                    anomalyIndex,
+                    AnomalyType.DeletedHistoryIndicator,
+                    linkedDomain ?? new DomainEntry { Domain = cookieDomain },
+                    new[] { cookie.Created },
+                    severity: 4,
+                    description: $"Cookie für Domain '{cookieDomain}' ohne passenden Verlaufseintrag"
+                );
+            }
+        }
+    }
+
+
+    DomainEntry? FindClosestDomain(DateTime time)
+    {
+        return SummarizedEntries
+            .OrderBy(d => Math.Abs((d.VisitTime - time).TotalSeconds))
+            .FirstOrDefault();
+    }
+
+    void DetectOrphanAutofill(Dictionary<string, AnomalyEntry> anomalyIndex, int toleranceSeconds = 120)
+    {
+        if (State.AutofillEntries == null) return;
+
+        foreach (var autofill in State.AutofillEntries)
+        {
+            bool hasMatchingDomain = SummarizedEntries.Any(domain =>
+                Math.Abs((domain.VisitTime - autofill.DateCreated).TotalSeconds)
+                <= toleranceSeconds
+            );
+
+            if (!hasMatchingDomain)
+            {
+                var linkedDomain = FindClosestDomain(autofill.DateCreated);
+
+                AddOrUpdateAnomaly(
+                    anomalyIndex,
+                    AnomalyType.DeletedHistoryIndicator,
+                    linkedDomain ?? new DomainEntry { Domain = "[unknown]" },
+                    new[] { autofill.DateCreated },
+                    severity: 5,
+                    description: $"Autofill '{autofill.Name}' ohne zugehörigen Seitenaufruf"
+                );
+            }
+        }
+    }
+
+
+
+
 
     //------------------------------------------------------------
     // Domänen Zusammenfassungen
@@ -583,12 +971,13 @@
     [JSInvokable("OnResize")] // Elemente werden Visuell dem Fenster angepasst
     public async Task OnResizeAsync()
     {
+        isResizing = true;
+
         await UpdateViewportSizeAsync();
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
+
+        Refresh();
+
+        isResizing = false;
         StateHasChanged();
     }
 
@@ -630,61 +1019,64 @@
             return;
         }
 
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
+        Refresh();
         StateHasChanged();
     }
 
     [JSInvokable("OnZoom")]
     public async Task OnZoomAsync(string direction)
     {
-        isZooming = true; //zoom sperre Flag setzen
+        isZooming = true;
 
-        // Scrollgrenzen absichern
-        scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
+        // 1️⃣ Scrollgrenzen für aktuellen Zustand absichern
+        scrollIndex = Math.Clamp(
+            scrollIndex,
+            0,
+            Math.Max(0, movableLayerWidth - viewportWidth)
+        );
 
-        // Mittelpunkt-Zeit merken (zentriert im Viewport)
+        // 2️⃣ Mittelpunkt-Zeit aus aktuellem Zustand ermitteln
         double centerPx = scrollIndex + viewportWidth / 2;
-        DateTime centerTime = PixelToTime(centerPx);  // ACHTUNG: ERROR anfälligkeit hier!!
+        DateTime centerTime = PixelToTime(centerPx);
 
-        // Zoomstufe anpassen
+        // 3️⃣ Zoomstufe ändern
         if (direction == "in" && currentZoomIndex > 0)
-        {
             currentZoomIndex--;
-            //pixelPerSecond *= 2; // Beispiel: 2x reinzoomen
-        }
         else if (direction == "out" && currentZoomIndex < zoomLevels.Length - 1)
-        {
             currentZoomIndex++;
-            //pixelPerSecond /= 2; // Beispiel: 2x rauszoomen
-        }
 
-        // Neue Scrollposition berechnen, sodass die Zeit gleich bleibt
+        // 4️⃣ Neue Scrollposition für dieselbe Zeit berechnen
         double newCenterPx = TimeToPixel(centerTime);
         double newScrollLeft = newCenterPx - viewportWidth / 2;
 
-        // Scrollgrenzen erneut absichern
-        newScrollLeft = Math.Clamp(newScrollLeft, 0, Math.Max(0, movableLayerWidth - viewportWidth));
+        // 5️⃣ 🔥 WICHTIG: neuen Scrollwert übernehmen
+        scrollIndex = Math.Clamp(
+            newScrollLeft,
+            0,
+            Math.Max(0, movableLayerWidth - viewportWidth)
+        );
 
-        // Darstellung aktualisieren
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
+        // 6️⃣ Optional: Scroll-Container synchronisieren
+        isProgrammaticScroll = true;
+        await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
+        await Task.Delay(1);
+        isProgrammaticScroll = false;
+
+        // 7️⃣ ALLE Pixel neu berechnen (JETZT korrekt!)
+        Refresh();
+
         StateHasChanged();
-
         isZooming = false;
     }
+
 
     [JSInvokable("OnArrowRight")]
     public async Task OnArrowRightAsync()
     {
         if (currentPivotIndex < State.BrowserEntries.Count - 1)
             await CenterOnEntry(currentPivotIndex + 1);
+        Refresh();
+        StateHasChanged();
     }
 
     [JSInvokable("OnArrowLeft")]
@@ -692,6 +1084,27 @@
     {
         if (currentPivotIndex > 0)
             await CenterOnEntry(currentPivotIndex - 1);
+        Refresh();
+        StateHasChanged();
+    }
+
+    async Task ExpandAndFocus(DomainEntry domainEntry)
+    {
+        domainEntry.IsExpanded = true;
+
+        // passenden Index finden
+        int index = State.BrowserEntries.FindIndex(e =>
+            Math.Abs((e.VisitTime - domainEntry.VisitTime).TotalSeconds) < 1);
+
+        if (index >= 0)
+        {
+            currentPivotIndex = index;
+            await CenterOnEntry(index);
+        }
+
+        Refresh();
+
+        StateHasChanged();
     }
 
 
@@ -722,11 +1135,7 @@
         scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
 
         // Anzeige aktualisieren
-        UpdateVisibleTimestamps();
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateAutofillPositions();
-        RecalculateSummarizedPositions();
+        Refresh();
         StateHasChanged();
 
         // Optional: Browser scrollen, falls du einen externen Scroll-Container hast
@@ -848,37 +1257,40 @@
 }
 
 <!-- RAZOR MARKUP -->
-<div class="timeline-wrapper">
+<div class="timeline-wrapper @(isNavOpen ? "shifted" : "full")">
     <!-- LEFT SIDE OF TIMELINE -->
-    <div class="legend-area">
+    <div class="legend-area @(isNavOpen ? "shifted" : "full")">
         <div class="timeline-area-static timeline-area-top">
-            <div class="timeline-label">Verlauf-Zeitachse</div> 
-            <div class="timeline-history-label">Website Verlauf</div>
-            <div class="timeline"></div>
+            <div class="timeline-label">Verlauf-Zeitachse</div>
+            <div class="timeline-history-label">History</div>
+            <div class="timeline-top-legend "></div>
             <div class="timeline-cookies-label">Cookies</div>
             <div class="timeline-cookies"></div>
-            <div class="timeline-webdata-label">Web Data Autofill</div>
+            <div class="timeline-webdata-label">User Input</div>
             <div class="timeline-webdata"></div>
-            <div class="timeline-favicons-label">Favicons</div>
+            <div class="timeline-favicons-label">Storage</div>
             <div class="timeline-favicons"></div>
+            <div class="timeline-ext-label">Extensions</div>
+            <div class="timeline-ext"></div>
         </div>
         <div class="timeline-area-static timeline-area-bottom">
             <div class="timeline-label">Analyse-Zeitachse</div>
-            <div class="timeline"></div>
+            <div class="timeline-bottom-legend"></div>
         </div>
     </div>
 
     <!-- MOVABLE TIMELINE -->
     <div class="timeline-static">
         <div class="timeline-area-scroll timeline-area-top">
-            <div class="timeline"></div>
+            <div class="timeline-top"></div>
             <div class="timeline-cookies"></div>
             <div class="timeline-webdata"></div>
             <div class="timeline-favicons"></div>
+            <div class="timeline-ext"></div>
         </div>
 
         <div class="timeline-area-scroll timeline-area-bottom">
-            <div class="timeline"></div>
+            <div class="timeline-bottom"></div>
         </div>
     </div>
 
@@ -889,10 +1301,15 @@
         <button class="btn btn-sm" @onclick="ToggleAllDomains">
             @(allExpanded ? "Alle einklappen" : "Alle ausklappen")
         </button>
+
+        <button class="btn btn-sm mt-2" @onclick="ToggleDebug">
+            @(showDebug ? "Debug ausblenden" : "Debug einblenden")
+        </button>
     </div>
 
     @code {
-        private bool allExpanded = false; // Status, ob aktuell alles ausgeklappt ist
+        private bool allExpanded = false;
+        private bool showDebug = false;
 
         private void ToggleAllDomains()
         {
@@ -903,75 +1320,92 @@
                 entry.IsExpanded = allExpanded;
             }
         }
+
+        private void ToggleDebug()
+        {
+            showDebug = !showDebug;
+        }
+
+
     }
 
-    <div style="position: fixed; top: 600px; left: 80px; background: yellow; z-index: 1000; padding: 40px;">
-        DEBUG: SecondsPerSpacing = @SecondsPerSpacing
-        DEBUG: scrollIndex = @scrollIndex
-        DEBUG: baseTime = @baseTime
-		DEBUG: viewportWidth = @viewportWidth
-        DEBUG: containerHeight = @containerHeight
-        DEBUG: CurrentZoomIndex = @currentZoomIndex
-        DEBUG: TimeStamp 0 @baseTime.AddHours(currentZoomIndex * (SecondsPerSpacing / 3600.0))
 
-        <!-- Debug-Ausgabe 
-        <div style="position: fixed; top: 10px; left: 10px; background: yellow; padding: 4px; z-index: 9999;">
-            <strong>DEBUG Heavy Cluster Position:</strong><br />
-            heavyClusterSpacingPx: 20 px<br />
-            HeavyClusterIndex: 4<br />
-            offsetPx: @offsetPx px<br />
-            containerHeight: @containerHeight px<br />
-            offsetPercent: @offsetPercent %<br />
-            domainPosY: @domainPosY %
-        </div>-->
+    @if (showDebug)
+    {
+        <div style="
+        position: fixed;
+        top: 600px;
+        left: 80px;
+        background: yellow;
+        z-index: 1000;
+        padding: 16px;
+        max-height: 300px;
+        max-width: 90vw;
+        overflow: auto;
+        border: 1px solid #333;
+        font-size: 12px;
+        ">
+            <strong>DEBUG</strong><br />
 
-        <div style="display: flex; gap: 20px; margin-top: 10px;">
-            <div style="flex: 1;">
-                <strong>Visible History Entries (@State.BrowserEntries.Count):</strong>
-                <ul style="font-size: 12px; padding-left: 20px;">
-                    @foreach (var e in State.BrowserEntries)
-                    {
-                        <li>Time: @e.VisitTime, Pos: @e.Position</li>
-                    }
-                </ul>
-            </div>
+            SecondsPerSpacing = @SecondsPerSpacing<br />
+            scrollIndex = @scrollIndex<br />
+            baseTime = @baseTime<br />
+            viewportWidth = @viewportWidth<br />
+            containerHeight = @containerHeight<br />
+            <hr />
 
-            <div style="flex: 1;">
-                <strong>Visible Cookie Entries (@State.AutofillEntries.Count):</strong>
-                <ul style="font-size: 12px; padding-left: 20px;">
-                    @foreach (var e in State.AutofillEntries)
-                    {
-                        <li>Time: @e.DateCreated, Pos: @e.Position</li>
-                    }
-                </ul>
-            </div>
+            <div style="display: flex; gap: 20px; align-items:flex-start;">
+                <div>
+                    <strong>History (@State.BrowserEntries.Count)</strong>
+                    <ul>
+                        @foreach (var e in State.BrowserEntries)
+                        {
+                            <li>@e.VisitTime | px=@e.Position</li>
+                        }
+                    </ul>
+                </div>
 
-            <div style="flex: 1;">
-                <strong>Visible Cookie Entries (@State.BrowserCookies.Count):</strong>
-                <ul style="font-size: 12px; padding-left: 20px;">
-                    @foreach (var e in State.BrowserCookies)
-                    {
-                        <li>Time: @e.LastAccessed, Pos: @e.Position</li>
-                    }
-                </ul>
-            </div>
+                <div>
+                    <strong>Cookies (@State.BrowserCookies.Count)</strong>
+                    <ul>
+                        @foreach (var e in State.BrowserCookies)
+                        {
+                            <li>@e.LastAccessed | px=@e.Position</li>
+                        }
+                    </ul>
+                </div>
 
-            <div style="flex: 1;">
-                @{
-                    var summarizedDomains = SummarizeEntries(State.BrowserEntries); // oder irgendeine andere Liste von BrowserHistoryEntry
-                }
-                <strong>BrowserEntries mit SubEntries:</strong>
-                <ul style="font-size: 12px; padding-left: 20px;">
-                    @foreach (var domain in summarizedDomains)
-                    {
-                        <li>
-                            Domain: @domain.Domain, HeavyOffset: @domain.HeavyOffset, HeavyClusterIndex: @domain.HeavyClusterIndex, IsHeavyCluster: @domain.IsHeavyCluster
-                        </li>
-                    }
-                </ul>
+                <div>
+                    <strong>Autofill (@State.AutofillEntries.Count)</strong>
+                    <ul>
+                        @foreach (var e in State.AutofillEntries)
+                        {
+                            <li>@e.DateCreated | px=@e.Position</li>
+                        }
+                    </ul>
+                </div>
+
+                <!-- 🔴 ANOMALIEN -->
+                <div>
+                    <strong>Anomalies (@Anomalies.Count)</strong>
+                    <ul>
+                        @foreach (var a in Anomalies)
+                        {
+                            <li>
+                                <strong>@a.Type</strong><br />
+                                first: @a.FirstSeen<br />
+                                last: @a.LastSeen<br />
+                                px: @Math.Round(a.Position, 1)<br />
+                                sev: @a.Severity | hits: @a.Count
+                            </li>
+                        }
+                    </ul>
+                </div>
             </div>
         </div>
-    </div>
+    }
+
+
 
 
     <div class="timeline-container">
@@ -1002,7 +1436,7 @@
 
             <!-- History Einträge in der Zeitachse -->
             @{
-                int baseTop = 25; // Basislinie für normale Domains in %
+                int baseTop = 33; // Basislinie für normale Domains in %
                 int heavyClusterSpacingPx = 20; // Abstand jeder neuen Heavy Cluster-Linie nach oben
                 int heavyClusterIndex = 1; // Zähler für versetzte Heavy Cluster-Linien
             }
@@ -1012,17 +1446,23 @@
                 var color = GetColorForDomain(domainEntry.Url);
 
                 <div class="domain-container">
+                    
 
                     @if (!domainEntry.IsExpanded && !domainEntry.IsHeavyCluster)
                     {
+
+                        //<div class="domain-label"
+                        //     style="left:@($"{domainEntry.Position}px"); top: calc(33% - 35px);">
+                        //   @domainEntry.Domain
+                        //</div>
                         // Normale Domain Marker
                         string domainClass = domainEntry.IsSearch ? "domain-marker square" :
                         domainEntry.IsDirect ? "domain-marker hollow" :
                         "domain-marker filled";
 
                         <div class="@domainClass"
-                             style="left: calc(@($"{domainEntry.Position}px - 6px")); color:@color"
-                             @onclick="() => domainEntry.IsExpanded = true">
+                             style="left: calc(@($"{domainEntry.Position}px - 10px")); color:@color"
+                             @onclick="() => ExpandAndFocus(domainEntry)">
 
                             <div class="domaine-tooltip" style="background-color:@color;">
                                 <div><strong>Zeitstempel: @domainEntry.VisitTime</strong></div>
@@ -1053,9 +1493,24 @@
                             width:@($"{lastPos - firstPos}px");
                             height:2px;
                             background-color:@color;
-                            z-index:18;">
+                            z-index:20;">
                             </div>
                         }
+
+                        /*
+                        string GetDomainFromUrl(string url)
+                        {
+                            try
+                            {
+                                var uri = new Uri(url);
+                                return uri.Host;
+                            }
+                            catch
+                            {
+                                return url;
+                            }
+                        }*/
+
 
                         // SubEntries anzeigen
                         @foreach (var sub in domainEntry.SubEntries)
@@ -1069,27 +1524,27 @@
                             color:@GetColorForDomain(sub.Url);
                             cursor:pointer;
                             z-index:21;"
-                                 @onclick="() => domainEntry.IsExpanded = !domainEntry.IsExpanded">
+                             @onclick="() => SelectSubEntry(domainEntry, sub)">
 
                                 @if (isSearch)
                                 {
                                     // Hohles Quadrat für Suchmaschinen
                                     <div class="domain-marker square"
-                                         style="width:12px; height:12px; color:@GetColorForDomain(sub.Url); top:calc(@topStyleSquare);">
+                                         style="width:20px; height:20px; color:@GetColorForDomain(sub.Url); top:calc(@topStyleSquare);">
                                     </div>
                                 }
                                 else if (string.IsNullOrEmpty(sub.ReferrerUrl))
                                 {
                                     // Hohles Dreieck
-                                    <svg width="12" height="12" viewBox="0 0 12 12">
-                                        <polygon points="0,0 12,0 6,12" fill="none" stroke="currentColor" stroke-width="2" />
+                                    <svg width="18" height="20" viewBox="0 0 18 20">
+                                        <polygon points="0,0 18,0 10,20" fill="none" stroke="currentColor" stroke-width="2" />
                                     </svg>
                                 }
                                 else
                                 {
                                     // Gefülltes Dreieck
-                                    <svg width="12" height="12" viewBox="0 0 12 12">
-                                        <polygon points="0,0 12,0 6,12" fill="currentColor" />
+                                    <svg width="18" height="20" viewBox="0 0 18 20">
+                                        <polygon points="0,0 18,0 10,20" fill="currentColor" />
                                     </svg>
                                 }
 
@@ -1121,54 +1576,75 @@
                     <div class="cookie-marker"
                          style="left: calc(@($"{cookie.Position}px - 5px"))"
                          data-host="@cookie.Host"
-                         data-value="@cookie.EncryptedValue"
+                         data-valueEncr="@cookie.EncryptedValue"
+                         data-value="@cookie.Value"
                          data-time="@cookie.Created"
-                         @onclick="() => selectedCookie = cookie">
+                         @onclick="() => SelectCookie(cookie)">
                     </div>
                 }
             }
 
-            @if (selectedCookie != null)
-            {
-                <div class="entry-details cookie-details">
-                    <p><strong>Host:</strong> @selectedCookie.Host</p>
-                    <p><strong>Name:</strong> @selectedCookie.Name</p>
-                    <p><strong>Created:</strong> @selectedCookie.Created</p>
-                    <p><strong>Last Accessed:</strong> @selectedCookie.LastAccessed</p>
-                    <p><strong>Expires:</strong> @selectedCookie.Expires</p>
-                </div>
-            }
+
 
             <!-- Autofill Einträge in der Zeitachse -->
-            @foreach (var item in State.AutofillEntries)
+            @foreach (var item in UserInputs)
             {
                 if (item.Position > -50 && item.Position < viewportWidth - 300)
                 {
-                    <div class="autofill-marker"
-                         style="left: calc(@($"{item.Position}px - 5px"))"
-                         data-name="@item.Name"
-                         data-value="@item.Value"
-                         data-time="@item.DateCreated"
-                         @onclick="() => selectedAutofill = item">
-                    </div>
+                <div class="userinput-marker @(item.Type == UserInputType.SearchQuery ? "search" : "autofill")"
+                     style="left: calc(@($"{item.Position}px - 5px"))"
+                     data-value="@item.Value"
+                     data-time="@item.Time"
+                     data-type="@item.Type"
+                     @onclick="() => SelectInput(item)">
+                </div>
                 }
             }
 
-            @if (selectedAutofill != null)
+
+        <!-- Extensions in der Zeitachse -->
+        @foreach (var ext in State.Extensions)
+        {
+            if (ext.Position > -50 && ext.Position < viewportWidth - 300)
             {
-                <div class="entry-details autofill-details">
-                    <p><strong>Name:</strong> @selectedAutofill.Name</p>
-                    <p><strong>Value:</strong> @selectedAutofill.Value</p>
-
-                    <p><strong>Created:</strong> @selectedAutofill.DateCreated</p>
-                    <p><strong>Last Used:</strong> @selectedAutofill.DateLastUsed</p>
-
-                    @if (@selectedAutofill.DateCreated > DateTime.MinValue)
-                    {
-                        <p><strong>Modified:</strong> @selectedAutofill.DateCreated</p>
-                    }
+                <div class="extension-marker"
+                     style="left: calc(@($"{ext.Position}px - 5px"))"
+                     data-name="@ext.Name"
+                     data-risk="@ext.RiskLevel"
+                     data-score="@ext.RiskScore"
+                     data-findings="@GetTopFindings(ext)"
+                     data-time="@ext.InstallTime"
+                     @onclick="() => SelectExtension(ext)">
                 </div>
             }
+        }
+
+
+
+        @if (selectedExtension != null)
+        {
+            <ExtensionDetails Data="selectedExtension" OnClose="CloseAll" />
+        }
+        else if (selectedCookie != null)
+        {
+            <CookieDetails Data="selectedCookie" OnClose="CloseAll" />
+        }
+        else if (selectedInput != null)
+        {
+            <AutofillDetails Data="selectedInput" OnClose="CloseAll" />
+        }
+        else if (selectedSubEntry != null)
+        {
+            <SubEntryDetails Data="selectedSubEntry" OnClose="CloseAll" />
+        }
+        else if (selectedDomain != null)
+        {
+            <DomainDetails Data="selectedDomain" OnClose="CloseAll" />
+        }
+
+        
+
+
 
             <!-- SVG-Sammelcontainer für alle Linien -->
             <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:18;">
@@ -1258,9 +1734,9 @@
 
                         double artifactPosY = artifact switch
                         {
-                            BrowserCookieEntry => 30,   // Cookies oben
-                            WebDataAutofillEntry => 32, // Autofill etwas darunter
-                            _ => 30
+                            BrowserCookieEntry => 43,   // Cookies oben
+                            WebDataAutofillEntry => 50, // Autofill etwas darunter
+                            _ => 33
                         };
 
                         string color = GetColorForDomain(matchingDomain.Url);
@@ -1274,6 +1750,229 @@
                     }
                 }
 
+            </svg>
+
+        <!-- 🔌 EXTENSION → WEB STORE VERBINDUNGEN -->
+        <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:18;">
+
+            @foreach (var ext in State.Extensions)
+            {
+                // 1️⃣ WebStore Visit finden (bleibt zeitbasiert → ok)
+                var matchingHistory = State.BrowserEntries
+                    .Where(h =>
+                        (h.Url.Contains("chrome.google.com/webstore") ||
+                         h.Url.Contains("chromewebstore.google.com")) &&
+                        Math.Abs((h.VisitTime - ext.InstallTime).TotalMinutes) <= 10
+                    )
+                    .OrderBy(h => Math.Abs((h.VisitTime - ext.InstallTime).TotalSeconds))
+                    .FirstOrDefault();
+
+                if (matchingHistory == null)
+                    continue;
+
+                // 2️⃣ 🔥 DomainEntry sauber über SubEntries matchen (KEIN Zeit-Hack mehr)
+                var matchingDomain = SummarizedEntries
+                    .FirstOrDefault(d =>
+                        d.SubEntries.Any(s => s.Url == matchingHistory.Url)
+                    );
+
+                // 🔁 Fallback (falls kein exakter Match)
+                if (matchingDomain == null)
+                {
+                    var host = new Uri(matchingHistory.Url).Host;
+
+                    matchingDomain = SummarizedEntries
+                        .FirstOrDefault(d =>
+                            host.Contains(d.Domain) || d.Domain.Contains(host)
+                        );
+                }
+
+                if (matchingDomain == null)
+                    continue;
+
+                // 3️⃣ Domain Position
+                double domainPosX = matchingDomain.Position;
+
+                double domainPosY;
+                double offsetPx = 25 + heavyClusterSpacingPx * (matchingDomain.HeavyClusterIndex - 1);
+                double offsetPercent = (offsetPx / containerHeight) * 100.0;
+
+                if (matchingDomain.IsHeavyCluster)
+                {
+                    domainPosY = baseTop - offsetPercent;
+                    domainPosY = Math.Round(domainPosY);
+                }
+                else
+                {
+                    domainPosY = baseTop;
+                }
+
+                // 4️⃣ Extension Position
+                double extensionPosX = ext.Position;
+                double extensionPosY = 64;
+
+                // 5️⃣ Farbe
+                string color = GetColorForDomain(matchingDomain.Url);
+
+                // 6️⃣ Linie
+                <line x1="@domainPosX"
+                      y1="@($"{domainPosY}%")"
+                      x2="@extensionPosX"
+                      y2="@($"{extensionPosY}%")"
+                      stroke="@color"
+                      stroke-width="2"
+                      stroke-dasharray="4,3"
+                      opacity="0.8" />
+            }
+
+        </svg>
+
+
+
+            <!-- ANOMALIE ZEITACHSE -->
+            @code {
+
+                int baseTop = 33; // Basislinie für normale Domains in %
+                int heavyClusterSpacingPx = 20; // Abstand jeder neuen Heavy Cluster-Linie nach oben
+
+                string GetSeverityColor(int severity) => severity switch
+                {
+                    5 => "#ff2d2d",   // Rot – kritisch
+                    4 => "#ff6b00",   // Dunkelorange
+                    3 => "#ffb000",   // Orange
+                    2 => "#3fa9f5",   // Blau
+                    _ => "#9e9e9e"    // Grau
+                };
+
+				// Y-Position der Domain in Prozent
+                double GetDomainYPercent(DomainEntry domain)
+                {
+                    if (!domain.IsHeavyCluster)
+                        return baseTop;
+
+                    double offsetPx = 25 + heavyClusterSpacingPx * (domain.HeavyClusterIndex - 1);
+                    double offsetPercent = (offsetPx / containerHeight) * 100.0;
+
+                    return Math.Round(baseTop - offsetPercent);
+                }
+
+				// Y-Position der Anomalie in Pixel
+                double AnomalyYPercent => 78;
+
+
+                IEnumerable<(double x, double yPercent)> GetAnomalyTargetPoints(DomainEntry domain)
+                {
+                    double y = GetDomainYPercent(domain);
+
+                    if (domain.IsHeavyCluster || domain.IsExpanded)
+                    {
+                        foreach (var sub in domain.SubEntries)
+                            yield return (sub.Position, y);
+                        yield break;
+                    }
+
+                    yield return (domain.Position, y);
+                }
+
+				// Hilfsmethode: Zielpunkt der Anomalie ermitteln (z.B. Cookie oder Autofill)
+                (double x, double yPercent)? GetAnomalyTargetPoint(AnomalyEntry anomaly)
+                {
+                    switch (anomaly.Type)
+                    {
+                        case AnomalyType.DeletedHistoryIndicator:
+                            {
+                                // Cookie?
+                                var cookie = State.BrowserCookies?
+                                .FirstOrDefault(c =>
+                                Math.Abs((c.Created - anomaly.FirstSeen).TotalSeconds) <= 1);
+
+                                if (cookie != null)
+                                    return (cookie.Position, 43); // Cookie-Linie
+
+                                // Autofill?
+                                var autofill = State.AutofillEntries?
+                                .FirstOrDefault(a =>
+                                Math.Abs((a.DateCreated - anomaly.FirstSeen).TotalSeconds) <= 1);
+
+                                if (autofill != null)
+                                    return (autofill.Position, 50); // Autofill-Linie
+
+                                return null;
+                            }
+
+                        default:
+                            return null;
+                    }
+                }
+
+
+            }
+
+            @foreach (var anomaly in Anomalies)
+            {
+                var color = GetSeverityColor(anomaly.Severity);
+
+                <div class="anomaly-marker"
+                     style="position:absolute;
+                    left:@($"{anomaly.Position - 6}px");
+                    top:@($"{AnomalyYPercent}%");
+                    transform: translateY(-50%);
+                    color:@color;
+                    z-index:30;"
+                     data-time="@anomaly.FirstSeen"
+                     data-lastseen="@anomaly.LastSeen"
+                     data-url="@anomaly.Url"
+                     data-type="@anomaly.Type"
+                     data-description="@anomaly.Description"
+                     data-severity="@anomaly.Severity"
+                     data-count="@anomaly.Count">
+
+                    <!-- 🔺 Gefülltes Dreieck -->
+                    <svg width="16" height="50" viewBox="0 0 16 50">
+                        <polygon points="0,0 16,0 8,50" fill="currentColor" />
+                    </svg>
+
+                </div>
+            }
+
+
+            <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:15;">
+                @foreach (var anomaly in Anomalies)
+                {
+                    var color = GetSeverityColor(anomaly.Severity);
+
+                    // 🧨 Deleted-History → Artefakt
+                    if (anomaly.Type == AnomalyType.DeletedHistoryIndicator)
+                    {
+                        var target = GetAnomalyTargetPoint(anomaly);
+                        if (target == null) continue;
+
+                        <line x1="@target.Value.x"
+                              y1="@($"{target.Value.yPercent}%")"
+                              x2="@anomaly.Position"
+                              y2="@($"{AnomalyYPercent}%")"
+                              stroke="@color"
+                              stroke-width="@(0.7 + anomaly.Severity)"
+                              stroke-dasharray="4,3" />
+                    }
+                    // 🔴 Domain-basierte Anomalien
+                    else
+                    {
+                        var domain = anomaly.LinkedDomain;
+                        if (domain == null) continue;
+
+                        foreach (var point in GetAnomalyTargetPoints(domain))
+                        {
+                            <line x1="@point.x"
+                                  y1="@($"{point.yPercent}%")"
+                                  x2="@anomaly.Position"
+                                  y2="@($"{AnomalyYPercent}%")"
+                                  stroke="@color"
+                                  stroke-width="@(0.7 + anomaly.Severity)"
+                                  stroke-dasharray="4,3" />
+                        }
+                    }
+                }
             </svg>
 
 

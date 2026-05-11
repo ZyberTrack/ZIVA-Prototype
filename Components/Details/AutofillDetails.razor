@@ -1,0 +1,19 @@
+﻿<div class="entry-details">
+
+    <div class="entry-header">
+        <span>Autofill</span>
+        <button class="close-btn" @onclick="OnClose">✕</button>
+    </div>
+
+    <div class="entry-content">
+        <p><strong>Type:</strong> @Data.Type</p>
+        <p><strong>Value:</strong> @(Data.Value ?? "-")</p>
+        <p><strong>Time:</strong> @Data.Time</p>
+    </div>
+
+</div>
+
+@code {
+    [Parameter] public UserInputEntry Data { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+}

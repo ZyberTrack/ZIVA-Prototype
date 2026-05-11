@@ -1,0 +1,26 @@
+﻿<div class="entry-details">
+
+    <div class="entry-header">
+        <span>Domain: @Data.Domain</span>
+        <button class="close-btn" @onclick="OnClose">✕</button>
+    </div>
+
+    <div class="entry-content">
+        <p><strong>Domain:</strong> @(Data.Domain ?? "-")</p>
+        <p><strong>First Visit:</strong> @Data.VisitTime</p>
+        <p><strong>Visits:</strong> @(Data.SubEntries?.Count ?? 0)</p>
+
+        <p>
+            <strong>Type:</strong>
+            @(Data.IsSearch ? "Search"
+            : Data.IsDirect ? "Direct"
+            : "Referral")
+        </p>
+    </div>
+
+</div>
+
+@code {
+    [Parameter] public DomainEntry Data { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+}
