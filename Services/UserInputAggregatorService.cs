@@ -1,4 +1,7 @@
-﻿using System;
+﻿// INFOR FÜR BACHELORARBEIT:
+// User Input Types - Search Queries (from Browser History) und Autofill (from Web Data) und Favicons.
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Web;

@@ -15,6 +15,7 @@ namespace ZIVA_Prototype.Components.Models
     public enum UserInputType
     {
         SearchQuery,
-        Autofill
+        Autofill,
+        Favicon,
     }
 }

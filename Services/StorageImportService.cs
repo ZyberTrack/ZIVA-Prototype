@@ -1,4 +1,10 @@
-﻿using LevelDB;
+﻿// INFOR FÜR BACHELORARBEIT:
+// Timestamps werden mit TimestampExtractor.cs geparsed.
+// Es werden ISO8601 Strings und große Zahlen (Unix Timestamps) erkannt.
+// Es ist wichtig zu verstehen, dass diese Timestamps nicht direkt von Chromium stammen,
+// Der StorageScanner extrahiert weitere Storage Artefakte aus den Raw Daten, z.B. aus den Keys und Values der LevelDB Einträge.
+
+using LevelDB;
 using System.Text;
 using ZIVA_Prototype.Components.Models;
 

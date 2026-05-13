@@ -63,6 +63,65 @@ namespace ZIVA_Prototype.Components.Models
             .Distinct()
             .ToList();
 
+        // =====================================================
+        // FORENSIC SOURCES
+        // =====================================================
+
+        public List<string> SourceTypes { get; set; } = new();
+
+        public List<string> RuntimeArtifacts { get; set; } = new();
+
+        public List<string> ResidualArtifacts { get; set; } = new();
+
+        public List<string> HistoryIndicators { get; set; } = new();
+
+        public List<string> DetectedFiles { get; set; } = new();
+
+        public bool FoundInPreferences { get; set; }
+
+        public bool FoundInSecurePreferences { get; set; }
+
+        public bool FoundInExtensionsFolder { get; set; }
+
+        public bool FoundInRuntimeArtifacts { get; set; }
+
+        public bool FoundInHistory { get; set; }
+
+        public bool FoundInFilesystem { get; set; }
+
+        public bool IsResidualArtifact { get; set; }
+
+        public bool ManifestMissing { get; set; }
+
+        public bool HasBackgroundScript { get; set; }
+
+        public bool HasContentScripts { get; set; }
+
+        public bool HasServiceWorker { get; set; }
+
+        public int ConfidenceScore { get; set; }
+
+        // =====================================================
+        // FORENSIC HELPERS
+        // =====================================================
+
+        public bool HasTimestamp =>
+            InstallTime != default;
+
+        // =====================================================
+        // MANIFEST / FILESYSTEM
+        // =====================================================
+
+        public bool HasManifest { get; set; }
+
+        // =====================================================
+        // OPTIONAL: BROWSER CONTEXT
+        // =====================================================
+
+        public string Browser { get; set; } = string.Empty;
+
+        public string ProfileName { get; set; } = string.Empty;
+
 
         public int Position { get; set; } // Timeline
     }
