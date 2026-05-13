@@ -335,9 +335,11 @@
         RecalculateUserInputPositions();
         RecalculateSummarizedPositions();
         RecalculateExtensionPositions();
-        RecalculateAnomalyPositions();
         RecalculateStoragePositions();
+
         DetectAnomalies();
+        RecalculateAnomalyPositions();
+
         BuildArtifactTimeline();
         UpdateVisibleTimestamps();
 
