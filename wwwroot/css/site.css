@@ -539,6 +539,56 @@
         z-index: 999;
     }
 
+.storage-marker {
+    position: absolute;
+    top: calc(57% - 8px); /* unter Autofill, über Extensions */
+    width: 8px;
+    height: 26px;
+    background-color: #9c27b0; /* lila = Storage */
+    border-radius: 50%;
+    z-index: 19;
+    cursor: pointer;
+    box-shadow: 0 0 3px rgba(0,0,0,0.3);
+}
+
+    /*Sensitive (Tokens etc.) */
+    .storage-marker.sensitive {
+        background-color: #ff2d2d;
+        box-shadow: 0 0 6px rgba(255, 45, 45, 0.8);
+    }
+
+        .storage-marker.sensitive::before {
+            content: "!";
+            position: absolute;
+            top: -10px;
+            left: -2px;
+            color: red;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+    .storage-marker:hover::after {
+        content: "Key: " attr(data-key) "\A" "Origin: " attr(data-origin) "\A" "Value: " attr(data-value);
+        white-space: pre;
+        position: absolute;
+        top: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #9c27b0;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: var(--tooltip-font-size);
+        z-index: 999;
+        max-width: 300px;
+        word-break: break-all;
+    }
+
+    /* Tooltip bei Tokens */
+    .storage-marker.sensitive:hover::after {
+        background-color: #ff2d2d;
+    }
+
 .extension-marker {
     position: absolute;
     top: calc(63% - 10px); /* leicht unter Cookies */

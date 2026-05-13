@@ -47,6 +47,7 @@
     private BrowserExtensionEntry? selectedExtension;
 	private DomainEntry? selectedDomain;
     private BrowserHistoryEntry? selectedSubEntry;
+    private StorageEntry? selectedStorage;
 
     private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
     private bool isZooming = false; // Flag to indicate if zooming is in progress
@@ -180,6 +181,12 @@
         selectedInput = item;
     }
 
+    void SelectStorage(StorageEntry s)
+    {
+        ResetSelection();
+        selectedStorage = s;
+    }
+
     void SelectExtension(BrowserExtensionEntry ext)
     {
         ResetSelection();
@@ -200,6 +207,7 @@
         selectedCookie = null;
         selectedInput = null;
         selectedSubEntry = null;
+        selectedStorage = null;
     }
 
     void SelectSubEntry(DomainEntry domainEntry, BrowserHistoryEntry sub)
@@ -269,6 +277,7 @@
         RecalculateExtensionPositions();
         DetectAnomalies();
         RecalculateAnomalyPositions();
+        RecalculateStoragePositions();
         UpdateVisibleTimestamps();
 
         InvokeAsync(StateHasChanged);
@@ -390,6 +399,16 @@
         foreach (var ext in State.Extensions)
         {
             ext.Position = (int)TimeToPixel(ext.InstallTime) - (int)scrollIndex;
+        }
+    }
+
+    private void RecalculateStoragePositions()
+    {
+        if (State.StorageEntries == null) return;
+
+        foreach (var entry in State.StorageEntries)
+        {
+            entry.Position = (int)TimeToPixel(entry.Time) - (int)scrollIndex;
         }
     }
 
@@ -1264,11 +1283,11 @@
             <div class="timeline-label">Verlauf-Zeitachse</div>
             <div class="timeline-history-label">History</div>
             <div class="timeline-top-legend "></div>
-            <div class="timeline-cookies-label">Cookies</div>
+            <div class="timeline-cookies-label">Cookies & Session</div>
             <div class="timeline-cookies"></div>
             <div class="timeline-webdata-label">User Input</div>
             <div class="timeline-webdata"></div>
-            <div class="timeline-favicons-label">Storage</div>
+            <div class="timeline-favicons-label">Local Storage </div>
             <div class="timeline-favicons"></div>
             <div class="timeline-ext-label">Extensions</div>
             <div class="timeline-ext"></div>
@@ -1384,6 +1403,44 @@
                         }
                     </ul>
                 </div>
+
+            <div>
+                <strong>Extensions (@State.Extensions.Count)</strong>
+                <ul>
+                    @foreach (var e in State.Extensions)
+                    {
+                        <li>
+                            @e.Name <br />
+                            Installed: @e.InstallTime <br />
+                            px=@e.Position <br />
+                            Risk: @e.RiskLevel (@e.RiskScore)
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <div>
+                <strong>Storage (@State.StorageEntries.Count)</strong>
+                <ul>
+                    @foreach (var s in State.StorageEntries)
+                    {
+                        <li>
+                            <strong>@s.Key</strong> <br />
+                            origin: @s.Origin <br />
+                            px=@s.Position <br />
+                
+                            @if (s.IsSensitive)
+                            {
+                                <span style="color:red;">⚠ TOKEN</span>
+                
+                                <br />
+                            }
+
+                            value: @(s.Value?.Length > 60 ? s.Value.Substring(0, 60) + "..." : s.Value)
+                        </li>
+                    }
+                </ul>
+            </div>
 
                 <!-- 🔴 ANOMALIEN -->
                 <div>
@@ -1619,6 +1676,21 @@
             }
         }
 
+        <!-- STORAGE Einträge in der Zeitachse -->
+        @foreach (var s in State.StorageEntries)
+        {
+            if (s.Position > -50 && s.Position < viewportWidth - 300)
+            {
+                <div class="storage-marker @(s.IsSensitive ? "sensitive" : "")"
+                     style="left: calc(@($"{s.Position}px - 5px"))"
+                     data-key="@s.Key"
+                     data-origin="@s.Origin"
+                     data-value="@s.Value"
+                     @onclick="() => SelectStorage(s)">
+                </div>
+            }
+        }
+
 
 
         @if (selectedExtension != null)
@@ -1640,6 +1712,10 @@
         else if (selectedDomain != null)
         {
             <DomainDetails Data="selectedDomain" OnClose="CloseAll" />
+        }
+        else if (selectedStorage != null)
+        {
+            <StorageDetails Data="selectedStorage" OnClose="CloseAll" />
         }
 
         

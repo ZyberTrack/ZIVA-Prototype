@@ -16,7 +16,8 @@ namespace ZIVA_Prototype.Services
             List<BrowserHistoryEntry> history,
             List<BrowserCookieEntry> cookies,
             List<WebDataAutofillEntry> autofill,
-            List<BrowserExtensionEntry> extensions)
+            List<BrowserExtensionEntry> extensions,
+            List<StorageEntry> storage)
         {
             BrowserEntries.Clear();
             BrowserEntries.AddRange(history.OrderBy(e => e.VisitTime));
@@ -29,6 +30,9 @@ namespace ZIVA_Prototype.Services
 
             Extensions.Clear();
             Extensions.AddRange(extensions.OrderBy(e => e.InstallTime));
+
+            StorageEntries.Clear();
+            StorageEntries.AddRange(storage.OrderBy(s => s.Origin));
 
             OnChange?.Invoke();
         }
@@ -118,6 +122,29 @@ namespace ZIVA_Prototype.Services
         }
 
         // =========================================================
+        // STORAGE 🔥 (NEU)
+        // =========================================================
+        public List<StorageEntry> StorageEntries { get; } = new();
+
+        public void SetStorageEntries(List<StorageEntry> entries)
+        {
+            StorageEntries.Clear();
+            StorageEntries.AddRange(entries.OrderBy(e => e.Origin)); // später evtl. LastModified
+
+            OnChange?.Invoke();
+        }
+
+        public void AddStorageEntries(List<StorageEntry> entries)
+        {
+            StorageEntries.AddRange(entries);
+
+            StorageEntries.Sort((a, b) =>
+                string.Compare(a.Origin, b.Origin, StringComparison.Ordinal));
+
+            OnChange?.Invoke();
+        }
+
+        // =========================================================
         // CLEAR ALL (FIX!)
         // =========================================================
         public void ClearAll()
@@ -125,9 +152,10 @@ namespace ZIVA_Prototype.Services
             BrowserEntries.Clear();
             BrowserCookies.Clear();
             AutofillEntries.Clear();
-            Extensions.Clear(); // 🔥 wichtig
+            Extensions.Clear();
+            StorageEntries.Clear();
 
-            OnChange?.Invoke(); // 🔥 wichtig (hat bei dir gefehlt)
+            OnChange?.Invoke();
         }
     }
 }

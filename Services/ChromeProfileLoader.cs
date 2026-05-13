@@ -11,19 +11,25 @@ namespace ZIVA_Prototype.Services
         private readonly WebDataAutofillImportService _autofill;
         private readonly TimelineStateService _state;
         private readonly ExtensionImportService _extensions;
+        private readonly StorageImportService _storage;
+        private readonly StorageArtifactScanner _artifactScanner;
 
         public ChromeProfileLoader(
             HistoryImportService history,
             CookieImportService cookies,
             WebDataAutofillImportService autofill,
             ExtensionImportService extensions,
-            TimelineStateService state)
+            StorageImportService storage,
+            TimelineStateService state,
+            StorageArtifactScanner artifactScanner)
         {
             _history = history;
             _cookies = cookies;
             _autofill = autofill;
             _extensions = extensions;
+            _storage = storage;
             _state = state;
+            _artifactScanner = artifactScanner;
         }
 
         public async Task LoadProfileAsync(string profilePath)
@@ -32,7 +38,7 @@ namespace ZIVA_Prototype.Services
 
             Console.WriteLine($"📂 Lade Profil: {profilePath}");
 
-            // 🔥 Dateien dynamisch finden
+            // Dateien dynamisch finden
             var historyPath = FindFile(profilePath, "History");
             var cookiesPath = FindFile(profilePath, "Cookies");
             var webDataPath = FindFile(profilePath, "Web Data");
@@ -81,7 +87,7 @@ namespace ZIVA_Prototype.Services
             // ===== EXTENSIONS =====
             if (profilePath != null)
             {
-                Console.WriteLine($"✅ Web Data gefunden: {profilePath}");
+                Console.WriteLine($"✅ Extensions werden geladen aus: {profilePath}");
 
                 
                 var extList = await _extensions.LoadExtensionsAsync(profilePath);
@@ -94,15 +100,42 @@ namespace ZIVA_Prototype.Services
                 Console.WriteLine("⚠️ Keine Web Data-Datei gefunden!");
             }
 
-            // 🔥 WAL Hinweis (optional, aber stark)
+            // WAL Hinweis (optional, aber stark)
             var walPath = Path.Combine(profilePath, "History-wal");
             if (File.Exists(walPath))
             {
                 Console.WriteLine("⚠️ WAL aktiv – Daten könnten unvollständig sein");
             }
+
+            // ===== STORAGE =====
+            if (profilePath != null)
+            {
+                Console.WriteLine($"✅ Storage wird geladen aus: {profilePath}");
+
+                var storageEntries = _storage.Load(profilePath);
+
+                Console.WriteLine($"➡️ Storage Count: {storageEntries.Count}");
+
+                Console.WriteLine("✅ Artifact Scanner startet...");
+
+                var recoveredArtifacts =
+                    _artifactScanner.Scan(profilePath);
+
+                Console.WriteLine(
+                    $"➡️ Recovered Artifacts: {recoveredArtifacts.Count}");
+
+                storageEntries.AddRange(recoveredArtifacts);
+
+
+                _state.SetStorageEntries(storageEntries);
+            }
+            else
+            {
+                Console.WriteLine("⚠️ Kein Profilpfad für Storage!");
+            }
         }
 
-        // 🔥 Helfer: findet Datei robust
+        // Helfer: findet Datei robust
         private string? FindFile(string folder, string fileName)
         {
             // Direkt im Ordner

@@ -25,6 +25,8 @@ namespace ZIVA_Prototype
             builder.Services.AddScoped<ChromeProfileLoader>();
             builder.Services.AddScoped<UserInputAggregatorService>();
             builder.Services.AddScoped<ExtensionImportService>();
+            builder.Services.AddScoped<StorageImportService>();
+            builder.Services.AddSingleton<StorageArtifactScanner>();
 
             builder.Services.AddSingleton<TimelineStateService>();
             builder.Services.AddSingleton<PersistStateService>();

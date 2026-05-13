@@ -29,7 +29,9 @@ namespace ZIVA_Prototype.Services
                 BrowserEntries = state.BrowserEntries,
                 BrowserCookies = state.BrowserCookies,
                 AutofillEntries = state.AutofillEntries,
-                Extensions = state.Extensions // 🔥 NEU
+                Extensions = state.Extensions,
+                StorageEntries = state.StorageEntries,
+
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions
@@ -61,7 +63,8 @@ namespace ZIVA_Prototype.Services
                 persisted.BrowserEntries ?? new List<BrowserHistoryEntry>(),
                 persisted.BrowserCookies ?? new List<BrowserCookieEntry>(),
                 persisted.AutofillEntries ?? new List<WebDataAutofillEntry>(),
-                persisted.Extensions ?? new List<BrowserExtensionEntry>()
+                persisted.Extensions ?? new List<BrowserExtensionEntry>(),
+                persisted.StorageEntries ?? new List<StorageEntry>()
             );
         }
 
@@ -71,7 +74,8 @@ namespace ZIVA_Prototype.Services
             public List<BrowserCookieEntry>? BrowserCookies { get; set; } = new();
             public List<WebDataAutofillEntry>? AutofillEntries { get; set; } = new();
 
-            public List<BrowserExtensionEntry>? Extensions { get; set; } = new(); // 🔥 NEU
+            public List<BrowserExtensionEntry>? Extensions { get; set; } = new();
+            public List<StorageEntry>? StorageEntries { get; set; } = new();
         }
     }
 }
