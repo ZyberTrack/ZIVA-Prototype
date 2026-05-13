@@ -46,9 +46,10 @@
     private DotNetObjectReference<Timeline>? selfRef;
     private UserInputEntry? selectedInput;
     private BrowserExtensionEntry? selectedExtension;
-	private DomainEntry? selectedDomain;
+    private DomainEntry? selectedDomain;
     private BrowserHistoryEntry? selectedSubEntry;
     private StorageEntry? selectedStorage;
+    private TimelineArtifact? focusedArtifact;
 
     private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
     private bool isZooming = false; // Flag to indicate if zooming is in progress
@@ -75,6 +76,31 @@
     private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
     private int currentPivotIndex = 0; // Index in State.BrowserEntries
     private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
+
+
+    // Für Arrof Fokus
+
+    private List<TimelineArtifact> TimelineArtifacts = new();
+    private int currentArtifactIndex = 0;
+
+    private class TimelineArtifact
+    {
+        public DateTime Time { get; set; }
+
+        public object Data { get; set; } = default!;
+
+        public ArtifactType Type { get; set; }
+    }
+
+    private enum ArtifactType
+    {
+        History,
+        Cookie,
+        UserInput,
+        Extension,
+        Storage,
+        Anomaly
+    }
 
     // Suchmaschinen Domains für Erkennung
     string[] searchEngines = new[]
@@ -161,7 +187,7 @@
 };
 
     //------------------------------------------------------------
-	// UX: Drag & Drop Panel, Close Button, Top Findings
+    // UX: Drag & Drop Panel, Close Button, Top Findings
     //------------------------------------------------------------
 
     private ElementReference panelRef;
@@ -182,6 +208,8 @@
 
         selectedInput = item;
 
+        SyncFocusedArtifact(item);
+
         await CenterOnTime(item.Time);
     }
 
@@ -190,6 +218,8 @@
         ResetSelection();
 
         selectedStorage = s;
+
+        SyncFocusedArtifact(s);
 
         await CenterOnTime(s.Time);
     }
@@ -200,6 +230,8 @@
 
         selectedExtension = ext;
 
+        SyncFocusedArtifact(ext);
+
         await CenterOnTime(ext.InstallTime);
     }
 
@@ -208,6 +240,8 @@
         ResetSelection();
 
         selectedCookie = cookie;
+
+        SyncFocusedArtifact(cookie);
 
         await CenterOnTime(cookie.Created);
     }
@@ -230,6 +264,9 @@
 
         selectedDomain = domainEntry;
         selectedSubEntry = sub;
+
+        SyncFocusedArtifact(sub);
+        SyncFocusedArtifact(domainEntry);
 
         await CenterOnTime(sub.VisitTime);
     }
@@ -298,12 +335,76 @@
         RecalculateUserInputPositions();
         RecalculateSummarizedPositions();
         RecalculateExtensionPositions();
-        DetectAnomalies();
         RecalculateAnomalyPositions();
         RecalculateStoragePositions();
+        DetectAnomalies();
+        BuildArtifactTimeline();
         UpdateVisibleTimestamps();
 
         InvokeAsync(StateHasChanged);
+    }
+
+    private void BuildArtifactTimeline()
+    {
+        TimelineArtifacts.Clear();
+
+        TimelineArtifacts.AddRange(
+            State.BrowserEntries.Select(e => new TimelineArtifact
+            {
+                Time = e.VisitTime,
+                Data = e,
+                Type = ArtifactType.History
+            })
+        );
+
+        TimelineArtifacts.AddRange(
+            State.BrowserCookies.Select(c => new TimelineArtifact
+            {
+                Time = c.Created,
+                Data = c,
+                Type = ArtifactType.Cookie
+            })
+        );
+
+        TimelineArtifacts.AddRange(
+            UserInputs.Select(i => new TimelineArtifact
+            {
+                Time = i.Time,
+                Data = i,
+                Type = ArtifactType.UserInput
+            })
+        );
+
+        TimelineArtifacts.AddRange(
+            State.Extensions.Select(e => new TimelineArtifact
+            {
+                Time = e.InstallTime,
+                Data = e,
+                Type = ArtifactType.Extension
+            })
+        );
+
+        TimelineArtifacts.AddRange(
+            State.StorageEntries.Select(s => new TimelineArtifact
+            {
+                Time = s.Time,
+                Data = s,
+                Type = ArtifactType.Storage
+            })
+        );
+
+        TimelineArtifacts.AddRange(
+            Anomalies.Select(a => new TimelineArtifact
+            {
+                Time = a.FirstSeen,
+                Data = a,
+                Type = ArtifactType.Anomaly
+            })
+        );
+
+        TimelineArtifacts = TimelineArtifacts
+            .OrderBy(t => t.Time)
+            .ToList();
     }
 
 
@@ -1115,19 +1216,21 @@
     [JSInvokable("OnArrowRight")]
     public async Task OnArrowRightAsync()
     {
-        if (currentPivotIndex < State.BrowserEntries.Count - 1)
-            await CenterOnEntry(currentPivotIndex + 1);
-        Refresh();
-        StateHasChanged();
+        if (currentArtifactIndex < TimelineArtifacts.Count - 1)
+        {
+            currentArtifactIndex++;
+            await FocusArtifact(TimelineArtifacts[currentArtifactIndex]);
+        }
     }
 
     [JSInvokable("OnArrowLeft")]
     public async Task OnArrowLeftAsync()
     {
-        if (currentPivotIndex > 0)
-            await CenterOnEntry(currentPivotIndex - 1);
-        Refresh();
-        StateHasChanged();
+        if (currentArtifactIndex > 0)
+        {
+            currentArtifactIndex--;
+            await FocusArtifact(TimelineArtifacts[currentArtifactIndex]);
+        }
     }
 
     async Task ExpandAndFocus(DomainEntry domainEntry)
@@ -1205,6 +1308,64 @@
         await Task.Delay(1);
 
         isProgrammaticScroll = false;
+    }
+
+    private void SyncFocusedArtifact(object artifact)
+    {
+        int index = TimelineArtifacts.FindIndex(a => a.Data == artifact);
+
+        if (index >= 0)
+        {
+            currentArtifactIndex = index;
+            focusedArtifact = TimelineArtifacts[index];
+        }
+    }
+
+    private async Task FocusArtifact(TimelineArtifact artifact)
+    {
+        // NUR Fokus setzen
+        focusedArtifact = artifact;
+
+        // Panels schließen
+        ResetSelection();
+
+        switch (artifact.Type)
+        {
+            case ArtifactType.History:
+                {
+                    var entry = (BrowserHistoryEntry)artifact.Data;
+
+                    var domain = SummarizedEntries.FirstOrDefault(d =>
+                        d.SubEntries.Any(s => s == entry));
+
+                    if (domain != null)
+                    {
+                        // NUR expandieren
+                        domain.IsExpanded = true;
+                        expandedStates[domain.Domain] = true;
+                    }
+
+                    break;
+                }
+
+            case ArtifactType.Cookie:
+            case ArtifactType.UserInput:
+            case ArtifactType.Extension:
+            case ArtifactType.Storage:
+            case ArtifactType.Anomaly:
+                break;
+        }
+
+        await CenterOnTime(artifact.Time);
+
+        Refresh();
+
+        StateHasChanged();
+    }
+
+    bool IsFocused(object obj)
+    {
+        return focusedArtifact?.Data == obj;
     }
 
     private double GetPixelPerUnit()
