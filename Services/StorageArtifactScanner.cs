@@ -6,6 +6,8 @@ namespace ZIVA_Prototype.Services
 {
     public class StorageArtifactScanner
     {
+        private readonly TimestampExtractor _timestampExtractor = new TimestampExtractor();
+
         // =========================================================
         // FILE TYPES
         // =========================================================
@@ -100,6 +102,11 @@ namespace ZIVA_Prototype.Services
         {
             var results = new List<StorageEntry>();
 
+            DateTime artifactTime =
+                GetBestArtifactTimestamp(filePath);
+
+            DateTime extractedTime = artifactTime;
+
             byte[] data = File.ReadAllBytes(filePath);
 
             var strings = ExtractStrings(data);
@@ -109,6 +116,13 @@ namespace ZIVA_Prototype.Services
 
             foreach (var str in strings)
             {
+                var possibleTimestamp = _timestampExtractor.Extract(str);
+
+                if (possibleTimestamp != null)
+                {
+                    extractedTime = possibleTimestamp.Value;
+                }
+
                 try
                 {
                     // =====================================
@@ -118,11 +132,11 @@ namespace ZIVA_Prototype.Services
                     {
                         results.Add(new StorageEntry
                         {
-                            Time = DateTime.Now,
+                            Time = extractedTime,
 
                             Profile = profile,
 
-                            Type = "RecoveredArtifact",
+                            Type = "RecoveredJWT",
 
                             Origin = filePath,
 
@@ -141,11 +155,11 @@ namespace ZIVA_Prototype.Services
                     {
                         results.Add(new StorageEntry
                         {
-                            Time = DateTime.Now,
+                            Time = extractedTime,
 
                             Profile = profile,
 
-                            Type = "RecoveredArtifact",
+                            Type = "RecoveredURL",
 
                             Origin = filePath,
 
@@ -164,11 +178,11 @@ namespace ZIVA_Prototype.Services
                     {
                         results.Add(new StorageEntry
                         {
-                            Time = DateTime.Now,
+                            Time = extractedTime,
 
                             Profile = profile,
 
-                            Type = "RecoveredArtifact",
+                            Type = "RecoveredEmail",
 
                             Origin = filePath,
 
@@ -188,11 +202,11 @@ namespace ZIVA_Prototype.Services
                     {
                         results.Add(new StorageEntry
                         {
-                            Time = DateTime.Now,
+                            Time = extractedTime,
 
                             Profile = profile,
 
-                            Type = "RecoveredArtifact",
+                            Type = "RecoveredFirebase",
 
                             Origin = filePath,
 
@@ -212,11 +226,11 @@ namespace ZIVA_Prototype.Services
                     {
                         results.Add(new StorageEntry
                         {
-                            Time = DateTime.Now,
+                            Time = extractedTime,
 
                             Profile = profile,
 
-                            Type = "RecoveredArtifact",
+                            Type = "RecoveredApiKey",
 
                             Origin = filePath,
 
@@ -236,11 +250,11 @@ namespace ZIVA_Prototype.Services
                     {
                         results.Add(new StorageEntry
                         {
-                            Time = DateTime.Now,
+                            Time = extractedTime,
 
                             Profile = profile,
 
-                            Type = "RecoveredArtifact",
+                            Type = "RecoveredAuth",
 
                             Origin = filePath,
 
@@ -348,6 +362,25 @@ namespace ZIVA_Prototype.Services
                 return value.Substring(0, 300);
 
             return value;
+        }
+
+        // =========================================================
+        // BEST TIMESTAMP
+        // =========================================================
+        private DateTime GetBestArtifactTimestamp(
+            string filePath)
+        {
+            try
+            {
+                var file = new FileInfo(filePath);
+
+                // beste Näherung an echte Chromium Aktivität
+                return file.LastWriteTime;
+            }
+            catch
+            {
+                return DateTime.Now;
+            }
         }
     }
 }

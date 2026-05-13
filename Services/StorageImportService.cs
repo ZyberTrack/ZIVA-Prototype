@@ -48,13 +48,17 @@ namespace ZIVA_Prototype.Services
             {
                 Console.WriteLine("[LocalStorage] Found");
 
+                DateTime artifactTime =
+                    GetBestArtifactTimestamp(path);
+
                 string safe = CopyLevelDb(path);
 
                 var result = ReadLevelDb(
                     safe,
                     "LocalStorage",
                     profileName,
-                    null);
+                    null,
+                    artifactTime);
 
                 Console.WriteLine(
                     $"[LocalStorage] Parsed entries: {result.Count}");
@@ -90,13 +94,17 @@ namespace ZIVA_Prototype.Services
             {
                 Console.WriteLine("[SessionStorage] Found");
 
+                DateTime artifactTime =
+                    GetBestArtifactTimestamp(path);
+
                 string safe = CopyLevelDb(path);
 
                 var result = ReadLevelDb(
                     safe,
                     "SessionStorage",
                     profileName,
-                    null);
+                    null,
+                    artifactTime);
 
                 Console.WriteLine(
                     $"[SessionStorage] Parsed entries: {result.Count}");
@@ -157,13 +165,17 @@ namespace ZIVA_Prototype.Services
                         Console.WriteLine(
                             $"[IndexedDB] Reading: {origin}");
 
+                        DateTime artifactTime =
+                            GetBestArtifactTimestamp(levelDb);
+
                         string safe = CopyLevelDb(levelDb);
 
                         var result = ReadLevelDb(
                             safe,
                             "IndexedDB",
                             profileName,
-                            origin);
+                            origin,
+                            artifactTime);
 
                         Console.WriteLine(
                             $"[IndexedDB] {origin} -> {result.Count}");
@@ -185,13 +197,20 @@ namespace ZIVA_Prototype.Services
         }
 
         // =========================================================
+        // TIMESTAMP EXTRACTOR
+        // =========================================================
+
+        private readonly TimestampExtractor _timestampExtractor = new TimestampExtractor();
+
+        // =========================================================
         // READ LEVELDB
         // =========================================================
         private List<StorageEntry> ReadLevelDb(
             string dbPath,
             string type,
             string profile,
-            string forcedOrigin)
+            string forcedOrigin,
+            DateTime artifactTime)
         {
             var list = new List<StorageEntry>();
 
@@ -206,9 +225,6 @@ namespace ZIVA_Prototype.Services
 
                 using var iterator = db.CreateIterator();
 
-                // =========================================
-                // RAW COUNT DEBUG
-                // =========================================
                 int rawCount = 0;
 
                 for (iterator.SeekToFirst();
@@ -221,14 +237,10 @@ namespace ZIVA_Prototype.Services
                 Console.WriteLine(
                     $"[{type}] RAW LEVELDB ENTRIES: {rawCount}");
 
-                // rewind
                 iterator.SeekToFirst();
 
                 int shown = 0;
 
-                // =========================================
-                // MAIN PARSE LOOP
-                // =========================================
                 for (; iterator.IsValid(); iterator.Next())
                 {
                     try
@@ -242,14 +254,41 @@ namespace ZIVA_Prototype.Services
                         bool isBinary =
                             LooksBinary(valueBytes);
 
+                        // =====================================
+                        // TIMESTAMP EXTRACTION
+                        // =====================================
+
+                        DateTime extractedTime =
+                            artifactTime;
+
+                        var keyTimestamp =
+                            _timestampExtractor.Extract(
+                                decodedKey);
+
+                        var valueTimestamp =
+                            _timestampExtractor.Extract(
+                                decodedValue);
+
+                        if (valueTimestamp != null)
+                        {
+                            extractedTime =
+                                valueTimestamp.Value;
+                        }
+                        else if (keyTimestamp != null)
+                        {
+                            extractedTime =
+                                keyTimestamp.Value;
+                        }
+
+                        // =====================================
+                        // ORIGIN PARSE
+                        // =====================================
+
                         string origin =
                             forcedOrigin ?? "unknown";
 
                         string key = decodedKey;
 
-                        // =================================
-                        // FLEXIBLE ORIGIN PARSE
-                        // =================================
                         if (string.IsNullOrEmpty(forcedOrigin))
                         {
                             var parts =
@@ -262,9 +301,10 @@ namespace ZIVA_Prototype.Services
                             }
                         }
 
-                        // =================================
-                        // DEBUG OUTPUT
-                        // =================================
+                        // =====================================
+                        // DEBUG
+                        // =====================================
+
                         if (shown < 20)
                         {
                             Console.WriteLine(
@@ -280,6 +320,9 @@ namespace ZIVA_Prototype.Services
                                 $"VALUE: {decodedValue}");
 
                             Console.WriteLine(
+                                $"TIME: {extractedTime}");
+
+                            Console.WriteLine(
                                 $"BINARY: {isBinary}");
 
                             Console.WriteLine(
@@ -288,13 +331,9 @@ namespace ZIVA_Prototype.Services
                             shown++;
                         }
 
-                        // =================================
-                        // NO FILTERING FOR NOW
-                        // =================================
-
                         list.Add(new StorageEntry
                         {
-                            Time = DateTime.Now,
+                            Time = extractedTime,
 
                             Profile = profile,
 
@@ -346,9 +385,6 @@ namespace ZIVA_Prototype.Services
             {
                 string name =
                     Path.GetFileName(folderPath);
-
-                // example:
-                // https_discord.com_0
 
                 var parts = name.Split('_');
 
@@ -434,6 +470,32 @@ namespace ZIVA_Prototype.Services
             return
                 value.Count(c => c == '.') == 2 &&
                 value.Length > 40;
+        }
+
+        // =========================================================
+        // BEST TIMESTAMP
+        // =========================================================
+        private DateTime GetBestArtifactTimestamp(
+            string folderPath)
+        {
+            try
+            {
+                var dir = new DirectoryInfo(folderPath);
+
+                var files = dir.GetFiles(
+                    "*",
+                    SearchOption.AllDirectories);
+
+                if (files.Length == 0)
+                    return dir.LastWriteTime;
+
+                // beste Näherung an echte Chromium Aktivität
+                return files.Max(f => f.LastWriteTime);
+            }
+            catch
+            {
+                return DateTime.Now;
+            }
         }
 
         // =========================================================
