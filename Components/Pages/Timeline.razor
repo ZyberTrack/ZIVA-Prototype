@@ -38,6 +38,7 @@
     private List<UserInputEntry> UserInputs = new(); // kombinierte Liste der Keywords und Autofill Einträge
     private static List<int> usedHues = new(); // Liste aller bisher vergebenen Hue-Werte
     private static Dictionary<string, string> domainColors = new();
+    private Dictionary<string, bool> expandedStates = new();
 
     private BrowserHistoryEntry? selectedEntry; // Aktuell ausgewählte Browser History Artefakt Entry
     private BrowserCookieEntry? selectedCookie; // Aktuell ausgewählte Browser Cookies Artefakt Entry selectedAutofill
@@ -175,30 +176,40 @@
         );
     }
 
-    void SelectInput(UserInputEntry item)
+    async Task SelectInput(UserInputEntry item)
     {
         ResetSelection();
+
         selectedInput = item;
+
+        await CenterOnTime(item.Time);
     }
 
-    void SelectStorage(StorageEntry s)
+    async Task SelectStorage(StorageEntry s)
     {
         ResetSelection();
+
         selectedStorage = s;
+
+        await CenterOnTime(s.Time);
     }
 
-    void SelectExtension(BrowserExtensionEntry ext)
+    async Task SelectExtension(BrowserExtensionEntry ext)
     {
         ResetSelection();
 
         selectedExtension = ext;
+
+        await CenterOnTime(ext.InstallTime);
     }
 
-    void SelectCookie(BrowserCookieEntry cookie)
+    async Task SelectCookie(BrowserCookieEntry cookie)
     {
         ResetSelection();
 
         selectedCookie = cookie;
+
+        await CenterOnTime(cookie.Created);
     }
 
     void CloseAll()
@@ -211,12 +222,16 @@
         selectedStorage = null;
     }
 
-    void SelectSubEntry(DomainEntry domainEntry, BrowserHistoryEntry sub)
+    async Task SelectSubEntry(
+    DomainEntry domainEntry,
+    BrowserHistoryEntry sub)
     {
         ResetSelection();
 
         selectedDomain = domainEntry;
         selectedSubEntry = sub;
+
+        await CenterOnTime(sub.VisitTime);
     }
 
     void ResetSelection()
@@ -257,12 +272,17 @@
 
     private void Refresh()
     {
-        if (State.BrowserEntries.Any())
+        SummarizedEntries = SummarizeEntries(
+        State.BrowserEntries,
+        zoomLevels[currentZoomIndex].seconds
+        );
+
+        foreach (var entry in SummarizedEntries)
         {
-            SummarizedEntries = SummarizeEntries(
-                State.BrowserEntries,
-                zoomLevels[currentZoomIndex].seconds
-            );
+            if (expandedStates.TryGetValue(entry.Domain, out bool expanded))
+            {
+                entry.IsExpanded = expanded;
+            }
         }
 
         var aggregator = new UserInputAggregatorService();
@@ -1117,6 +1137,7 @@
         selectedDomain = domainEntry;
 
         domainEntry.IsExpanded = true;
+        expandedStates[domainEntry.Domain] = true;
 
         int index = State.BrowserEntries.FindIndex(e =>
             Math.Abs((e.VisitTime - domainEntry.VisitTime).TotalSeconds) < 1);
@@ -1144,27 +1165,46 @@
         if (State.BrowserEntries == null || !State.BrowserEntries.Any())
             return;
 
-        // Index clampen
         index = Math.Clamp(index, 0, State.BrowserEntries.Count - 1);
+
         currentPivotIndex = index;
 
-        var entry = State.BrowserEntries[currentPivotIndex];
+        var entry = State.BrowserEntries[index];
 
-        // baseTime auf den Pivot-Entry setzen
-        baseTime = entry.VisitTime;
+        await CenterOnTime(entry.VisitTime);
+    }
 
-        // scrollIndex so berechnen, dass Pivot in die Mitte des Viewports kommt
-        scrollIndex = TimeToPixel(entry.VisitTime) - viewportWidth / 2;
+    private async Task CenterOnTime(DateTime time)
+    {
+        // Timeline neu auf Zeitpunkt ankern
+        baseTime = time;
 
-        // Scrollgrenzen sichern
-        scrollIndex = Math.Clamp(scrollIndex, 0, Math.Max(0, movableLayerWidth - viewportWidth));
+        // Mittelpunkt exakt auf InitialOffset
+        scrollIndex = InitialOffsetPx - viewportWidth / 2;
 
-        // Anzeige aktualisieren
+        // Clamp
+        scrollIndex = Math.Clamp(
+            scrollIndex,
+            0,
+            Math.Max(0, movableLayerWidth - viewportWidth)
+        );
+
         Refresh();
-        StateHasChanged();
 
-        // Optional: Browser scrollen, falls du einen externen Scroll-Container hast
-        await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
+        await InvokeAsync(StateHasChanged);
+
+        isProgrammaticScroll = true;
+
+        await JS.InvokeVoidAsync(
+            "scrollHelpers.scrollTo",
+            scrollDivRef,
+            scrollIndex,
+            0
+        );
+
+        await Task.Delay(1);
+
+        isProgrammaticScroll = false;
     }
 
     private double GetPixelPerUnit()
@@ -1336,15 +1376,17 @@
         private bool allExpanded = false;
         private bool showDebug = false;
 
-        private void ToggleAllDomains()
-        {
-            allExpanded = !allExpanded;
+    private void ToggleAllDomains()
+    {
+        allExpanded = !allExpanded;
 
-            foreach (var entry in SummarizedEntries)
-            {
-                entry.IsExpanded = allExpanded;
-            }
+        foreach (var entry in SummarizedEntries)
+        {
+            entry.IsExpanded = allExpanded;
+
+            expandedStates[entry.Domain] = allExpanded;
         }
+    }
 
         private void ToggleDebug()
         {
