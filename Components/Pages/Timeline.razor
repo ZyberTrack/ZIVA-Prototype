@@ -206,6 +206,7 @@
         selectedExtension = null;
         selectedCookie = null;
         selectedInput = null;
+        selectedDomain = null;
         selectedSubEntry = null;
         selectedStorage = null;
     }
@@ -225,6 +226,7 @@
         selectedInput = null;
         selectedDomain = null;
         selectedSubEntry = null;
+        selectedStorage = null;
     }
 
     private string GetTopFindings(BrowserExtensionEntry ext)
@@ -1109,9 +1111,12 @@
 
     async Task ExpandAndFocus(DomainEntry domainEntry)
     {
+        ResetSelection();
+
+        selectedDomain = domainEntry;
+
         domainEntry.IsExpanded = true;
 
-        // passenden Index finden
         int index = State.BrowserEntries.FindIndex(e =>
             Math.Abs((e.VisitTime - domainEntry.VisitTime).TotalSeconds) < 1);
 

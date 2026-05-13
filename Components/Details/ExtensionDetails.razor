@@ -7,26 +7,96 @@
 
     <div class="entry-content">
 
-        <p><strong>Risk:</strong> @Data.RiskLevel (@Data.RiskScore)</p>
+        <p>
+            <strong>Risk:</strong>
+            @Data.RiskLevel (@Data.RiskScore)
+        </p>
 
-        <p><strong>Findings:</strong></p>
+        <p>
+            <strong>Version:</strong>
+            @Data.Version
+        </p>
+
+        <p>
+            <strong>Installed:</strong>
+            @Data.InstallTime.ToLocalTime()
+        </p>
+
+        <p>
+            <strong>Enabled:</strong>
+            @(Data.IsEnabled ? "Yes" : "No")
+        </p>
+
+        <p>
+            <strong>Source:</strong>
+            @(Data.IsUnpacked ? "Unpacked / Developer" :
+              Data.IsFromWebStore ? "Chrome Web Store" :
+              "Unknown")
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(Data.InstallLocation))
+        {
+            <p>
+                <strong>Install Path:</strong><br />
+                @Data.InstallLocation
+            </p>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Data.Description))
+        {
+            <p>
+                <strong>Description:</strong><br />
+                @Data.Description
+            </p>
+        }
+
+        <hr />
+
+        <p><strong>Top Findings</strong></p>
+
         <ul>
-            @foreach (var f in Data.Findings ?? Enumerable.Empty<Finding>())
+            @foreach (var f in Data.Findings
+                     .OrderByDescending(x => x.Weight))
             {
-                <li>@f.Description</li>
+                <li>
+                    <strong>@f.Type</strong><br />
+                    @f.Description
+                </li>
             }
         </ul>
 
-        <p><strong>Critical Capabilities:</strong></p>
+        <hr />
+
+        <p><strong>Permissions</strong></p>
+
         <ul>
-            @foreach (var p in Data.AllPermissions ?? Enumerable.Empty<string>())
+            @foreach (var p in Data.AllPermissions)
             {
-                if (p == "<all_urls>" || p == "webRequest" || p == "webRequestBlocking" || p == "cookies")
+                <li>@p</li>
+            }
+        </ul>
+
+        @if (Data.ContentScripts.Any())
+        {
+            <hr />
+
+            <p><strong>Content Scripts</strong></p>
+
+            <ul>
+                @foreach (var s in Data.ContentScripts)
                 {
-                    <li>@p</li>
+                    <li>@s</li>
                 }
-            }
-        </ul>
+            </ul>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Data.BackgroundScript))
+        {
+            <p>
+                <strong>Background Worker:</strong><br />
+                @Data.BackgroundScript
+            </p>
+        }
 
     </div>
 </div>

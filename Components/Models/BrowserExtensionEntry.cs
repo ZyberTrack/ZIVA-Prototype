@@ -30,6 +30,18 @@ namespace ZIVA_Prototype.Components.Models
         public List<string> ContentScripts { get; set; } = new();
         public string? BackgroundScript { get; set; }
 
+        // 🖥️ Browser State (Preferences)
+
+        public bool IsEnabled { get; set; }
+
+        public bool IsFromWebStore { get; set; }
+
+        public bool IsUnpacked { get; set; }
+
+        public string InstallLocation { get; set; } = string.Empty;
+
+        public string UpdateUrl { get; set; } = string.Empty;
+
         // 🧠 Detection
         public int RiskScore { get; set; }
         public RiskLevel RiskLevel { get; set; } = RiskLevel.Low;
