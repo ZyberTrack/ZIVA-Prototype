@@ -269,7 +269,8 @@
 
         UserInputs = aggregator.Build(
             State.BrowserEntries,
-            State.AutofillEntries
+            State.AutofillEntries,
+            State.Favicons
         );
 
         RecalculatePositions();
@@ -1354,9 +1355,9 @@
     }
 
 
-    @if (showDebug)
-    {
-        <div style="
+@if (showDebug)
+{
+    <div style="
         position: fixed;
         top: 600px;
         left: 80px;
@@ -1369,48 +1370,84 @@
         border: 1px solid #333;
         font-size: 12px;
         ">
-            <strong>DEBUG</strong><br />
+        <strong>DEBUG</strong><br />
 
-            SecondsPerSpacing = @SecondsPerSpacing<br />
-            scrollIndex = @scrollIndex<br />
-            baseTime = @baseTime<br />
-            viewportWidth = @viewportWidth<br />
-            containerHeight = @containerHeight<br />
-            <hr />
+        SecondsPerSpacing = @SecondsPerSpacing<br />
+        scrollIndex = @scrollIndex<br />
+        baseTime = @baseTime<br />
+        viewportWidth = @viewportWidth<br />
+        containerHeight = @containerHeight<br />
+        <hr />
 
-            <div style="display: flex; gap: 20px; align-items:flex-start;">
-                <div>
-                    <strong>History (@State.BrowserEntries.Count)</strong>
-                    <ul>
-                        @foreach (var e in State.BrowserEntries)
-                        {
-                            <li>@e.VisitTime | px=@e.Position</li>
-                        }
-                    </ul>
-                </div>
+        <div style="display: flex; gap: 20px; align-items:flex-start;">
 
-                <div>
-                    <strong>Cookies (@State.BrowserCookies.Count)</strong>
-                    <ul>
-                        @foreach (var e in State.BrowserCookies)
-                        {
-                            <li>@e.LastAccessed | px=@e.Position</li>
-                        }
-                    </ul>
-                </div>
+            <!-- HISTORY -->
+            <div>
+                <strong>History (@State.BrowserEntries.Count)</strong>
 
-                <div>
-                    <strong>Autofill (@State.AutofillEntries.Count)</strong>
-                    <ul>
-                        @foreach (var e in State.AutofillEntries)
-                        {
-                            <li>@e.DateCreated | px=@e.Position</li>
-                        }
-                    </ul>
-                </div>
+                <ul>
+                    @foreach (var e in State.BrowserEntries)
+                    {
+                        <li>
+                            @e.VisitTime |
+                            px=@e.Position
+                        </li>
+                    }
+                </ul>
+            </div>
 
+            <!-- COOKIES -->
+            <div>
+                <strong>Cookies (@State.BrowserCookies.Count)</strong>
+
+                <ul>
+                    @foreach (var e in State.BrowserCookies)
+                    {
+                        <li>
+                            @e.LastAccessed |
+                            px=@e.Position
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <!-- USER INPUT -->
+            <div>
+                <strong>User Input (@UserInputs.Count)</strong>
+
+                <ul>
+                    @foreach (var e in UserInputs)
+                    {
+                        <li>
+                            @e.Time |
+                            px=@e.Position |
+                            type=@e.Type |
+                            value=@e.Value
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <!-- FAVICONS -->
+            <div>
+                <strong>Favicons (@State.Favicons.Count)</strong>
+
+                <ul>
+                    @foreach (var f in State.Favicons)
+                    {
+                        <li>
+                            @f.Time |
+                            px=@f.Position |
+                            url=@f.PageUrl
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <!-- EXTENSIONS -->
             <div>
                 <strong>Extensions (@State.Extensions.Count)</strong>
+
                 <ul>
                     @foreach (var e in State.Extensions)
                     {
@@ -1424,48 +1461,74 @@
                 </ul>
             </div>
 
+            <!-- STORAGE -->
             <div>
                 <strong>Storage (@State.StorageEntries.Count)</strong>
+
                 <ul>
                     @foreach (var s in State.StorageEntries)
                     {
                         <li>
-                            <strong>@s.Key</strong> <br />
+                            <strong>@s.Key</strong><br />
+
                             origin: @s.Origin <br />
                             px=@s.Position <br />
-                
+
                             @if (s.IsSensitive)
                             {
                                 <span style="color:red;">⚠ TOKEN</span>
-                
                                 <br />
                             }
 
-                            value: @(s.Value?.Length > 60 ? s.Value.Substring(0, 60) + "..." : s.Value)
+                            value:
+                            @(s.Value?.Length > 60
+                                ? s.Value.Substring(0, 60) + "..."
+                                : s.Value)
                         </li>
                     }
                 </ul>
             </div>
 
-                <!-- 🔴 ANOMALIEN -->
-                <div>
-                    <strong>Anomalies (@Anomalies.Count)</strong>
-                    <ul>
-                        @foreach (var a in Anomalies)
-                        {
-                            <li>
-                                <strong>@a.Type</strong><br />
-                                first: @a.FirstSeen<br />
-                                last: @a.LastSeen<br />
-                                px: @Math.Round(a.Position, 1)<br />
-                                sev: @a.Severity | hits: @a.Count
-                            </li>
-                        }
-                    </ul>
-                </div>
+            <!-- DOMAIN SUMMARY -->
+            <div>
+                <strong>Domains (@SummarizedEntries.Count)</strong>
+
+                <ul>
+                    @foreach (var d in SummarizedEntries)
+                    {
+                        <li>
+                            @d.Domain <br />
+                            time=@d.VisitTime <br />
+                            px=@d.Position <br />
+                            sub=@d.SubEntries.Count
+                        </li>
+                    }
+                </ul>
             </div>
+
+            <!-- ANOMALIES -->
+            <div>
+                <strong>Anomalies (@Anomalies.Count)</strong>
+
+                <ul>
+                    @foreach (var a in Anomalies)
+                    {
+                        <li>
+                            <strong>@a.Type</strong><br />
+
+                            first: @a.FirstSeen<br />
+                            last: @a.LastSeen<br />
+                            px: @Math.Round(a.Position, 1)<br />
+                            sev: @a.Severity |
+                            hits: @a.Count
+                        </li>
+                    }
+                </ul>
+            </div>
+
         </div>
-    }
+    </div>
+}
 
 
 
@@ -1648,20 +1711,28 @@
 
 
 
-            <!-- Autofill Einträge in der Zeitachse -->
-            @foreach (var item in UserInputs)
+            <!-- User Input Einträge in der Zeitachse -->
+        @foreach (var item in UserInputs)
+        {
+            if (item.Position > -50 && item.Position < viewportWidth - 300)
             {
-                if (item.Position > -50 && item.Position < viewportWidth - 300)
+                string cssClass = item.Type switch
                 {
-                <div class="userinput-marker @(item.Type == UserInputType.SearchQuery ? "search" : "autofill")"
+                    UserInputType.SearchQuery => "search",
+                    UserInputType.Autofill => "autofill",
+                    UserInputType.Favicon => "favicon",
+                    _ => ""
+                };
+
+                <div class="userinput-marker @cssClass"
                      style="left: calc(@($"{item.Position}px - 5px"))"
                      data-value="@item.Value"
                      data-time="@item.Time"
                      data-type="@item.Type"
                      @onclick="() => SelectInput(item)">
                 </div>
-                }
             }
+        }
 
 
         <!-- Extensions in der Zeitachse -->

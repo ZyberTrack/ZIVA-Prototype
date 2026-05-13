@@ -17,7 +17,8 @@ namespace ZIVA_Prototype.Services
             List<BrowserCookieEntry> cookies,
             List<WebDataAutofillEntry> autofill,
             List<BrowserExtensionEntry> extensions,
-            List<StorageEntry> storage)
+            List<StorageEntry> storage,
+            List<FaviconEntry> favicons)
         {
             BrowserEntries.Clear();
             BrowserEntries.AddRange(history.OrderBy(e => e.VisitTime));
@@ -33,6 +34,9 @@ namespace ZIVA_Prototype.Services
 
             StorageEntries.Clear();
             StorageEntries.AddRange(storage.OrderBy(s => s.Origin));
+
+            Favicons.Clear();
+            Favicons.AddRange(favicons.OrderBy(f => f.Time));
 
             OnChange?.Invoke();
         }
@@ -101,7 +105,7 @@ namespace ZIVA_Prototype.Services
         }
 
         // =========================================================
-        // EXTENSIONS 🔥 (NEU)
+        // EXTENSIONS
         // =========================================================
         public List<BrowserExtensionEntry> Extensions { get; } = new();
 
@@ -122,14 +126,14 @@ namespace ZIVA_Prototype.Services
         }
 
         // =========================================================
-        // STORAGE 🔥 (NEU)
+        // STORAGE
         // =========================================================
         public List<StorageEntry> StorageEntries { get; } = new();
 
         public void SetStorageEntries(List<StorageEntry> entries)
         {
             StorageEntries.Clear();
-            StorageEntries.AddRange(entries.OrderBy(e => e.Origin)); // später evtl. LastModified
+            StorageEntries.AddRange(entries.OrderBy(e => e.Origin));
 
             OnChange?.Invoke();
         }
@@ -145,7 +149,30 @@ namespace ZIVA_Prototype.Services
         }
 
         // =========================================================
-        // CLEAR ALL (FIX!)
+        // FAVICONS 🔥
+        // =========================================================
+        public List<FaviconEntry> Favicons { get; } = new();
+
+        public void SetFavicons(List<FaviconEntry> entries)
+        {
+            Favicons.Clear();
+            Favicons.AddRange(entries.OrderBy(f => f.Time));
+
+            OnChange?.Invoke();
+        }
+
+        public void AddFavicons(List<FaviconEntry> entries)
+        {
+            Favicons.AddRange(entries);
+
+            Favicons.Sort((a, b) =>
+                a.Time.CompareTo(b.Time));
+
+            OnChange?.Invoke();
+        }
+
+        // =========================================================
+        // CLEAR ALL
         // =========================================================
         public void ClearAll()
         {
@@ -154,6 +181,7 @@ namespace ZIVA_Prototype.Services
             AutofillEntries.Clear();
             Extensions.Clear();
             StorageEntries.Clear();
+            Favicons.Clear();
 
             OnChange?.Invoke();
         }

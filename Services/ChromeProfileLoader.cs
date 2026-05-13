@@ -13,6 +13,7 @@ namespace ZIVA_Prototype.Services
         private readonly ExtensionImportService _extensions;
         private readonly StorageImportService _storage;
         private readonly StorageArtifactScanner _artifactScanner;
+        private readonly FaviconsImportService _favicons;
 
         public ChromeProfileLoader(
             HistoryImportService history,
@@ -21,7 +22,8 @@ namespace ZIVA_Prototype.Services
             ExtensionImportService extensions,
             StorageImportService storage,
             TimelineStateService state,
-            StorageArtifactScanner artifactScanner)
+            StorageArtifactScanner artifactScanner,
+            FaviconsImportService favicons)
         {
             _history = history;
             _cookies = cookies;
@@ -30,6 +32,7 @@ namespace ZIVA_Prototype.Services
             _storage = storage;
             _state = state;
             _artifactScanner = artifactScanner;
+            _favicons = favicons;
         }
 
         public async Task LoadProfileAsync(string profilePath)
@@ -42,6 +45,7 @@ namespace ZIVA_Prototype.Services
             var historyPath = FindFile(profilePath, "History");
             var cookiesPath = FindFile(profilePath, "Cookies");
             var webDataPath = FindFile(profilePath, "Web Data");
+            var faviconsPath = FindFile(profilePath, "Favicons");
 
             // ===== HISTORY =====
             if (historyPath != null)
@@ -132,6 +136,24 @@ namespace ZIVA_Prototype.Services
             else
             {
                 Console.WriteLine("⚠️ Kein Profilpfad für Storage!");
+            }
+
+            // ===== FAVICONS =====
+            if (faviconsPath != null)
+            {
+                Console.WriteLine($"✅ Favicons werden geladen aus: {faviconsPath}");
+
+                var faviconList =
+                    await _favicons.LoadFromFaviconsAsync(faviconsPath);
+
+                Console.WriteLine(
+                    $"➡️ Favicons Count: {faviconList.Count}");
+
+                _state.SetFavicons(faviconList);
+            }
+            else
+            {
+                Console.WriteLine("⚠️ Keine Favicons gefunden!");
             }
         }
 

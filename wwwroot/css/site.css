@@ -514,15 +514,6 @@
     box-shadow: 0 0 3px rgba(0,0,0,0.3);
 }
 
-    /* Farben */
-    .userinput-marker.search {
-        background-color: #FFC1C1;
-    }
-
-    .userinput-marker.autofill {
-        background-color: #25AAC1;
-    }
-
     /* Tooltip */
     .userinput-marker:hover::after {
         content: "Time: " attr(data-time) "\A Value: " attr(data-value) "\A Type: " attr(data-type);
@@ -713,3 +704,16 @@
     .close-btn:hover {
         color: #ff3b3b;
     }
+
+/* User Input Marker Farben */
+.userinput-marker.search {
+    background: #4da3ff;
+}
+
+.userinput-marker.autofill {
+    background: #52d273;
+}
+
+.userinput-marker.favicon {
+    background: #ffcc33;
+}

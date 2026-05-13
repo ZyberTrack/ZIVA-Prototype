@@ -31,7 +31,7 @@ namespace ZIVA_Prototype.Services
                 AutofillEntries = state.AutofillEntries,
                 Extensions = state.Extensions,
                 StorageEntries = state.StorageEntries,
-
+                Favicons = state.Favicons
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions
@@ -49,33 +49,46 @@ namespace ZIVA_Prototype.Services
             if (!File.Exists(filePath))
             {
                 var empty = new PersistedState();
-                var jsonEmpty = JsonSerializer.Serialize(empty, new JsonSerializerOptions { WriteIndented = true });
+
+                var jsonEmpty = JsonSerializer.Serialize(
+                    empty,
+                    new JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    });
+
                 await File.WriteAllTextAsync(filePath, jsonEmpty);
             }
 
             var jsonContent = await File.ReadAllTextAsync(filePath);
 
-            var persisted = JsonSerializer.Deserialize<PersistedState>(jsonContent)
-                            ?? new PersistedState();
+            var persisted =
+                JsonSerializer.Deserialize<PersistedState>(jsonContent)
+                ?? new PersistedState();
 
-            // 🔥 WICHTIG: jetzt mit Extensions
             state.SetAll(
                 persisted.BrowserEntries ?? new List<BrowserHistoryEntry>(),
                 persisted.BrowserCookies ?? new List<BrowserCookieEntry>(),
                 persisted.AutofillEntries ?? new List<WebDataAutofillEntry>(),
                 persisted.Extensions ?? new List<BrowserExtensionEntry>(),
-                persisted.StorageEntries ?? new List<StorageEntry>()
+                persisted.StorageEntries ?? new List<StorageEntry>(),
+                persisted.Favicons ?? new List<FaviconEntry>()
             );
         }
 
         public class PersistedState
         {
             public List<BrowserHistoryEntry>? BrowserEntries { get; set; } = new();
+
             public List<BrowserCookieEntry>? BrowserCookies { get; set; } = new();
+
             public List<WebDataAutofillEntry>? AutofillEntries { get; set; } = new();
 
             public List<BrowserExtensionEntry>? Extensions { get; set; } = new();
+
             public List<StorageEntry>? StorageEntries { get; set; } = new();
+
+            public List<FaviconEntry>? Favicons { get; set; } = new();
         }
     }
 }
