@@ -7,13 +7,10 @@
 @inject TimelineStateService State // Verwaltet States mehrerer Importierter Datenbanken
 @inject HistoryImportService Importer   
 @inject PersistStateService PersistService // falls benötigt
-
+@inject TimelineAnomalyService AnomalyService
 
 
 @code {
-
-
-    //
     // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. 
     // 
     // TO DO:
@@ -77,6 +74,36 @@
     private int currentPivotIndex = 0; // Index in State.BrowserEntries
     private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
 
+    private bool allExpanded = false;
+    private bool showDebug = false;
+
+    // CONTEXT
+    private TimelineScaleContext ScaleContext =>
+    new()
+    {
+        BaseTime = baseTime,
+        InitialOffsetPx = InitialOffsetPx,
+        Spacing = spacing,
+        CurrentZoomIndex = currentZoomIndex,
+        ZoomLevels = zoomLevels
+    };
+
+    private void ToggleAllDomains()
+    {
+        allExpanded = !allExpanded;
+
+        foreach (var entry in SummarizedEntries)
+        {
+            entry.IsExpanded = allExpanded;
+
+            expandedStates[entry.Domain] = allExpanded;
+        }
+    }
+
+    private void ToggleDebug()
+    {
+        showDebug = !showDebug;
+    }
 
     // Für Arrof Fokus
 
@@ -130,17 +157,6 @@
         public int Index { get; set; }
         public DateTime Time { get; set; }
         public int Position { get; set; }
-    }
-
-    // Alles was ZOOMEN angeht, wird hier definiert.
-    enum TimeUnit
-    {
-        Seconds,
-        Minutes,
-        Hours,
-        Days,
-        Months,
-        Years
     }
 
     private readonly (int seconds, TimeUnit unit)[] zoomLevels = new[]
@@ -337,7 +353,14 @@
         RecalculateExtensionPositions();
         RecalculateStoragePositions();
 
-        DetectAnomalies();
+        Anomalies = AnomalyService.Detect(
+            SummarizedEntries,
+            State.BrowserCookies,
+            State.AutofillEntries,
+            BlacklistDomains,
+            SuspiciousDomains
+        );
+
         RecalculateAnomalyPositions();
 
         BuildArtifactTimeline();
@@ -484,7 +507,7 @@
         // Wird für jeden Eintrag gemacht
         foreach (var historyEntry in State.BrowserEntries)
         {
-            historyEntry.Position = (int)TimeToPixel(historyEntry.VisitTime) - scrollIndex; //Hier geht was schief wenn die position mit dsem zoom nicht stimmt
+            historyEntry.Position = (int)TimelineScaleService.TimeToPixel(historyEntry.VisitTime, ScaleContext) - scrollIndex; //Hier geht was schief wenn die position mit dsem zoom nicht stimmt
         }
     }
 
@@ -494,7 +517,7 @@
 
         foreach (var cookie in State.BrowserCookies)
         {
-            cookie.Position = (int)TimeToPixel(cookie.Created) - (int)scrollIndex;
+            cookie.Position = (int)TimelineScaleService.TimeToPixel(cookie.Created, ScaleContext) - (int)scrollIndex;
         }
     }
 
@@ -504,7 +527,7 @@
 
         foreach (var entry in UserInputs)
         {
-            entry.Position = (int)TimeToPixel(entry.Time) - (int)scrollIndex;
+            entry.Position = (int)TimelineScaleService.TimeToPixel(entry.Time, ScaleContext) - (int)scrollIndex;
         }
     }
 
@@ -514,7 +537,7 @@
 
         foreach (var entry in SummarizedEntries)
         {
-            entry.Position = (int)TimeToPixel(entry.VisitTime) - (int)scrollIndex;
+            entry.Position = (int)TimelineScaleService.TimeToPixel(entry.VisitTime, ScaleContext) - (int)scrollIndex;
         }
     }
 
@@ -524,7 +547,7 @@
 
         foreach (var ext in State.Extensions)
         {
-            ext.Position = (int)TimeToPixel(ext.InstallTime) - (int)scrollIndex;
+            ext.Position = (int)TimelineScaleService.TimeToPixel(ext.InstallTime, ScaleContext) - (int)scrollIndex;
         }
     }
 
@@ -534,7 +557,7 @@
 
         foreach (var entry in State.StorageEntries)
         {
-            entry.Position = (int)TimeToPixel(entry.Time) - (int)scrollIndex;
+            entry.Position = (int)TimelineScaleService.TimeToPixel(entry.Time, ScaleContext) - (int)scrollIndex;
         }
     }
 
@@ -565,7 +588,7 @@
                     break;
             }
 
-            a.Position = (int)TimeToPixel(positionTime) - (int)scrollIndex;
+            a.Position = (int)TimelineScaleService.TimeToPixel(positionTime, ScaleContext) - (int)scrollIndex;
         }
     }
 
@@ -626,7 +649,7 @@
             var first = State.BrowserEntries.First();
 
             // Zentriere den ersten Eintrag auf dem Bildschirm
-            var unitDistance = GetUnitDistance(baseTime, first.VisitTime);
+            var unitDistance = TimelineScaleService.GetUnitDistance(baseTime, first.VisitTime, CurrentTimeUnit);
             var scrollTo = InitialOffsetPx + unitDistance * spacing;
             scrollIndex = scrollTo - viewportWidth / 2;
 
@@ -676,7 +699,7 @@
             var first = State.BrowserCookies.First();
 
             // Zeitliche Distanz
-            var unitDistance = GetUnitDistance(baseTime, first.Created);
+            var unitDistance = TimelineScaleService.GetUnitDistance(baseTime, first.Created, CurrentTimeUnit);
 
             // Position berechnen
             var scrollTo = InitialOffsetPx + unitDistance * spacing;
@@ -725,7 +748,7 @@
             var first = State.AutofillEntries.First();
 
             // Zeitliche Distanz berechnen
-            var unitDistance = GetUnitDistance(baseTime, first.DateCreated);
+            var unitDistance = TimelineScaleService.GetUnitDistance(baseTime, first.DateCreated, CurrentTimeUnit);
 
             // Position bestimmen
             var scrollTo = InitialOffsetPx + unitDistance * spacing;
@@ -743,218 +766,6 @@
             await InvokeAsync(StateHasChanged);
         }
     }
-
-
-
-    //------------------------------------------------------------
-    // Anomalie Detection
-	//------------------------------------------------------------
-
-
-    string GetAnomalyKey(AnomalyType type, string domain)
-    => $"{type}:{domain.ToLower()}";
-
-    // Anomalien detecten!
-    void DetectAnomalies()
-    {
-        if (!SummarizedEntries.Any()) return;
-
-        Anomalies.Clear();
-        var anomalyIndex = new Dictionary<string, AnomalyEntry>();
-
-        // 🔴 bestehende Domain-Anomalien
-        //DetectDomainAnomalies(anomalyIndex);
-
-        // 🧨 NEU: Gelöschter Verlauf – Cookies
-        DetectOrphanCookies(anomalyIndex);
-
-        // 🧨 NEU: Gelöschter Verlauf – Autofill
-        DetectOrphanAutofill(anomalyIndex);
-
-        foreach (var domain in SummarizedEntries)
-        {
-            // ✅ ZEITEN statt PIXEL
-            var artifactTimes = domain.SubEntries.Any()
-                ? domain.SubEntries.Select(s => s.VisitTime)
-                : new[] { domain.VisitTime };
-
-            // 🔴 Blacklist
-            if (BlacklistDomains.Any(b =>
-                domain.Domain.Contains(b, StringComparison.OrdinalIgnoreCase)))
-            {
-                AddOrUpdateAnomaly(
-                    anomalyIndex,
-                    AnomalyType.BlacklistedDomain,
-                    domain,
-                    artifactTimes,   // ✅ RICHTIG
-                    severity: 5,
-                    description: "Domain befindet sich auf der Blacklist"
-                );
-
-                continue;
-            }
-
-            // 🟠 Suspicious
-            if (SuspiciousDomains.Any(s =>
-                domain.Domain.Contains(s, StringComparison.OrdinalIgnoreCase)))
-            {
-                AddOrUpdateAnomaly(
-                    anomalyIndex,
-                    AnomalyType.SuspiciousRedirect,
-                    domain,
-                    artifactTimes,   // ✅ RICHTIG
-                    severity: 3,
-                    description: "Verdächtige interne oder lokale Domain"
-                );
-            }
-        }
-
-        Anomalies.AddRange(anomalyIndex.Values);
-    }
-
-    string GetAnomalyKey(
-    AnomalyType type,
-    DomainEntry domain,
-    DateTime time,
-    string? artifactId = null)
-    {
-        return type switch
-        {
-            AnomalyType.DeletedHistoryIndicator =>
-                $"{type}:{domain.Domain.ToLower()}:{time:yyyyMMddHHmmss}:{artifactId}",
-
-            _ =>
-                $"{type}:{domain.Domain.ToLower()}"
-        };
-    }
-
-
-    void AddOrUpdateAnomaly(
-    Dictionary<string, AnomalyEntry> index,
-    AnomalyType type,
-    DomainEntry domain,
-    IEnumerable<DateTime> artifactTimes,
-    int severity,
-    string description,
-    string? artifactId = null)
-    {
-        var first = artifactTimes.Min();
-        var last = artifactTimes.Max();
-
-        var key = GetAnomalyKey(type, domain, first, artifactId);
-
-        if (index.TryGetValue(key, out var existing))
-        {
-            existing.Count++;
-            existing.FirstSeen = existing.FirstSeen < first ? existing.FirstSeen : first;
-            existing.LastSeen = existing.LastSeen > last ? existing.LastSeen : last;
-            existing.Severity = Math.Max(existing.Severity, severity);
-            return;
-        }
-
-        index[key] = new AnomalyEntry
-        {
-            FirstSeen = first,
-            LastSeen = last,
-            LinkedDomain = domain,
-            Type = type,
-            Severity = severity,
-            Description = description,
-            Count = 1
-        };
-    }
-
-
-    string NormalizeDomain(string input)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-            return "";
-
-        input = input.Trim().ToLower();
-
-        if (input.StartsWith("."))
-            input = input[1..];
-
-        // URLs erlauben
-        if (Uri.TryCreate(input, UriKind.Absolute, out var uri))
-            return uri.Host;
-
-        return input;
-    }
-
-    void DetectOrphanCookies(Dictionary<string, AnomalyEntry> anomalyIndex, int toleranceSeconds = 60)
-    {
-        if (State.BrowserCookies == null) return;
-
-        foreach (var cookie in State.BrowserCookies)
-        {
-            string cookieDomain = NormalizeDomain(cookie.Host);
-
-            bool hasMatchingHistory = SummarizedEntries.Any(domain =>
-            {
-                string domainNorm = NormalizeDomain(domain.Domain);
-
-                if (!domainNorm.EndsWith(cookieDomain) &&
-                    !cookieDomain.EndsWith(domainNorm))
-                    return false;
-
-                return Math.Abs((domain.VisitTime - cookie.Created).TotalSeconds)
-                       <= toleranceSeconds;
-            });
-
-            if (!hasMatchingHistory)
-            {
-                var linkedDomain = FindClosestDomain(cookie.Created);
-
-                AddOrUpdateAnomaly(
-                    anomalyIndex,
-                    AnomalyType.DeletedHistoryIndicator,
-                    linkedDomain ?? new DomainEntry { Domain = cookieDomain },
-                    new[] { cookie.Created },
-                    severity: 4,
-                    description: $"Cookie für Domain '{cookieDomain}' ohne passenden Verlaufseintrag"
-                );
-            }
-        }
-    }
-
-
-    DomainEntry? FindClosestDomain(DateTime time)
-    {
-        return SummarizedEntries
-            .OrderBy(d => Math.Abs((d.VisitTime - time).TotalSeconds))
-            .FirstOrDefault();
-    }
-
-    void DetectOrphanAutofill(Dictionary<string, AnomalyEntry> anomalyIndex, int toleranceSeconds = 120)
-    {
-        if (State.AutofillEntries == null) return;
-
-        foreach (var autofill in State.AutofillEntries)
-        {
-            bool hasMatchingDomain = SummarizedEntries.Any(domain =>
-                Math.Abs((domain.VisitTime - autofill.DateCreated).TotalSeconds)
-                <= toleranceSeconds
-            );
-
-            if (!hasMatchingDomain)
-            {
-                var linkedDomain = FindClosestDomain(autofill.DateCreated);
-
-                AddOrUpdateAnomaly(
-                    anomalyIndex,
-                    AnomalyType.DeletedHistoryIndicator,
-                    linkedDomain ?? new DomainEntry { Domain = "[unknown]" },
-                    new[] { autofill.DateCreated },
-                    severity: 5,
-                    description: $"Autofill '{autofill.Name}' ohne zugehörigen Seitenaufruf"
-                );
-            }
-        }
-    }
-
-
-
 
 
     //------------------------------------------------------------
@@ -1145,7 +956,7 @@
 
             // Aktuelles ZoomLevel abrufen
             var currentZoom = zoomLevels[currentZoomIndex];
-            var spacingTimeSpan = GetTimeSpanFromZoomLevel(currentZoom);
+            var spacingTimeSpan = TimelineScaleService.GetTimeSpanFromZoomLevel(currentZoom);
 
             // Zeitbasis verschieben
             baseTime = baseTime.AddTicks(spacingTimeSpan.Ticks * indexShift);
@@ -1182,7 +993,7 @@
 
         // 2️⃣ Mittelpunkt-Zeit aus aktuellem Zustand ermitteln
         double centerPx = scrollIndex + viewportWidth / 2;
-        DateTime centerTime = PixelToTime(centerPx);
+        DateTime centerTime = TimelineScaleService.PixelToTime(centerPx, ScaleContext);
 
         // 3️⃣ Zoomstufe ändern
         if (direction == "in" && currentZoomIndex > 0)
@@ -1191,7 +1002,7 @@
             currentZoomIndex++;
 
         // 4️⃣ Neue Scrollposition für dieselbe Zeit berechnen
-        double newCenterPx = TimeToPixel(centerTime);
+        double newCenterPx = TimelineScaleService.TimeToPixel(centerTime, ScaleContext);
         double newScrollLeft = newCenterPx - viewportWidth / 2;
 
         // 5️⃣ 🔥 WICHTIG: neuen Scrollwert übernehmen
@@ -1406,113 +1217,67 @@
         return focusedArtifact?.Data == obj;
     }
 
-    private double GetPixelPerUnit()
+    string GetSeverityBackground(int severity)
     {
-        // spacing bleibt fix
-        double fixedSpacing = spacing;
-
-        // aktuelle Zoomstufe
-        double valueInSeconds = zoomLevels[currentZoomIndex].seconds;
-        TimeUnit unit = zoomLevels[currentZoomIndex].unit;
-
-        // Dynamisch die Einheit anpassen
-        while (true)
+        return severity switch
         {
-            // Berechne value in der aktuellen Einheit
-            double valueInCurrentUnit = valueInSeconds;
-            switch (unit)
-            {
-                case TimeUnit.Seconds:
-                    break; // bleibt Sekunden
-                case TimeUnit.Minutes:
-                    valueInCurrentUnit /= 60.0;
-                    break;
-                case TimeUnit.Hours:
-                    valueInCurrentUnit /= 3600.0;
-                    break;
-                case TimeUnit.Days:
-                    valueInCurrentUnit /= 86400.0;
-                    break;
-                case TimeUnit.Months:
-                    valueInCurrentUnit /= (30 * 86400.0);
-                    break;
-                case TimeUnit.Years:
-                    valueInCurrentUnit /= (365 * 86400.0);
-                    break;
-            }
+            5 => "rgba(255,45,45,0.18)",
+            4 => "rgba(255,107,0,0.18)",
+            3 => "rgba(255,176,0,0.18)",
+            2 => "rgba(63,169,245,0.18)",
+            _ => "rgba(255,255,255,0.05)"
+        };
+    }
 
-            // Prüfen: passt valueInCurrentUnit zu spacing?
-            if (valueInCurrentUnit <= fixedSpacing || unit == TimeUnit.Years)
-                break;
-
-            // sonst nächstgrößere Einheit wählen
-            unit = unit switch
+    int? GetArtifactSeverity(object artifact)
+    {
+        var matches = Anomalies.Where(a =>
+        {
+            return artifact switch
             {
-                TimeUnit.Seconds => TimeUnit.Minutes,
-                TimeUnit.Minutes => TimeUnit.Hours,
-                TimeUnit.Hours => TimeUnit.Days,
-                TimeUnit.Days => TimeUnit.Months,
-                TimeUnit.Months => TimeUnit.Years,
-                TimeUnit.Years => TimeUnit.Years
+                BrowserHistoryEntry h =>
+                    a.LinkedDomain?.SubEntries?.Contains(h) == true,
+
+                BrowserCookieEntry c =>
+                    Math.Abs((a.FirstSeen - c.Created).TotalSeconds) <= 1,
+
+                UserInputEntry i =>
+                    Math.Abs((a.FirstSeen - i.Time).TotalSeconds) <= 1,
+
+                BrowserExtensionEntry e =>
+                    Math.Abs((a.FirstSeen - e.InstallTime).TotalSeconds) <= 1,
+
+                StorageEntry s =>
+                    Math.Abs((a.FirstSeen - s.Time).TotalSeconds) <= 1,
+
+                DomainEntry d =>
+                    a.LinkedDomain == d,
+
+                AnomalyEntry an =>
+                    an == a,
+
+                _ => false
             };
-        }
+        });
 
-        // Pixel pro Einheit = spacing / valueInCurrentUnit
-        double pixelPerUnit = fixedSpacing / valueInSeconds;
+        if (!matches.Any())
+            return null;
 
-        return pixelPerUnit;
+        return matches.Max(a => a.Severity);
     }
 
-    private double TimeToPixel(DateTime t)
+    string GetArtifactStyle(object artifact)
     {
-        double secondsFromBase = (t - baseTime).TotalSeconds;
-        double pixelsPerSecond = GetPixelPerUnit();
+        var severity = GetArtifactSeverity(artifact);
 
-        return InitialOffsetPx + secondsFromBase * pixelsPerSecond;
+        if (severity == null)
+            return "";
+
+        var bg = GetSeverityBackground(severity.Value);
+
+        return $"background:{bg};";
     }
 
-	// Darstellung der History Einträge in der Zeitachse
-    private DateTime PixelToTime(double px)
-    {
-        double pixelsFromStart = px - InitialOffsetPx;
-        double secondsPerPixel = zoomLevels[currentZoomIndex].seconds / spacing;
-
-        double secondsFromBase = pixelsFromStart * secondsPerPixel;
-
-        return baseTime.AddSeconds(secondsFromBase);
-    }
-
-    // Für scroll Funktion wird die Zeitspanne aus der Zoomstufe berechnet
-    private TimeSpan GetTimeSpanFromZoomLevel((int seconds, TimeUnit unit) zoomLevel)
-    {
-        return zoomLevel.unit switch
-        {
-            TimeUnit.Seconds => TimeSpan.FromSeconds(zoomLevel.seconds),
-            TimeUnit.Minutes => TimeSpan.FromMinutes(zoomLevel.seconds / 60.0),
-            TimeUnit.Hours => TimeSpan.FromHours(zoomLevel.seconds / 3600.0),
-            TimeUnit.Days => TimeSpan.FromDays(zoomLevel.seconds / 86400.0),
-            TimeUnit.Months => TimeSpan.FromDays(zoomLevel.seconds / 86400.0), // Näherung: 1 Monat = 30 Tage
-            TimeUnit.Years => TimeSpan.FromDays(zoomLevel.seconds / 86400.0),  // Näherung: 1 Jahr = 365 Tage
-            _ => TimeSpan.FromSeconds(zoomLevel.seconds)
-        };
-    }
-
-    // Berechnet die Distanz zwischen zwei Zeitpunkten in der aktuellen Zeiteinheit
-    private double GetUnitDistance(DateTime from, DateTime to)
-    {
-        return CurrentTimeUnit switch
-        {
-            TimeUnit.Seconds => (to - from).TotalSeconds,
-            TimeUnit.Minutes => (to - from).TotalMinutes,
-            TimeUnit.Hours => (to - from).TotalHours,
-            TimeUnit.Days => (to - from).TotalDays,
-            TimeUnit.Months => ((to.Year - from.Year) * 12 + to.Month - from.Month)
-                                + (to.Day - from.Day) / 30.0,
-            TimeUnit.Years => (to.Year - from.Year)
-                                + (to.DayOfYear - from.DayOfYear) / 365.0,
-            _ => 0
-        };
-    } 
 
     public void Dispose()
     {
@@ -1575,29 +1340,6 @@
         </button>
     </div>
 
-    @code {
-        private bool allExpanded = false;
-        private bool showDebug = false;
-
-    private void ToggleAllDomains()
-    {
-        allExpanded = !allExpanded;
-
-        foreach (var entry in SummarizedEntries)
-        {
-            entry.IsExpanded = allExpanded;
-
-            expandedStates[entry.Domain] = allExpanded;
-        }
-    }
-
-        private void ToggleDebug()
-        {
-            showDebug = !showDebug;
-        }
-    }
-
-
 
     <div class="timeline-container">
 
@@ -1613,7 +1355,8 @@
                     <ul>
                         @foreach (var e in State.BrowserEntries)
                         {
-                            <li class="artifact-clickable"
+                            <li class="artifact-clickable artifact-anomaly"
+                                style="@GetArtifactStyle(e)"
                                 @onclick="() => FocusHistoryFromTable(e)">
                                 @e.VisitTime |
                                 px=@e.Position
@@ -1628,7 +1371,8 @@
                     <ul>
                         @foreach (var e in State.BrowserCookies)
                         {
-                            <li class="artifact-clickable"
+                            <li class="artifact-clickable artifact-anomaly"
+                                style="@GetArtifactStyle(e)"
                                 @onclick="() => SelectCookie(e)">
                                 @e.LastAccessed |
                                 px=@e.Position
@@ -1643,7 +1387,8 @@
                     <ul>
                         @foreach (var e in UserInputs)
                         {
-                            <li class="artifact-clickable"
+                            <li class="artifact-clickable artifact-anomaly"
+                                style="@GetArtifactStyle(e)"
                                 @onclick="() => SelectInput(e)">
                                 @e.Time |
                                 px=@e.Position |
@@ -1659,7 +1404,8 @@
                     <ul>
                         @foreach (var e in State.Extensions)
                         {
-                            <li class="artifact-clickable"
+                            <li class="artifact-clickable artifact-anomaly"
+                                style="@GetArtifactStyle(e)" "
                                 @onclick="() => SelectExtension(e)">
                                 @e.Name <br />
                                 px=@e.Position
@@ -1674,7 +1420,8 @@
                     <ul>
                         @foreach (var s in State.StorageEntries)
                         {
-                            <li class="artifact-clickable"
+                            <li class="artifact-clickable artifact-anomaly"
+                                style="@GetArtifactStyle(s)"
                                 @onclick="() => SelectStorage(s)">
                                 @s.Key <br />
                                 px=@s.Position
@@ -1689,7 +1436,8 @@
                     <ul>
                         @foreach (var d in SummarizedEntries)
                         {
-                            <li class="artifact-clickable"
+                            <li class="artifact-clickable artifact-anomaly"
+                                style="@GetArtifactStyle(d)"
                                 @onclick="() => ExpandAndFocus(d)">
                                 @d.Domain <br />
                                 px=@d.Position
@@ -1704,7 +1452,8 @@
                     <ul>
                         @foreach (var a in Anomalies)
                         {
-                            <li class="artifact-clickable"
+                            <li class="artifact-clickable artifact-anomaly"
+                                style="@GetArtifactStyle(a)"
                                 @onclick="() => FocusAnomaly(a)">
                                 @a.Type <br />
                                 px=@Math.Round(a.Position, 1)

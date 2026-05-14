@@ -1,4 +1,4 @@
-﻿class AnomalyEntry
+﻿public class AnomalyEntry
 {
     public DateTime FirstSeen { get; set; }
     public DateTime LastSeen { get; set; }      // Optional, aber sehr sinnvoll

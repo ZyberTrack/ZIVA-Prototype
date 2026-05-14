@@ -48,6 +48,8 @@ namespace ZIVA_Prototype
             builder.Services.AddSingleton<TimelineStateService>();
             builder.Services.AddSingleton<PersistStateService>();
 
+            builder.Services.AddSingleton<TimelineAnomalyService>();
+
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
