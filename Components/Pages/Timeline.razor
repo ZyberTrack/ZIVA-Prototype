@@ -1365,6 +1365,42 @@
         StateHasChanged();
     }
 
+    async Task FocusAnomaly(AnomalyEntry anomaly)
+    {
+        ResetSelection();
+
+        SyncFocusedArtifact(anomaly);
+
+        await CenterOnTime(anomaly.FirstSeen);
+
+        StateHasChanged();
+    }
+
+    async Task FocusHistoryFromTable(BrowserHistoryEntry entry)
+    {
+        ResetSelection();
+
+        var domain = SummarizedEntries.FirstOrDefault(d =>
+            d.SubEntries.Any(s => s == entry));
+
+        if (domain != null)
+        {
+            domain.IsExpanded = true;
+            expandedStates[domain.Domain] = true;
+
+            selectedDomain = domain;
+            selectedSubEntry = entry;
+
+            SyncFocusedArtifact(entry);
+
+            await CenterOnTime(entry.VisitTime);
+
+            Refresh();
+
+            StateHasChanged();
+        }
+    }
+
     bool IsFocused(object obj)
     {
         return focusedArtifact?.Data == obj;
@@ -1577,7 +1613,8 @@
                     <ul>
                         @foreach (var e in State.BrowserEntries)
                         {
-                            <li>
+                            <li class="artifact-clickable"
+                                @onclick="() => FocusHistoryFromTable(e)">
                                 @e.VisitTime |
                                 px=@e.Position
                             </li>
@@ -1591,7 +1628,8 @@
                     <ul>
                         @foreach (var e in State.BrowserCookies)
                         {
-                            <li>
+                            <li class="artifact-clickable"
+                                @onclick="() => SelectCookie(e)">
                                 @e.LastAccessed |
                                 px=@e.Position
                             </li>
@@ -1605,7 +1643,8 @@
                     <ul>
                         @foreach (var e in UserInputs)
                         {
-                            <li>
+                            <li class="artifact-clickable"
+                                @onclick="() => SelectInput(e)">
                                 @e.Time |
                                 px=@e.Position |
                                 @e.Type
@@ -1620,7 +1659,8 @@
                     <ul>
                         @foreach (var e in State.Extensions)
                         {
-                            <li>
+                            <li class="artifact-clickable"
+                                @onclick="() => SelectExtension(e)">
                                 @e.Name <br />
                                 px=@e.Position
                             </li>
@@ -1634,7 +1674,8 @@
                     <ul>
                         @foreach (var s in State.StorageEntries)
                         {
-                            <li>
+                            <li class="artifact-clickable"
+                                @onclick="() => SelectStorage(s)">
                                 @s.Key <br />
                                 px=@s.Position
                             </li>
@@ -1648,7 +1689,8 @@
                     <ul>
                         @foreach (var d in SummarizedEntries)
                         {
-                            <li>
+                            <li class="artifact-clickable"
+                                @onclick="() => ExpandAndFocus(d)">
                                 @d.Domain <br />
                                 px=@d.Position
                             </li>
@@ -1662,7 +1704,8 @@
                     <ul>
                         @foreach (var a in Anomalies)
                         {
-                            <li>
+                            <li class="artifact-clickable"
+                                @onclick="() => FocusAnomaly(a)">
                                 @a.Type <br />
                                 px=@Math.Round(a.Position, 1)
                             </li>
