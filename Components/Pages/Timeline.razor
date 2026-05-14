@@ -1517,21 +1517,25 @@
             <div class="timeline-ext"></div>
         </div>
 
-        <div class="timeline-area-scroll timeline-area-bottom">
+        <div class="timeline-area-scroll timeline-area-bottom @(showDebug ? "artifact-open" : "")">
             <div class="timeline-bottom"></div>
+
+            
+
+
         </div>
     </div>
 
     <!-- RIGHT SIDE OF TIMELINE -->
     <div class="timeless-area">
-        <div class="timeline-label">Werkzeug</div>
+        <div class="timeline-label">Tools</div>
 
         <button class="btn btn-sm" @onclick="ToggleAllDomains">
-            @(allExpanded ? "Alle einklappen" : "Alle ausklappen")
+            @(allExpanded ? "Summerize All" : "Expand All")
         </button>
 
         <button class="btn btn-sm mt-2" @onclick="ToggleDebug">
-            @(showDebug ? "Debug ausblenden" : "Debug einblenden")
+            @(showDebug ? "Artefact Table Off" : "Artefact Table On")
         </button>
     </div>
 
@@ -1555,190 +1559,121 @@
         {
             showDebug = !showDebug;
         }
-
-
     }
-
-
-@if (showDebug)
-{
-    <div style="
-        position: fixed;
-        top: 600px;
-        left: 80px;
-        background: yellow;
-        z-index: 1000;
-        padding: 16px;
-        max-height: 300px;
-        max-width: 90vw;
-        overflow: auto;
-        border: 1px solid #333;
-        font-size: 12px;
-        ">
-        <strong>DEBUG</strong><br />
-
-        SecondsPerSpacing = @SecondsPerSpacing<br />
-        scrollIndex = @scrollIndex<br />
-        baseTime = @baseTime<br />
-        viewportWidth = @viewportWidth<br />
-        containerHeight = @containerHeight<br />
-        <hr />
-
-        <div style="display: flex; gap: 20px; align-items:flex-start;">
-
-            <!-- HISTORY -->
-            <div>
-                <strong>History (@State.BrowserEntries.Count)</strong>
-
-                <ul>
-                    @foreach (var e in State.BrowserEntries)
-                    {
-                        <li>
-                            @e.VisitTime |
-                            px=@e.Position
-                        </li>
-                    }
-                </ul>
-            </div>
-
-            <!-- COOKIES -->
-            <div>
-                <strong>Cookies (@State.BrowserCookies.Count)</strong>
-
-                <ul>
-                    @foreach (var e in State.BrowserCookies)
-                    {
-                        <li>
-                            @e.LastAccessed |
-                            px=@e.Position
-                        </li>
-                    }
-                </ul>
-            </div>
-
-            <!-- USER INPUT -->
-            <div>
-                <strong>User Input (@UserInputs.Count)</strong>
-
-                <ul>
-                    @foreach (var e in UserInputs)
-                    {
-                        <li>
-                            @e.Time |
-                            px=@e.Position |
-                            type=@e.Type |
-                            value=@e.Value
-                        </li>
-                    }
-                </ul>
-            </div>
-
-            <!-- FAVICONS -->
-            <div>
-                <strong>Favicons (@State.Favicons.Count)</strong>
-
-                <ul>
-                    @foreach (var f in State.Favicons)
-                    {
-                        <li>
-                            @f.Time |
-                            px=@f.Position |
-                            url=@f.PageUrl
-                        </li>
-                    }
-                </ul>
-            </div>
-
-            <!-- EXTENSIONS -->
-            <div>
-                <strong>Extensions (@State.Extensions.Count)</strong>
-
-                <ul>
-                    @foreach (var e in State.Extensions)
-                    {
-                        <li>
-                            @e.Name <br />
-                            Installed: @e.InstallTime <br />
-                            px=@e.Position <br />
-                            Risk: @e.RiskLevel (@e.RiskScore)
-                        </li>
-                    }
-                </ul>
-            </div>
-
-            <!-- STORAGE -->
-            <div>
-                <strong>Storage (@State.StorageEntries.Count)</strong>
-
-                <ul>
-                    @foreach (var s in State.StorageEntries)
-                    {
-                        <li>
-                            <strong>@s.Key</strong><br />
-
-                            origin: @s.Origin <br />
-                            px=@s.Position <br />
-
-                            @if (s.IsSensitive)
-                            {
-                                <span style="color:red;">⚠ TOKEN</span>
-                                <br />
-                            }
-
-                            value:
-                            @(s.Value?.Length > 60
-                                ? s.Value.Substring(0, 60) + "..."
-                                : s.Value)
-                        </li>
-                    }
-                </ul>
-            </div>
-
-            <!-- DOMAIN SUMMARY -->
-            <div>
-                <strong>Domains (@SummarizedEntries.Count)</strong>
-
-                <ul>
-                    @foreach (var d in SummarizedEntries)
-                    {
-                        <li>
-                            @d.Domain <br />
-                            time=@d.VisitTime <br />
-                            px=@d.Position <br />
-                            sub=@d.SubEntries.Count
-                        </li>
-                    }
-                </ul>
-            </div>
-
-            <!-- ANOMALIES -->
-            <div>
-                <strong>Anomalies (@Anomalies.Count)</strong>
-
-                <ul>
-                    @foreach (var a in Anomalies)
-                    {
-                        <li>
-                            <strong>@a.Type</strong><br />
-
-                            first: @a.FirstSeen<br />
-                            last: @a.LastSeen<br />
-                            px: @Math.Round(a.Position, 1)<br />
-                            sev: @a.Severity |
-                            hits: @a.Count
-                        </li>
-                    }
-                </ul>
-            </div>
-
-        </div>
-    </div>
-}
-
 
 
 
     <div class="timeline-container">
+
+    @if (showDebug)
+    {
+        <div class="artifact-table-overlay">
+
+            <div class="artifact-table-content">
+
+                <div class="artifact-column">
+                    <strong>History (@State.BrowserEntries.Count)</strong>
+
+                    <ul>
+                        @foreach (var e in State.BrowserEntries)
+                        {
+                            <li>
+                                @e.VisitTime |
+                                px=@e.Position
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+                <div class="artifact-column">
+                    <strong>Cookies (@State.BrowserCookies.Count)</strong>
+
+                    <ul>
+                        @foreach (var e in State.BrowserCookies)
+                        {
+                            <li>
+                                @e.LastAccessed |
+                                px=@e.Position
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+                <div class="artifact-column">
+                    <strong>User Input (@UserInputs.Count)</strong>
+
+                    <ul>
+                        @foreach (var e in UserInputs)
+                        {
+                            <li>
+                                @e.Time |
+                                px=@e.Position |
+                                @e.Type
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+                <div class="artifact-column">
+                    <strong>Extensions (@State.Extensions.Count)</strong>
+
+                    <ul>
+                        @foreach (var e in State.Extensions)
+                        {
+                            <li>
+                                @e.Name <br />
+                                px=@e.Position
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+                <div class="artifact-column">
+                    <strong>Storage (@State.StorageEntries.Count)</strong>
+
+                    <ul>
+                        @foreach (var s in State.StorageEntries)
+                        {
+                            <li>
+                                @s.Key <br />
+                                px=@s.Position
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+                <div class="artifact-column">
+                    <strong>Domains (@SummarizedEntries.Count)</strong>
+
+                    <ul>
+                        @foreach (var d in SummarizedEntries)
+                        {
+                            <li>
+                                @d.Domain <br />
+                                px=@d.Position
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+                <div class="artifact-column">
+                    <strong>Anomalies (@Anomalies.Count)</strong>
+
+                    <ul>
+                        @foreach (var a in Anomalies)
+                        {
+                            <li>
+                                @a.Type <br />
+                                px=@Math.Round(a.Position, 1)
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    }
+
         <!-- Externer Container mit fixer Breite & overflow -->
         <div id="scroll-container" class="scroll-wrapper scroll-wrapper-timeline" @ref="scrollDivRef">
             <!-- Zeitachsn Balken -->

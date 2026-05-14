@@ -211,7 +211,21 @@
 .timeline-area-bottom {
     background: rgb(216, 198, 198);
     flex: 1;
+
+    position: relative;
+    overflow: hidden;
 }
+
+    .timeline-area-bottom.artifact-open {
+        overflow: hidden;
+        pointer-events: auto;
+    }
+
+        .timeline-area-bottom.artifact-open .timeline-bottom,
+        .timeline-area-bottom.artifact-open svg,
+        .timeline-area-bottom.artifact-open .anomaly-marker {
+            pointer-events: none;
+        }
 
 .timeline-top-legend {
     position: absolute;
@@ -704,6 +718,80 @@
     .close-btn:hover {
         color: #ff3b3b;
     }
+
+/* Artefakt Table */
+
+.artifact-table-overlay {
+    position: absolute;
+    left: 50px;
+    right: 350px;
+    top: 66.5%;
+    z-index: 9999;
+    background: rgba(33,43,54,0.98);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.45);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    pointer-events: auto;
+}
+
+.artifact-table-header {
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    color: #d7e3f4;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.artifact-table-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 14px;
+    display: flex;
+    gap: 18px;
+}
+
+.artifact-column {
+    min-width: 240px;
+    color: #dbe7f5;
+    font-size: 12px;
+}
+
+    .artifact-column strong {
+        display: block;
+        margin-bottom: 10px;
+        color: white;
+        font-size: 13px;
+    }
+
+    .artifact-column ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .artifact-column li {
+        margin-bottom: 8px;
+        padding: 6px 8px;
+        background: rgba(255,255,255,0.04);
+        border-radius: 6px;
+        line-height: 1.4;
+    }
+
+.artifact-close-btn {
+    background: transparent;
+    border: none;
+    color: #d7e3f4;
+    cursor: pointer;
+    font-size: 16px;
+}
 
 /* User Input Marker Farben */
 .userinput-marker.search {
