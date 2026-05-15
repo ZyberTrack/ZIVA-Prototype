@@ -1,0 +1,834 @@
+﻿
+.timeline-wrapper,
+.timeline-container,
+.scroll-wrapper,
+.movable-layer {
+    height: 100%;
+}
+
+
+
+.timeline-wrapper {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 250px;
+    right: 0;
+    overflow: hidden; 
+}
+
+
+.legend-area {
+    position: fixed;
+    width: 200px;
+    top: 0;
+    height: 100%;
+    border-right: 2px solid #474747;
+    z-index: 30; 
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow: hidden;
+}
+
+    .legend-area.shifted {
+        left: 250px;
+    }
+
+    .legend-area.full {
+        left: 0;
+    }
+
+/* ------------------------------ */
+/* Timeless Area */
+/* ------------------------------ */
+
+.timeless-area {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 150px;
+    height: 100%;
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(33,43,54,0.98);
+    border-left: 1px solid rgba(255,255,255,0.08);
+    box-shadow: -8px 0 24px rgba(0,0,0,0.35);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    padding-top: 0px;
+}
+
+
+
+.timeless-header {
+    width: 100%;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    margin-top: 0;
+    color: #d7e3f4;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    text-align: center;
+}
+
+
+
+.tool-btn {
+    width: 115px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    color: #dbe7f5;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+}
+
+  
+
+    .tool-btn:hover {
+        background: rgba(255,255,255,0.10);
+        border-color: rgba(255,255,255,0.18);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+
+  
+
+    .tool-btn:active {
+        transform: translateY(1px);
+    }
+
+
+
+.expand-btn:hover {
+    background: rgba(82,210,115,0.16);
+}
+
+.debug-btn:hover {
+    background: rgba(77,163,255,0.16);
+}
+
+.timeline-static {
+    position: fixed;
+    top: 0;
+    z-index: 4; 
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: column;
+}
+
+
+.timeline-container {
+    position: relative;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin-left: 200px; 
+    margin-right: 250px; 
+}
+
+.scroll-wrapper {
+    width: 100%;
+    height: 100%;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    white-space: nowrap;
+}
+
+.timeline-wrapper.shifted {
+    left: 200px;
+    right: 0px;
+}
+
+.timeline-wrapper.full {
+    left: 0px;
+    right: 0;
+}
+
+
+.movable-layer {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    z-index: 6;
+    white-space: nowrap;
+}
+
+
+.timestamp {
+    position: absolute;
+    top: 7px;
+    transform: translateX(-50%);
+    z-index: 9;
+}
+
+    .timestamp span {
+        font-size: 12px;
+        background-color: #fff;
+        padding: 4px 8px;
+        border-radius: 3px;
+        box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
+    }
+
+
+.line {
+    position: absolute;
+    top: 10px;
+    height: 100%;
+    width: 2px;
+    background-color: rgba(169, 169, 169, 0.5);
+}
+
+.timeline-area-top {
+    background: rgb(201, 219, 216);
+    border-bottom: 2px solid #474747;
+    flex: 2;
+}
+
+.timeline-area-bottom {
+    background: rgb(216, 198, 198);
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+    .timeline-area-bottom.artifact-open {
+        overflow: hidden;
+        pointer-events: auto;
+    }
+
+        .timeline-area-bottom.artifact-open .timeline-bottom,
+        .timeline-area-bottom.artifact-open svg,
+        .timeline-area-bottom.artifact-open .anomaly-marker {
+            pointer-events: none;
+        }
+
+.timeline-top-legend {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    top: 50%;
+    background-color: rgba(169, 169, 169, 1);
+}
+
+.timeline-bottom-legend {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    top: 33%;
+    background-color: rgba(169, 169, 169, 1);
+}
+
+.timeline-top {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    top: 50%;
+    background-color: rgba(169, 169, 169, 1);
+}
+
+.timeline-bottom {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    top: 33%;
+    background-color: rgba(169, 169, 169, 1);
+}
+
+.timeline-cookies {
+    position: absolute;
+    top: calc(65%);
+    width: 100%;
+    height: 2px;
+    display: flex;
+    background-color: rgba(169, 169, 169, 1);
+}
+
+.timeline-webdata {
+    position: absolute;
+    top: calc(75%);
+    width: 100%;
+    height: 2px;
+    display: flex;
+    background-color: rgba(169, 169, 169, 1);
+}
+
+.timeline-favicons {
+    position: absolute;
+    top: calc(85%);
+    width: 100%;
+    height: 2px;
+    display: flex;
+    background-color: rgba(169, 169, 169, 1);
+}
+
+.timeline-ext {
+    position: absolute;
+    top: calc(95%);
+    width: 100%;
+    height: 2px;
+    display: flex;
+    background-color: rgba(169, 169, 169, 1);
+}
+
+
+
+.timeline-label {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #474747;
+    transition: left 0.3s ease;
+}
+
+    .timeline-label.sidebar-closed {
+        left: 70px;
+    }
+
+.timeline-history-label {
+    position: absolute;
+    top: calc(50% - 19px);
+    left: 10px;
+    font-size: 16px;
+    display: flex;
+    color: #474747;
+}
+
+.timeline-cookies-label {
+    position: absolute;
+    top: calc(65% - 18px);
+    left: 10px;
+    font-size: 16px;
+    display: flex;
+    color: #474747;
+}
+
+.timeline-webdata-label {
+    position: absolute;
+    top: calc(75% - 18px);
+    left: 10px;
+    font-size: 16px;
+    display: flex;
+    color: #474747;
+}
+
+.timeline-favicons-label {
+    position: absolute;
+    top: calc(85% - 18px);
+    left: 10px;
+    font-size: 16px;
+    display: flex;
+    color: #474747;
+}
+
+.timeline-ext-label {
+    position: absolute;
+    top: calc(95% - 18px);
+    left: 10px;
+    font-size: 16px;
+    display: flex;
+    color: #474747;
+}
+
+
+
+
+.timeline-area-static {
+    position: relative;
+    width: 100%;
+    /*flex: 1;*/
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+
+
+.timeline-area-scroll {
+    position: relative;
+    width: 100%;
+    /*flex: 1;*/
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* --- Zeitachsen-Elemente --- */
+
+/* Basis Marker */
+.domain-marker {
+    position: absolute;
+    top: calc(33% - 8px);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    z-index: 20;
+    cursor: pointer;
+    box-shadow: 0 0 3px rgba(0,0,0,0.3);
+}
+
+    /* Hohler Kreis */
+    .domain-marker.hollow {
+        border: 2px solid currentColor;
+        background: none;
+    }
+
+
+    .domain-marker.filled {
+        background-color: currentColor;
+    }
+
+    /* Hohles Quadrat (Google / Suchmaschine) */
+    .domain-marker.square {
+        width: 20px;
+        height: 20px;
+        border: 2px solid currentColor;
+        background: none;
+        border-radius: 0;
+    }
+
+
+.domain-label {
+    position: absolute;
+    transform: translateX(-50%);
+    font-size: 15px;
+    z-index: 30;
+    color: #444;
+    opacity: 0.8;
+    white-space: nowrap;
+}
+
+
+
+.subentry-marker {
+    position: absolute;
+    cursor: pointer;
+    z-index: 21;
+    width: 12px;
+    height: 12px;
+}
+
+
+/* Tooltip */
+.subentry-tooltip {
+    position: absolute;
+    top: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    padding: 6px 10px;
+    color: white;
+    border-radius: 4px;
+    font-size: var(--tooltip-font-size);
+    z-index: 999;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+.domaine-tooltip {
+    position: absolute;
+    top: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    padding: 6px 10px;
+    color: white;
+    border-radius: 4px;
+    font-size: var(--tooltip-font-size);
+    z-index: 999;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+/* Domain Tooltip */
+.domain-marker:hover > .domaine-tooltip {
+    display: block;
+}
+
+/* SubEntry Tooltip */
+.subentry:hover > .subentry-tooltip {
+    display: block;
+}
+
+
+
+
+
+/* Wenn auf Artefakt geklickt wird */
+.entry-details {
+    margin-top: 20px;
+    background-color: #f0f8ff;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #cce;
+    max-width: 600px;
+    font-size: 14px;
+}
+
+
+
+.cookie-marker {
+    position: absolute;
+    top: calc(43% - 10px);
+    /*left: calc(-6px);  damit es auf der Achsenlinie liegt */
+    width: 7px;
+    height: 30px;
+    background-color: #6846FC;
+    border-radius: 50%;
+    z-index: 19;
+    cursor: pointer;
+    box-shadow: 0 0 3px rgba(0,0,0,0.3);
+}
+
+    .cookie-marker:hover::after {
+        content: "Time: " attr(data-time) "\A Name: " attr(data-host) "\A Value Encrypted: " attr(data-valueEncr) "\A Value: " attr(data-value);
+        white-space: pre; /* "\A" für Zeilenumbruch aktivieren */
+        position: absolute;
+        top: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #6846FC;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: var(--tooltip-font-size);
+        z-index: 999;
+    }
+
+
+.userinput-marker {
+    position: absolute;
+    top: calc(50% - 12px);
+    width: 7px;
+    height: 30px;
+    border-radius: 50%;
+    z-index: 18;
+    cursor: pointer;
+    box-shadow: 0 0 3px rgba(0,0,0,0.3);
+}
+
+    /* Tooltip */
+    .userinput-marker:hover::after {
+        content: "Time: " attr(data-time) "\A Value: " attr(data-value) "\A Type: " attr(data-type);
+        white-space: pre;
+        position: absolute;
+        top: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: var(--tooltip-font-size);
+        z-index: 999;
+    }
+
+.storage-marker {
+    position: absolute;
+    top: calc(57% - 8px); 
+    width: 8px;
+    height: 26px;
+    background-color: #9c27b0; /* lila = Storage */
+    border-radius: 50%;
+    z-index: 19;
+    cursor: pointer;
+    box-shadow: 0 0 3px rgba(0,0,0,0.3);
+}
+
+
+    .storage-marker.sensitive {
+        background-color: #ff2d2d;
+        box-shadow: 0 0 6px rgba(255, 45, 45, 0.8);
+    }
+
+        .storage-marker.sensitive::before {
+            content: "!";
+            position: absolute;
+            top: -10px;
+            left: -2px;
+            color: red;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+    .storage-marker:hover::after {
+        content: "Key: " attr(data-key) "\A" "Origin: " attr(data-origin) "\A" "Value: " attr(data-value);
+        white-space: pre;
+        position: absolute;
+        top: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #9c27b0;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: var(--tooltip-font-size);
+        z-index: 999;
+        word-break: break-all;
+    }
+
+    /* Tooltip bei Tokens */
+    .storage-marker.sensitive:hover::after {
+        background-color: #ff2d2d;
+    }
+
+.extension-marker {
+    position: absolute;
+    top: calc(63% - 10px); /* leicht unter Cookies */
+    width: 7px;
+    height: 30px;
+    background-color: #ff0565; /* neutral blau */
+    border-radius: 50%;
+    z-index: 19;
+    cursor: pointer;
+    box-shadow: 0 0 3px rgba(0,0,0,0.3);
+}
+
+    .extension-marker:hover::after {
+        content: "Extension: " attr(data-name) "\A" "Risk: " attr(data-risk) " (" attr(data-score) ")" "\A" "Findings: " attr(data-findings) "\A" "Installed: " attr(data-time);
+        white-space: pre;
+        position: absolute;
+        top: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #ff0565;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: var(--tooltip-font-size);
+        z-index: 999;
+    }
+
+.artifact-line {
+    position: absolute;
+    height: 2px;
+    background-color: gray; /* wird dynamisch überschrieben */
+    z-index: 18;
+}
+
+
+.anomaly-marker {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    cursor: pointer;
+    z-index: 30;
+}
+
+    .anomaly-marker:hover::after {
+        content: "Detected: " attr(data-firstseen) "\A Last seen: " attr(data-lastseen) "\A URL: " attr(data-url) "\A Type: " attr(data-type) "\A Severity: " attr(data-severity) "\A Hits: " attr(data-count) "\A Description: " attr(data-description);
+        white-space: pre;
+        position: absolute;
+        top: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: var(--sev-color, #9e9e9e);
+        color: white;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-size: var(--tooltip-font-size);
+        z-index: 999;
+        pointer-events: none;
+    }
+
+    /* Severity-Farben */
+    .anomaly-marker[data-severity="5"] {
+        --sev-color: #ff1f1f; /* Tiefrot – kritisch */
+    }
+
+    .anomaly-marker[data-severity="4"] {
+        --sev-color: #ff4a1a; /* Rot-Orange */
+    }
+
+    .anomaly-marker[data-severity="3"] {
+        --sev-color: #ff7a1a; /* Orange mit Rotstich */
+    }
+
+    .anomaly-marker[data-severity="2"] {
+        --sev-color: #ffb347; /* Warmes Gelb-Orange (noch klarer Alarmton) */
+    }
+
+    .anomaly-marker[data-severity="1"] {
+        --sev-color: #c9c1bb; /* Warmes Grau mit leichtem Rotstich */
+    }
+
+.entry-details {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    max-width: 500px;
+    max-height: 60vh;
+    background: #111;
+    color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+    overflow: hidden;
+    z-index: 9999;
+    font-size: 13px;
+}
+
+/* Header (Drag Area) */
+.entry-header {
+    background: #1e1e1e;
+    padding: 10px 12px;
+    cursor: move;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+
+/* Content */
+.entry-content {
+    padding: 12px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+/* Close Button */
+.close-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+    .close-btn:hover {
+        color: #ff3b3b;
+    }
+
+/* Artefakt Table */
+
+.artifact-table-overlay {
+    position: absolute;
+    left: 0;
+    right: 150px;
+    top: 66.5%;
+    bottom: 0;
+    z-index: 99999;
+    display: flex;
+    background: rgba(33,43,54,0.98);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+}
+
+    /* Sidebar offen */
+    .artifact-table-overlay.shifted {
+        left: 50px;
+    }
+    /* Sidebar geschlossen */
+    .artifact-table-overlay.full {
+        left: 0;
+    }
+
+/* LEFT VERTICAL HEADER */
+
+.artifact-side-header {
+    width: 38px;
+    background: rgba(255,255,255,0.03);
+    border-right: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+    /* ROTATED TEXT */
+
+    .artifact-side-header span {
+        transform: rotate(-90deg);
+        white-space: nowrap;
+        color: #dbe7f5;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+.artifact-table-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 14px;
+    display: flex;
+    gap: 18px;
+}
+
+.artifact-column {
+    min-width: 240px;
+    color: #dbe7f5;
+    font-size: 12px;
+}
+
+    .artifact-column strong {
+        display: block;
+        margin-bottom: 10px;
+        color: white;
+        font-size: 13px;
+    }
+
+    .artifact-column ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .artifact-column li {
+        margin-bottom: 8px;
+        padding: 6px 8px;
+        background: rgba(255,255,255,0.04);
+        border-radius: 6px;
+        line-height: 1.4;
+    }
+
+.artifact-close-btn {
+    background: transparent;
+    border: none;
+    color: #d7e3f4;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.artifact-clickable {
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+    .artifact-clickable:hover {
+        background: rgba(255,255,255,0.10);
+    }
+
+.artifact-anomaly {
+    border-left: 3px solid rgba(255,255,255,0.25);
+    border-radius: 4px;
+}
+/* User Input Marker Farben */
+.userinput-marker.search {
+    background: #4da3ff;
+}
+
+.userinput-marker.autofill {
+    background: #52d273;
+}
+
+.userinput-marker.favicon {
+    background: #ffcc33;
+}

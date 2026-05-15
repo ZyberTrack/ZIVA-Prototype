@@ -13,11 +13,7 @@
     <SourceRoot Include="C:\Users\vikto\.nuget\packages\" />
     <SourceRoot Include="C:\Program Files (x86)\Microsoft Visual Studio\Shared\NuGetPackages\" />
   </ItemGroup>
-  <ImportGroup Condition=" '$(TargetFramework)' == '' AND '$(ExcludeRestorePackageImports)' != 'true' ">
-    <Import Project="$(NuGetPackageRoot)radzen.blazor\6.6.4\buildMultiTargeting\Radzen.Blazor.props" Condition="Exists('$(NuGetPackageRoot)radzen.blazor\6.6.4\buildMultiTargeting\Radzen.Blazor.props')" />
-    <Import Project="$(NuGetPackageRoot)microsoft.aspnetcore.components.webview\10.0.0\buildMultiTargeting\Microsoft.AspNetCore.Components.WebView.props" Condition="Exists('$(NuGetPackageRoot)microsoft.aspnetcore.components.webview\10.0.0\buildMultiTargeting\Microsoft.AspNetCore.Components.WebView.props')" />
-  </ImportGroup>
-  <ImportGroup Condition=" '$(TargetFramework)' == 'net10.0-windows10.0.19041.0' AND '$(ExcludeRestorePackageImports)' != 'true' ">
+  <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <Import Project="$(NuGetPackageRoot)microsoft.codeanalysis.analyzers\3.3.4\buildTransitive\Microsoft.CodeAnalysis.Analyzers.props" Condition="Exists('$(NuGetPackageRoot)microsoft.codeanalysis.analyzers\3.3.4\buildTransitive\Microsoft.CodeAnalysis.Analyzers.props')" />
     <Import Project="$(NuGetPackageRoot)radzen.blazor\6.6.4\buildTransitive\Radzen.Blazor.props" Condition="Exists('$(NuGetPackageRoot)radzen.blazor\6.6.4\buildTransitive\Radzen.Blazor.props')" />
     <Import Project="$(NuGetPackageRoot)microsoft.windows.sdk.buildtools.msix\1.7.20250829.1\buildTransitive\Microsoft.Windows.SDK.BuildTools.MSIX.props" Condition="Exists('$(NuGetPackageRoot)microsoft.windows.sdk.buildtools.msix\1.7.20250829.1\buildTransitive\Microsoft.Windows.SDK.BuildTools.MSIX.props')" />
@@ -39,7 +35,7 @@
     <Import Project="$(NuGetPackageRoot)microsoft.aspnetcore.components.webview\10.0.0\buildTransitive\Microsoft.AspNetCore.Components.WebView.props" Condition="Exists('$(NuGetPackageRoot)microsoft.aspnetcore.components.webview\10.0.0\buildTransitive\Microsoft.AspNetCore.Components.WebView.props')" />
     <Import Project="$(NuGetPackageRoot)microsoft.aspnetcore.components.webview.maui\10.0.60\build\Microsoft.AspNetCore.Components.WebView.Maui.props" Condition="Exists('$(NuGetPackageRoot)microsoft.aspnetcore.components.webview.maui\10.0.60\build\Microsoft.AspNetCore.Components.WebView.Maui.props')" />
   </ImportGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net10.0-windows10.0.19041.0' AND '$(ExcludeRestorePackageImports)' != 'true' ">
+  <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <PkgMicrosoft_CodeAnalysis_Analyzers Condition=" '$(PkgMicrosoft_CodeAnalysis_Analyzers)' == '' ">C:\Users\vikto\.nuget\packages\microsoft.codeanalysis.analyzers\3.3.4</PkgMicrosoft_CodeAnalysis_Analyzers>
     <PkgMicrosoft_Windows_SDK_BuildTools_MSIX Condition=" '$(PkgMicrosoft_Windows_SDK_BuildTools_MSIX)' == '' ">C:\Users\vikto\.nuget\packages\microsoft.windows.sdk.buildtools.msix\1.7.20250829.1</PkgMicrosoft_Windows_SDK_BuildTools_MSIX>
     <PkgMicrosoft_Web_WebView2 Condition=" '$(PkgMicrosoft_Web_WebView2)' == '' ">C:\Users\vikto\.nuget\packages\microsoft.web.webview2\1.0.3179.45</PkgMicrosoft_Web_WebView2>

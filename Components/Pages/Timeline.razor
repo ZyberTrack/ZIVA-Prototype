@@ -11,18 +11,14 @@
 
 
 @code {
-    // TIMELINE ARTEFAKTE WERDEN NICHT ANGEZEIGT. 
+
+    // TO DO: ================================================================= //
     // 
-    // TO DO:
-    // 
-    // 
+    //  - REFACTORING!!!!!
     // 
     //
     //
-    // - Beim anklicken einer Domänen-Zusammenfassung, alle domänen namen oberhalb der artefakte anzeigen als text.
-    //
-    // - Erkennen von zwielichtigen Suchmaschienen -> Pirate Bay etc... und Websiten per liste!!
-    //
+    // ======================================================================== //
 
     [CascadingParameter]
     public bool isNavOpen { get; set; }  // Um sidebar auszublenden
@@ -1287,65 +1283,14 @@
 
 <!-- RAZOR MARKUP -->
 <div class="timeline-wrapper @(isNavOpen ? "shifted" : "full")">
-    <!-- LEFT SIDE OF TIMELINE -->
-    <div class="legend-area @(isNavOpen ? "shifted" : "full")">
-        <div class="timeline-area-static timeline-area-top">
-            <div class="timeline-label">Verlauf-Zeitachse</div>
-            <div class="timeline-history-label">History</div>
-            <div class="timeline-top-legend "></div>
-            <div class="timeline-cookies-label">Cookies & Session</div>
-            <div class="timeline-cookies"></div>
-            <div class="timeline-webdata-label">User Input</div>
-            <div class="timeline-webdata"></div>
-            <div class="timeline-favicons-label">Local Storage </div>
-            <div class="timeline-favicons"></div>
-            <div class="timeline-ext-label">Extensions</div>
-            <div class="timeline-ext"></div>
-        </div>
-        <div class="timeline-area-static timeline-area-bottom">
-            <div class="timeline-label">Analyse-Zeitachse</div>
-            <div class="timeline-bottom-legend"></div>
-        </div>
-    </div>
-
-    <!-- MOVABLE TIMELINE -->
-    <div class="timeline-static">
-        <div class="timeline-area-scroll timeline-area-top">
-            <div class="timeline-top"></div>
-            <div class="timeline-cookies"></div>
-            <div class="timeline-webdata"></div>
-            <div class="timeline-favicons"></div>
-            <div class="timeline-ext"></div>
-        </div>
-
-        <div class="timeline-area-scroll timeline-area-bottom @(showDebug ? "artifact-open" : "")">
-            <div class="timeline-bottom"></div>
-
-            
-
-
-        </div>
-    </div>
-
-    <!-- RIGHT SIDE OF TIMELINE -->
-    <div class="timeless-area">
-        <div class="timeline-label">Tools</div>
-
-        <button class="btn btn-sm" @onclick="ToggleAllDomains">
-            @(allExpanded ? "Summerize All" : "Expand All")
-        </button>
-
-        <button class="btn btn-sm mt-2" @onclick="ToggleDebug">
-            @(showDebug ? "Artefact Table Off" : "Artefact Table On")
-        </button>
-    </div>
-
-
-    <div class="timeline-container">
 
     @if (showDebug)
     {
-        <div class="artifact-table-overlay">
+        <div class="artifact-table-overlay @(isNavOpen ? "shifted" : "full")">
+
+            <div class="artifact-side-header">
+                <span>Artefact Table</span>
+            </div>
 
             <div class="artifact-table-content">
 
@@ -1466,6 +1411,69 @@
         </div>
     }
 
+    <!-- LEFT SIDE OF TIMELINE -->
+    <div class="legend-area @(isNavOpen ? "shifted" : "full")">
+        <div class="timeline-area-static timeline-area-top">
+            <div class="timeline-label @(isNavOpen ? "sidebar-open" : "sidebar-closed")">
+            Verlauf-Zeitachse
+            </div>
+            <div class="timeline-history-label">History</div>
+            <div class="timeline-top-legend "></div>
+            <div class="timeline-cookies-label">Cookies & Session</div>
+            <div class="timeline-cookies"></div>
+            <div class="timeline-webdata-label">User Input</div>
+            <div class="timeline-webdata"></div>
+            <div class="timeline-favicons-label">Local Storage </div>
+            <div class="timeline-favicons"></div>
+            <div class="timeline-ext-label">Extensions</div>
+            <div class="timeline-ext"></div>
+        </div>
+        <div class="timeline-area-static timeline-area-bottom">
+            <div class="timeline-label">Analyse-Zeitachse</div>
+            <div class="timeline-bottom-legend"></div>
+        </div>
+    </div>
+
+    <!-- MOVABLE TIMELINE -->
+    <div class="timeline-static">
+        <div class="timeline-area-scroll timeline-area-top">
+            <div class="timeline-top"></div>
+            <div class="timeline-cookies"></div>
+            <div class="timeline-webdata"></div>
+            <div class="timeline-favicons"></div>
+            <div class="timeline-ext"></div>
+        </div>
+
+        <div class="timeline-area-scroll timeline-area-bottom @(showDebug ? "artifact-open" : "")">
+            <div class="timeline-bottom"></div>
+
+            
+
+
+        </div>
+    </div>
+
+    <!-- RIGHT SIDE OF TIMELINE -->
+    <div class="timeless-area">
+
+        <div class="timeless-header">
+            TOOLS
+        </div>
+
+        <button class="tool-btn expand-btn"
+                @onclick="ToggleAllDomains">
+            @(allExpanded ? "Summarize All" : "Expand All")
+        </button>
+
+        <button class="tool-btn debug-btn"
+                @onclick="ToggleDebug">
+            @(showDebug ? "Artefact Table Off" : "Artefact Table On")
+        </button>
+
+    </div>
+
+
+    <div class="timeline-container">
         <!-- Externer Container mit fixer Breite & overflow -->
         <div id="scroll-container" class="scroll-wrapper scroll-wrapper-timeline" @ref="scrollDivRef">
             <!-- Zeitachsn Balken -->
