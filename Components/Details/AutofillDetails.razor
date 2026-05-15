@@ -1,0 +1,64 @@
+﻿@using ZIVA_Prototype.Components.Models.Timeline;
+@using ZIVA_Prototype.Components.Models.Enums;
+
+<div class="entry-details">
+
+    <div class="entry-header">
+        <span>User Input Details</span>
+
+        <button class="close-btn"
+                @onclick="OnClose">
+            ✕
+        </button>
+    </div>
+
+    <div class="entry-content">
+
+        <div class="entry-row">
+            <strong>Type</strong><br />
+            @GetTypeLabel(Data.Type)
+        </div>
+
+        <div class="entry-row">
+            <strong>Value</strong><br />
+            @(string.IsNullOrWhiteSpace(Data.Value)
+                ? "-"
+                : Data.Value)
+        </div>
+
+        <div class="entry-row">
+            <strong>Timestamp</strong><br />
+            @Data.Time
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+
+    [Parameter]
+    public UserInputEntry Data { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private string GetTypeLabel(
+        UserInputType type)
+    {
+        return type switch
+        {
+            UserInputType.SearchQuery =>
+                "Search Query",
+
+            UserInputType.Autofill =>
+                "Autofill Data",
+
+            UserInputType.Favicon =>
+                "Favicon Artifact",
+
+            _ =>
+                type.ToString()
+        };
+    }
+}

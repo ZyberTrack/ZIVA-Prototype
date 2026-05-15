@@ -1,1 +1,0 @@
-// Beziehungen zw. Artefakten (Pfeile/Linien)

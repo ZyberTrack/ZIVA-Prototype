@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
-using ZIVA_Prototype.Services;
+using ZIVA_Prototype.Services.Import;
+using ZIVA_Prototype.Services.Timeline;
 
 namespace ZIVA_Prototype
 {
@@ -18,17 +19,39 @@ namespace ZIVA_Prototype
                 });
 
             builder.Services.AddMauiBlazorWebView();
-            // ⬇ Hier deine Services registrieren:
+
+            // ⬇ History / User Input
             builder.Services.AddScoped<HistoryImportService>();
             builder.Services.AddScoped<WebDataAutofillImportService>();
-            builder.Services.AddScoped<CookieImportService>();
-            builder.Services.AddScoped<ChromeProfileLoader>();
+            builder.Services.AddScoped<FaviconsImportService>();
             builder.Services.AddScoped<UserInputAggregatorService>();
+            //builder.Services.AddScoped<UserInputTimelineBuilder>();
+
+            // ⬇ Cookies / Storage
+            builder.Services.AddScoped<CookieImportService>();
+            builder.Services.AddScoped<StorageImportService>();
+
+            builder.Services.AddSingleton<StorageArtifactScanner>();
+
+            // ⬇ Chromium Profiles
+            builder.Services.AddScoped<ChromeProfileLoader>();
+
+            // ⬇ Extension DFIR Pipeline
             builder.Services.AddScoped<ExtensionImportService>();
 
+            builder.Services.AddScoped<ExtensionPreferenceScanner>();
+            builder.Services.AddScoped<ExtensionFolderScanner>();
+            builder.Services.AddScoped<ExtensionRuntimeScanner>();
+            builder.Services.AddScoped<ExtensionFilesystemScanner>();
+            builder.Services.AddScoped<ExtensionHistoryAnalyzer>();
+
+            // ⬇ Timeline / State
             builder.Services.AddSingleton<TimelineStateService>();
             builder.Services.AddSingleton<PersistStateService>();
-            
+            builder.Services.AddSingleton<TimelineAnomalyService>();
+            builder.Services.AddSingleton<TimelineColorService>();
+            builder.Services.AddSingleton<TimelineRenderCacheService>();
+
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

@@ -1,0 +1,126 @@
+﻿@page "/DataImport"
+@inject NavigationManager NavigationManager
+@using ZIVA_Prototype.Services;
+@using Microsoft.Maui.Storage;
+@using ZIVA_Prototype.Services.Import;
+@using ZIVA_Prototype.Services.Timeline;
+@inject HistoryImportService HistoryImportService
+@inject CookieImportService CookieImportService
+@inject WebDataAutofillImportService AutofillService
+@inject TimelineStateService State
+@inject PersistStateService PersistService
+@inject ChromeProfileLoader Loader
+
+@code {
+
+    string? CurrentProfilePath; // Current folder Path
+
+    private async Task ImportChromeProfile()
+    {
+        var folderPath = await SelectProfileFolderFromFile();
+
+        if (!string.IsNullOrEmpty(folderPath))
+        {
+            CurrentProfilePath = folderPath;
+
+            await Loader.LoadProfileAsync(folderPath);
+            await PersistService.PersistStateAsync(State);
+
+            //NavigationManager.NavigateTo("/");
+        }
+    }
+
+
+    private async Task<string?> SelectProfileFolderFromFile()
+    {
+        var file = await FilePicker.Default.PickAsync();
+
+        if (file != null)
+        {
+            return Path.GetDirectoryName(file.FullPath);
+        }
+
+        return null;
+    }
+
+
+    // Neuer Button zum Löschen aller Daten
+    private async Task ClearAllData()
+    {
+        State.ClearAll();
+        await PersistService.PersistStateAsync(State);
+    }
+}
+
+<div class="import-page">
+
+    <div class="import-panel">
+
+        <div class="import-header">
+            DATA IMPORT
+        </div>
+
+        <div class="import-content">
+
+          
+
+            <div class="import-section">
+
+                <div class="import-title">
+                    Chrome Profile
+                </div>
+
+                <div class="import-description">
+                    Load a Chrome profile to extract browser history,
+                    cookies, autofill data, local storage entries and extensions.
+                </div>
+
+                <button class="import-btn primary"
+                        @onclick="ImportChromeProfile">
+                    Load Chrome Profile
+                </button>
+
+            </div>
+
+            
+
+            <div class="import-section">
+
+                <div class="import-title">
+                    Current Profile
+                </div>
+
+                <div class="profile-box">
+                    @(string.IsNullOrWhiteSpace(CurrentProfilePath)
+                        ? "No profile loaded"
+                        : CurrentProfilePath)
+                </div>
+
+            </div>
+
+            
+
+            <div class="import-section danger-zone">
+
+                <div class="import-title">
+                    Danger Zone
+                </div>
+
+                <div class="import-description">
+                    Remove all currently loaded artifacts and analysis data.
+                </div>
+
+                <button class="import-btn danger"
+                        @onclick="ClearAllData">
+                    Clear All Data
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+

@@ -1,0 +1,52 @@
+﻿@using ZIVA_Prototype.Components.Models.Timeline
+
+<div class="entry-details">
+
+    <div class="entry-header">
+        <span>Domain: @Data.Domain</span>
+
+        <button class="close-btn"
+                @onclick="OnClose">
+            ✕
+        </button>
+    </div>
+
+    <div class="entry-content">
+
+        <div class="entry-row">
+            <strong>Domain</strong><br />
+            @(Data.Domain ?? "-")
+        </div>
+
+        <div class="entry-row">
+            <strong>First Visit</strong><br />
+            @Data.VisitTime
+        </div>
+
+        <div class="entry-row">
+            <strong>Visits</strong><br />
+            @(Data.SubEntries?.Count ?? 0)
+        </div>
+
+        <div class="entry-row">
+            <strong>Type</strong><br />
+            @(Data.IsSearch
+                ? "Search"
+                : Data.IsDirect
+                    ? "Direct"
+                    : "Referral")
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+
+    [Parameter]
+    public DomainEntry Data { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+}

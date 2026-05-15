@@ -1,0 +1,121 @@
+@using ZIVA_Prototype.Components.Models.Timeline
+
+<div class="entry-details extension-details">
+
+    <div class="entry-header">
+        <span>@Data.Name</span>
+
+        <button class="close-btn"
+                @onclick="OnClose">
+            ✕
+        </button>
+    </div>
+
+    <div class="entry-content">
+
+        <div class="entry-row">
+            <strong>Risk</strong><br />
+            @Data.RiskLevel (@Data.RiskScore)
+        </div>
+
+        <div class="entry-row">
+            <strong>Version</strong><br />
+            @Data.Version
+        </div>
+
+        <div class="entry-row">
+            <strong>Installed</strong><br />
+            @Data.InstallTime.ToLocalTime()
+        </div>
+
+        <div class="entry-row">
+            <strong>Enabled</strong><br />
+            @(Data.IsEnabled ? "Yes" : "No")
+        </div>
+
+        <div class="entry-row">
+            <strong>Source</strong><br />
+            @(Data.IsUnpacked
+                ? "Unpacked / Developer"
+                : Data.IsFromWebStore
+                    ? "Chrome Web Store"
+                    : "Unknown")
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Data.InstallLocation))
+        {
+            <div class="entry-row">
+                <strong>Install Path</strong><br />
+                @Data.InstallLocation
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Data.Description))
+        {
+            <div class="entry-row">
+                <strong>Description</strong><br />
+                @Data.Description
+            </div>
+        }
+
+        <div class="entry-row">
+            <strong>Top Findings</strong>
+
+            <ul>
+                @foreach (var f in Data.Findings
+                         .OrderByDescending(x => x.Weight))
+                {
+                    <li style="margin-top:8px;">
+                        <strong>@f.Type</strong><br />
+                        @f.Description
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <div class="entry-row">
+            <strong>Permissions</strong>
+
+            <ul>
+                @foreach (var p in Data.AllPermissions)
+                {
+                    <li>@p</li>
+                }
+            </ul>
+        </div>
+
+        @if (Data.ContentScripts.Any())
+        {
+            <div class="entry-row">
+                <strong>Content Scripts</strong>
+
+                <ul>
+                    @foreach (var s in Data.ContentScripts)
+                    {
+                        <li>@s</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Data.BackgroundScript))
+        {
+            <div class="entry-row">
+                <strong>Background Worker</strong><br />
+                @Data.BackgroundScript
+            </div>
+        }
+
+    </div>
+
+</div>
+
+@code {
+
+    [Parameter]
+    public BrowserExtensionEntry Data { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+}

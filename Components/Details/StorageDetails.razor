@@ -1,0 +1,100 @@
+﻿@using ZIVA_Prototype.Components.Models.Timeline
+
+<div class="entry-details storage-details">
+
+    <div class="entry-header">
+        <span>Storage Artifact</span>
+
+        <button class="close-btn"
+                @onclick="OnClose">
+            ✕
+        </button>
+    </div>
+
+    <div class="entry-content">
+
+        <div class="entry-row">
+            <strong>Type</strong><br />
+            @Data.Type
+        </div>
+
+        <div class="entry-row">
+            <strong>Origin</strong><br />
+            @Data.Origin
+        </div>
+
+        <div class="entry-row">
+            <strong>Timestamp</strong><br />
+            @Data.Time.ToLocalTime()
+        </div>
+
+        @if (Data.LastModified != null)
+        {
+            <div class="entry-row">
+                <strong>Last Modified</strong><br />
+                @Data.LastModified.Value.ToLocalTime()
+            </div>
+        }
+
+        <div class="entry-row">
+            <strong>Key</strong><br />
+            @Data.Key
+        </div>
+
+        <div class="entry-row">
+            <strong>Value</strong>
+
+            <div class="storage-value">
+                @Data.Value
+            </div>
+        </div>
+
+        @if (Data.IsSensitive)
+        {
+            <div class="entry-row risk-warning">
+                ⚠ Sensitive / Token-like Content
+            </div>
+        }
+
+        @if (Data.IsBinary)
+        {
+            <div class="entry-row binary-warning">
+                Binary / Encoded Content detected
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Data.RawKeyHex))
+        {
+            <div class="entry-row">
+                <strong>Raw Key (HEX)</strong>
+
+                <div class="hex-block">
+                    @Data.RawKeyHex
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Data.RawValueHex))
+        {
+            <div class="entry-row">
+                <strong>Raw Value (HEX)</strong>
+
+                <div class="hex-block">
+                    @Data.RawValueHex
+                </div>
+            </div>
+        }
+
+    </div>
+
+</div>
+
+@code {
+
+    [Parameter]
+    public StorageEntry Data { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+}
