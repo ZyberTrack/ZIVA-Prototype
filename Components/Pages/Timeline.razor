@@ -1198,6 +1198,80 @@
         return $"background:{bg};";
     }
 
+    
+    int baseTop = 33; // Basislinie für normale Domains in %
+    int heavyClusterSpacingPx = 20; // Abstand jeder neuen Heavy Cluster-Linie nach oben
+
+    string GetSeverityColor(int severity) => severity switch
+    {
+        5 => "#ff2d2d",   // Rot – kritisch
+        4 => "#ff6b00",   // Dunkelorange
+        3 => "#ffb000",   // Orange
+        2 => "#3fa9f5",   // Blau
+        _ => "#9e9e9e"    // Grau
+    };
+
+    // Y-Position der Domain in Prozent
+    double GetDomainYPercent(DomainEntry domain)
+    {
+        if (!domain.IsHeavyCluster)
+            return baseTop;
+
+        double offsetPx = 25 + heavyClusterSpacingPx * (domain.HeavyClusterIndex - 1);
+        double offsetPercent = (offsetPx / containerHeight) * 100.0;
+
+        return Math.Round(baseTop - offsetPercent);
+    }
+
+    // Y-Position der Anomalie in Pixel
+    double AnomalyYPercent => 78;
+
+
+    IEnumerable<(double x, double yPercent)> GetAnomalyTargetPoints(DomainEntry domain)
+    {
+        double y = GetDomainYPercent(domain);
+
+        if (domain.IsHeavyCluster || domain.IsExpanded)
+        {
+            foreach (var sub in domain.SubEntries)
+                yield return (sub.Position, y);
+            yield break;
+        }
+
+        yield return (domain.Position, y);
+    }
+
+    // Hilfsmethode: Zielpunkt der Anomalie ermitteln (z.B. Cookie oder Autofill)
+    (double x, double yPercent)? GetAnomalyTargetPoint(AnomalyEntry anomaly)
+    {
+        switch (anomaly.Type)
+        {
+            case AnomalyType.DeletedHistoryIndicator:
+                {
+                    // Cookie?
+                    var cookie = State.BrowserCookies?
+                    .FirstOrDefault(c =>
+                    Math.Abs((c.Created - anomaly.FirstSeen).TotalSeconds) <= 1);
+
+                    if (cookie != null)
+                        return (cookie.Position, 43); // Cookie-Linie
+
+                    // Autofill?
+                    var autofill = State.AutofillEntries?
+                    .FirstOrDefault(a =>
+                    Math.Abs((a.DateCreated - anomaly.FirstSeen).TotalSeconds) <= 1);
+
+                    if (autofill != null)
+                        return (autofill.Position, 50); // Autofill-Linie
+
+                    return null;
+                }
+
+            default:
+                return null;
+        }
+    }
+
 
     public void Dispose()
     {
@@ -1227,8 +1301,15 @@
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(e)"
                                 @onclick="() => FocusHistoryFromTable(e)">
-                                @e.VisitTime |
+
+                                @e.VisitTime <br />
+                                @(e.Url?.Length > 90
+                                    ? e.Url.Substring(0, 90) + "..."
+                                    : e.Url)
+
+                                <br />
                                 px=@e.Position
+
                             </li>
                         }
                     </ul>
@@ -1243,8 +1324,12 @@
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(e)"
                                 @onclick="() => SelectCookie(e)">
-                                @e.LastAccessed |
+
+                                @e.Name <br />
+                                @(e.Value?.Length > 80 ? e.Value.Substring(0, 80) + "..." : e.Value) <br />
+                                @e.LastAccessed <br />
                                 px=@e.Position
+
                             </li>
                         }
                     </ul>
@@ -1259,9 +1344,18 @@
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(e)"
                                 @onclick="() => SelectInput(e)">
-                                @e.Time |
-                                px=@e.Position |
-                                @e.Type
+
+                                @e.Type <br />
+
+                                @(e.Value?.Length > 100
+                                    ? e.Value.Substring(0, 100) + "..."
+                                    : e.Value)
+
+                                <br />
+
+                                @e.Time <br />
+                                px=@e.Position
+
                             </li>
                         }
                     </ul>
@@ -1274,10 +1368,15 @@
                         @foreach (var e in State.Extensions)
                         {
                             <li class="artifact-clickable artifact-anomaly"
-                                style="@GetArtifactStyle(e)" "
+                                style="@GetArtifactStyle(e)"
                                 @onclick="() => SelectExtension(e)">
-                                @e.Name <br />
+
+                                <strong>@e.Name</strong><br />
+
+                                @e.InstallTime <br />
+
                                 px=@e.Position
+
                             </li>
                         }
                     </ul>
@@ -1292,8 +1391,20 @@
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(s)"
                                 @onclick="() => SelectStorage(s)">
-                                @s.Key <br />
+
+                                <strong>@s.Key</strong><br />
+
+                                Type: @s.Type <br />
+
+                                Value:
+                                @(s.Value?.Length > 80
+                                    ? s.Value.Substring(0, 80) + "..."
+                                    : s.Value)
+
+                                <br />
+
                                 px=@s.Position
+
                             </li>
                         }
                     </ul>
@@ -1308,8 +1419,20 @@
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(d)"
                                 @onclick="() => ExpandAndFocus(d)">
-                                @d.Domain <br />
+
+                                <strong>@d.Domain</strong><br />
+
+                                URL:
+                                @(d.Url?.Length > 90
+                                    ? d.Url.Substring(0, 90) + "..."
+                                    : d.Url)
+
+                                <br />
+
+                                Visits: @(d.SubEntries?.Count ?? 0) <br />
+
                                 px=@d.Position
+
                             </li>
                         }
                     </ul>
@@ -1801,87 +1924,6 @@
             }
 
         </svg>
-
-
-
-            <!-- ANOMALIE ZEITACHSE -->
-            @code {
-
-                int baseTop = 33; // Basislinie für normale Domains in %
-                int heavyClusterSpacingPx = 20; // Abstand jeder neuen Heavy Cluster-Linie nach oben
-
-                string GetSeverityColor(int severity) => severity switch
-                {
-                    5 => "#ff2d2d",   // Rot – kritisch
-                    4 => "#ff6b00",   // Dunkelorange
-                    3 => "#ffb000",   // Orange
-                    2 => "#3fa9f5",   // Blau
-                    _ => "#9e9e9e"    // Grau
-                };
-
-				// Y-Position der Domain in Prozent
-                double GetDomainYPercent(DomainEntry domain)
-                {
-                    if (!domain.IsHeavyCluster)
-                        return baseTop;
-
-                    double offsetPx = 25 + heavyClusterSpacingPx * (domain.HeavyClusterIndex - 1);
-                    double offsetPercent = (offsetPx / containerHeight) * 100.0;
-
-                    return Math.Round(baseTop - offsetPercent);
-                }
-
-				// Y-Position der Anomalie in Pixel
-                double AnomalyYPercent => 78;
-
-
-                IEnumerable<(double x, double yPercent)> GetAnomalyTargetPoints(DomainEntry domain)
-                {
-                    double y = GetDomainYPercent(domain);
-
-                    if (domain.IsHeavyCluster || domain.IsExpanded)
-                    {
-                        foreach (var sub in domain.SubEntries)
-                            yield return (sub.Position, y);
-                        yield break;
-                    }
-
-                    yield return (domain.Position, y);
-                }
-
-				// Hilfsmethode: Zielpunkt der Anomalie ermitteln (z.B. Cookie oder Autofill)
-                (double x, double yPercent)? GetAnomalyTargetPoint(AnomalyEntry anomaly)
-                {
-                    switch (anomaly.Type)
-                    {
-                        case AnomalyType.DeletedHistoryIndicator:
-                            {
-                                // Cookie?
-                                var cookie = State.BrowserCookies?
-                                .FirstOrDefault(c =>
-                                Math.Abs((c.Created - anomaly.FirstSeen).TotalSeconds) <= 1);
-
-                                if (cookie != null)
-                                    return (cookie.Position, 43); // Cookie-Linie
-
-                                // Autofill?
-                                var autofill = State.AutofillEntries?
-                                .FirstOrDefault(a =>
-                                Math.Abs((a.DateCreated - anomaly.FirstSeen).TotalSeconds) <= 1);
-
-                                if (autofill != null)
-                                    return (autofill.Position, 50); // Autofill-Linie
-
-                                return null;
-                            }
-
-                        default:
-                            return null;
-                    }
-                }
-
-
-            }
 
             @foreach (var anomaly in RenderCache.VisibleAnomalies)
             {
