@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
-using ZIVA_Prototype.Services;
+using ZIVA_Prototype.Services.Import;
+using ZIVA_Prototype.Services.Timeline;
 
 namespace ZIVA_Prototype
 {
@@ -47,8 +48,8 @@ namespace ZIVA_Prototype
             // ⬇ Timeline / State
             builder.Services.AddSingleton<TimelineStateService>();
             builder.Services.AddSingleton<PersistStateService>();
-
             builder.Services.AddSingleton<TimelineAnomalyService>();
+            builder.Services.AddSingleton<TimelineColorService>();
 
 
 #if DEBUG

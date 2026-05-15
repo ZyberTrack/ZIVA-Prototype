@@ -1,13 +1,17 @@
 ﻿@page "/"
 @inject IJSRuntime JS
 @implements IDisposable
-@using ZIVA_Prototype.Components.Models;
+@using ZIVA_Prototype.Components.Models.Timeline;
+@using ZIVA_Prototype.Components.Models.Enums;
+@using ZIVA_Prototype.Services.Import;
+@using ZIVA_Prototype.Services.Timeline;
 @using ZIVA_Prototype.Services;
 @using System.Text.Json;
 @inject TimelineStateService State // Verwaltet States mehrerer Importierter Datenbanken
 @inject HistoryImportService Importer   
 @inject PersistStateService PersistService // falls benötigt
 @inject TimelineAnomalyService AnomalyService
+@inject TimelineColorService ColorService
 
 
 @code {
@@ -29,8 +33,6 @@
     private List<DomainEntry> SummarizedEntries { get; set; } = new();
     private List<TimestampEntry> visibleEntries = new();
     private List<UserInputEntry> UserInputs = new(); // kombinierte Liste der Keywords und Autofill Einträge
-    private static List<int> usedHues = new(); // Liste aller bisher vergebenen Hue-Werte
-    private static Dictionary<string, string> domainColors = new();
     private Dictionary<string, bool> expandedStates = new();
 
     private BrowserHistoryEntry? selectedEntry; // Aktuell ausgewählte Browser History Artefakt Entry
@@ -106,26 +108,7 @@
     private List<TimelineArtifact> TimelineArtifacts = new();
     private int currentArtifactIndex = 0;
 
-    private class TimelineArtifact
-    {
-        public DateTime Time { get; set; }
-
-        public object Data { get; set; } = default!;
-
-        public ArtifactType Type { get; set; }
-    }
-
-    private enum ArtifactType
-    {
-        History,
-        Cookie,
-        UserInput,
-        Extension,
-        Storage,
-        Anomaly
-    }
-
-    // Suchmaschinen Domains für Erkennung
+     // Suchmaschinen Domains für Erkennung
     string[] searchEngines = new[]
     {
     "google.",            // Google (alle Länderdomains)
@@ -349,12 +332,41 @@
             State.Favicons
         );
 
-        RecalculatePositions();
-        RecalculateCookiePositions();
-        RecalculateUserInputPositions();
-        RecalculateSummarizedPositions();
-        RecalculateExtensionPositions();
-        RecalculateStoragePositions();
+        RecalculatePositions(
+        State.BrowserEntries,
+        x => x.VisitTime,
+        (x, pos) => x.Position = pos
+    );
+
+        RecalculatePositions(
+            State.BrowserCookies,
+            x => x.Created,
+            (x, pos) => x.Position = pos
+        );
+
+        RecalculatePositions(
+            UserInputs,
+            x => x.Time,
+            (x, pos) => x.Position = pos
+        );
+
+        RecalculatePositions(
+            SummarizedEntries,
+            x => x.VisitTime,
+            (x, pos) => x.Position = pos
+        );
+
+        RecalculatePositions(
+            State.Extensions,
+            x => x.InstallTime,
+            (x, pos) => x.Position = pos
+        );
+
+        RecalculatePositions(
+            State.StorageEntries,
+            x => x.Time,
+            (x, pos) => x.Position = pos
+        );
 
         Anomalies = AnomalyService.Detect(
             SummarizedEntries,
@@ -503,64 +515,20 @@
         startOffset = -minIndex * spacing + 250; // z. B. 250px Puffer nach links
     }
 
-
-    // Nur für Einträge in der Zeitachse
-    private void RecalculatePositions()
+    private void RecalculatePositions<T>(
+    IEnumerable<T> items,
+    Func<T, DateTime> getTime,
+    Action<T, int> setPosition)
     {
-        // Wird für jeden Eintrag gemacht
-        foreach (var historyEntry in State.BrowserEntries)
+        foreach (var item in items)
         {
-            historyEntry.Position = (int)TimelineScaleService.TimeToPixel(historyEntry.VisitTime, ScaleContext) - scrollIndex; //Hier geht was schief wenn die position mit dsem zoom nicht stimmt
-        }
-    }
+            var pos =
+                (int)TimelineScaleService.TimeToPixel(
+                    getTime(item),
+                    ScaleContext
+                ) - (int)scrollIndex;
 
-    private void RecalculateCookiePositions()
-    {
-        if (State.BrowserCookies == null) return;
-
-        foreach (var cookie in State.BrowserCookies)
-        {
-            cookie.Position = (int)TimelineScaleService.TimeToPixel(cookie.Created, ScaleContext) - (int)scrollIndex;
-        }
-    }
-
-    private void RecalculateUserInputPositions()
-    {
-        if (UserInputs == null) return;
-
-        foreach (var entry in UserInputs)
-        {
-            entry.Position = (int)TimelineScaleService.TimeToPixel(entry.Time, ScaleContext) - (int)scrollIndex;
-        }
-    }
-
-    private void RecalculateSummarizedPositions()
-    {
-        if (SummarizedEntries == null) return;
-
-        foreach (var entry in SummarizedEntries)
-        {
-            entry.Position = (int)TimelineScaleService.TimeToPixel(entry.VisitTime, ScaleContext) - (int)scrollIndex;
-        }
-    }
-
-    private void RecalculateExtensionPositions()
-    {
-        if (State.Extensions == null) return;
-
-        foreach (var ext in State.Extensions)
-        {
-            ext.Position = (int)TimelineScaleService.TimeToPixel(ext.InstallTime, ScaleContext) - (int)scrollIndex;
-        }
-    }
-
-    private void RecalculateStoragePositions()
-    {
-        if (State.StorageEntries == null) return;
-
-        foreach (var entry in State.StorageEntries)
-        {
-            entry.Position = (int)TimelineScaleService.TimeToPixel(entry.Time, ScaleContext) - (int)scrollIndex;
+            setPosition(item, pos);
         }
     }
 
@@ -869,61 +837,6 @@
     }
 
     //------------------------------------------------------------
-    // Bessere Domain-Farbzuweisung mit maximaler Farbdistanz (HSL)
-    //------------------------------------------------------------
-
-    // Gibt HEX-Farbe aus HSL zurück
-    private string HslToRgb(int h, int s, int l)
-    {
-        double sat = s / 100.0;
-        double light = l / 100.0;
-        double c = (1 - Math.Abs(2 * light - 1)) * sat;
-        double x = c * (1 - Math.Abs((h / 60.0) % 2 - 1));
-        double m = light - c / 2;
-
-        double r = 0, g = 0, b = 0;
-
-        if (h < 60) { r = c; g = x; b = 0; }
-        else if (h < 120) { r = x; g = c; b = 0; }
-        else if (h < 180) { r = 0; g = c; b = x; }
-        else if (h < 240) { r = 0; g = x; b = c; }
-        else if (h < 300) { r = x; g = 0; b = c; }
-        else { r = c; g = 0; b = x; }
-
-        int R = (int)((r + m) * 255);
-        int G = (int)((g + m) * 255);
-        int B = (int)((b + m) * 255);
-
-        return $"rgb({R},{G},{B})";
-    }
-
-    // Gibt gut unterscheidbare Farbe für eine Domain zurück
-    private string GetColorForDomain(string url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-            return "rgb(200,200,200)";
-
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-            return "rgb(200,200,200)";
-
-        string domain = uri.Host.ToLower();
-
-        // Falls schon eine Farbe existiert → zurückgeben
-        if (domainColors.ContainsKey(domain))
-            return domainColors[domain];
-
-        // Neuen Hue-Wert wählen
-        int hue = (usedHues.Count * HueStep) % 360;
-        usedHues.Add(hue);
-
-        // Farbe generieren
-        string color = HslToRgb(hue, Saturation, Lightness);
-
-        domainColors[domain] = color;
-        return color;
-    }
-
-    //------------------------------------------------------------
 	// JavaScript Interop: Scrollen, Zoomen, Resizing
     //------------------------------------------------------------
 
@@ -973,7 +886,7 @@
             isProgrammaticScroll = false;
 
             UpdateVisibleTimestamps();
-            RecalculatePositions();
+            Refresh();
             StateHasChanged();
             return;
         }
@@ -1515,7 +1428,7 @@
 
             @foreach (var domainEntry in SummarizedEntries)
             {
-                var color = GetColorForDomain(domainEntry.Url);
+                var color = ColorService.GetColor(domainEntry.Url);
 
                 <div class="domain-container">
                     
@@ -1593,7 +1506,7 @@
                                  style="position: absolute;
                             left: calc(@($"{sub.Position}px - 6px"));
                             top:calc(@topStyle);
-                            color:@GetColorForDomain(sub.Url);
+                                color:@ColorService.GetColor(sub.Url);
                             cursor:pointer;
                             z-index:21;"
                              @onclick="() => SelectSubEntry(domainEntry, sub)">
@@ -1602,7 +1515,7 @@
                                 {
                                     // Hohles Quadrat für Suchmaschinen
                                     <div class="domain-marker square"
-                                         style="width:20px; height:20px; color:@GetColorForDomain(sub.Url); top:calc(@topStyleSquare);">
+                                         style="width:20px; height:20px; color:@ColorService.GetColor(sub.Url); top:calc(@topStyleSquare);">
                                     </div>
                                 }
                                 else if (string.IsNullOrEmpty(sub.ReferrerUrl))
@@ -1838,7 +1751,7 @@
                             _ => 33
                         };
 
-                        string color = GetColorForDomain(matchingDomain.Url);
+                        string color = ColorService.GetColor(matchingDomain.Url);
 
                         <line x1="@domainPosX"
                               y1="@($"{domainPosY}%")"
@@ -1911,7 +1824,7 @@
                 double extensionPosY = 64;
 
                 // 5️⃣ Farbe
-                string color = GetColorForDomain(matchingDomain.Url);
+                    string color = ColorService.GetColor(matchingDomain.Url);
 
                 // 6️⃣ Linie
                 <line x1="@domainPosX"
