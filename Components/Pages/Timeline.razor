@@ -70,7 +70,7 @@
     private int currentPivotIndex = 0; // Index in State.BrowserEntries
     private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
 
-    private bool allExpanded = false;
+    private bool allExpanded = true;
     private bool showDebug = false;
 
     // CONTEXT
@@ -325,6 +325,13 @@
         State.BrowserEntries,
         zoomLevels[currentZoomIndex].seconds
         );
+
+        // Damit alles expanded ist gleich zu beginn
+        foreach (var entry in SummarizedEntries)
+        {
+            entry.IsExpanded = allExpanded;
+            expandedStates[entry.Domain] = allExpanded;
+        }
 
         foreach (var entry in SummarizedEntries)
         {
