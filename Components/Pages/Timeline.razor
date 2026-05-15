@@ -12,6 +12,7 @@
 @inject PersistStateService PersistService // falls benötigt
 @inject TimelineAnomalyService AnomalyService
 @inject TimelineColorService ColorService
+@inject TimelineRenderCacheService RenderCache
 
 
 @code {
@@ -128,15 +129,6 @@
     "exalead.com",        // Exalead
     "seznam.cz"           // Seznam
     };
-
-
-    // Zoomstufen in Units statt Sekunden
-    public class TimestampEntry
-    {
-        public int Index { get; set; }
-        public DateTime Time { get; set; }
-        public int Position { get; set; }
-    }
 
     private readonly (int seconds, TimeUnit unit)[] zoomLevels = new[]
 {
@@ -309,18 +301,20 @@
         zoomLevels[currentZoomIndex].seconds
         );
 
-        // Damit alles expanded ist gleich zu beginn
         foreach (var entry in SummarizedEntries)
         {
-            entry.IsExpanded = allExpanded;
-            expandedStates[entry.Domain] = allExpanded;
-        }
+            // Farbe nur einmal berechnen
+            entry.RenderColor = ColorService.GetColor(entry.Url);
 
-        foreach (var entry in SummarizedEntries)
-        {
+            // Expand-State übernehmen oder initial setzen
             if (expandedStates.TryGetValue(entry.Domain, out bool expanded))
             {
                 entry.IsExpanded = expanded;
+            }
+            else
+            {
+                entry.IsExpanded = allExpanded;
+                expandedStates[entry.Domain] = allExpanded;
             }
         }
 
@@ -382,6 +376,16 @@
         UpdateVisibleTimestamps();
 
         InvokeAsync(StateHasChanged);
+
+        RenderCache.BuildVisibleCaches(
+            State.BrowserCookies,
+            UserInputs,
+            State.Extensions,
+            State.StorageEntries,
+            SummarizedEntries,
+            Anomalies,
+            viewportWidth
+        );
     }
 
     private void BuildArtifactTimeline()
@@ -1321,7 +1325,7 @@
                                 style="@GetArtifactStyle(a)"
                                 @onclick="() => FocusAnomaly(a)">
                                 @a.Type <br />
-                                px=@Math.Round(a.Position, 1)
+                                px=@Math.Round((decimal)a.Position, 1)
                             </li>
                         }
                     </ul>
@@ -1330,6 +1334,8 @@
             </div>
         </div>
     }
+
+    
 
     <!-- LEFT SIDE OF TIMELINE -->
     <div class="legend-area @(isNavOpen ? "shifted" : "full")">
@@ -1428,7 +1434,6 @@
 
             @foreach (var domainEntry in SummarizedEntries)
             {
-                var color = ColorService.GetColor(domainEntry.Url);
 
                 <div class="domain-container">
                     
@@ -1446,10 +1451,10 @@
                         "domain-marker filled";
 
                         <div class="@domainClass"
-                             style="left: calc(@($"{domainEntry.Position}px - 10px")); color:@color"
+                             style="left: calc(@($"{domainEntry.Position}px - 10px")); color:@domainEntry.RenderColor"
                              @onclick="() => ExpandAndFocus(domainEntry)">
 
-                            <div class="domaine-tooltip" style="background-color:@color;">
+                            <div class="domaine-tooltip" style="background-color:color:@domainEntry.RenderColor;">
                                 <div><strong>Zeitstempel: @domainEntry.VisitTime</strong></div>
                                 <div>Domäne: @domainEntry.Domain</div>
                             </div>
@@ -1477,7 +1482,7 @@
                             left:@($"{firstPos}px");
                             width:@($"{lastPos - firstPos}px");
                             height:2px;
-                            background-color:@color;
+                            background-color:@domainEntry.RenderColor;
                             z-index:20;">
                             </div>
                         }
@@ -1533,7 +1538,7 @@
                                     </svg>
                                 }
 
-                                <div class="subentry-tooltip" style="background-color:@color;">
+                                <div class="subentry-tooltip" style="background-color:@domainEntry.RenderColor;">
                                     <div><strong>Zeitstempel: @sub.VisitTime</strong></div>
                                     <div>URL: @sub.Url</div>
                                     @if (!string.IsNullOrEmpty(sub.ReferrerUrl))
@@ -1554,10 +1559,8 @@
 
 
             <!-- Cookies Einträge in der Zeitachse -->
-            @foreach (var cookie in State.BrowserCookies)
+            @foreach (var cookie in RenderCache.VisibleCookies)
             {
-                if (cookie.Position > -50 && cookie.Position < viewportWidth - 300)
-                {
                     <div class="cookie-marker"
                          style="left: calc(@($"{cookie.Position}px - 5px"))"
                          data-host="@cookie.Host"
@@ -1566,16 +1569,13 @@
                          data-time="@cookie.Created"
                          @onclick="() => SelectCookie(cookie)">
                     </div>
-                }
             }
 
 
 
             <!-- User Input Einträge in der Zeitachse -->
-        @foreach (var item in UserInputs)
+            @foreach (var item in RenderCache.VisibleInputs)
         {
-            if (item.Position > -50 && item.Position < viewportWidth - 300)
-            {
                 string cssClass = item.Type switch
                 {
                     UserInputType.SearchQuery => "search",
@@ -1591,15 +1591,12 @@
                      data-type="@item.Type"
                      @onclick="() => SelectInput(item)">
                 </div>
-            }
         }
 
 
         <!-- Extensions in der Zeitachse -->
-        @foreach (var ext in State.Extensions)
+            @foreach (var ext in RenderCache.VisibleExtensions)
         {
-            if (ext.Position > -50 && ext.Position < viewportWidth - 300)
-            {
                 <div class="extension-marker"
                      style="left: calc(@($"{ext.Position}px - 5px"))"
                      data-name="@ext.Name"
@@ -1609,14 +1606,11 @@
                      data-time="@ext.InstallTime"
                      @onclick="() => SelectExtension(ext)">
                 </div>
-            }
         }
 
         <!-- STORAGE Einträge in der Zeitachse -->
-        @foreach (var s in State.StorageEntries)
+            @foreach (var s in RenderCache.VisibleStorage)
         {
-            if (s.Position > -50 && s.Position < viewportWidth - 300)
-            {
                 <div class="storage-marker @(s.IsSensitive ? "sensitive" : "")"
                      style="left: calc(@($"{s.Position}px - 5px"))"
                      data-key="@s.Key"
@@ -1624,38 +1618,7 @@
                      data-value="@s.Value"
                      @onclick="() => SelectStorage(s)">
                 </div>
-            }
         }
-
-
-
-        @if (selectedExtension != null)
-        {
-            <ExtensionDetails Data="selectedExtension" OnClose="CloseAll" />
-        }
-        else if (selectedCookie != null)
-        {
-            <CookieDetails Data="selectedCookie" OnClose="CloseAll" />
-        }
-        else if (selectedInput != null)
-        {
-            <AutofillDetails Data="selectedInput" OnClose="CloseAll" />
-        }
-        else if (selectedSubEntry != null)
-        {
-            <SubEntryDetails Data="selectedSubEntry" OnClose="CloseAll" />
-        }
-        else if (selectedDomain != null)
-        {
-            <DomainDetails Data="selectedDomain" OnClose="CloseAll" />
-        }
-        else if (selectedStorage != null)
-        {
-            <StorageDetails Data="selectedStorage" OnClose="CloseAll" />
-        }
-
-        
-
 
 
             <!-- SVG-Sammelcontainer für alle Linien -->
@@ -1920,7 +1883,7 @@
 
             }
 
-            @foreach (var anomaly in Anomalies)
+            @foreach (var anomaly in RenderCache.VisibleAnomalies)
             {
                 var color = GetSeverityColor(anomaly.Severity);
 
@@ -1989,5 +1952,35 @@
 
 
         </div>
+
     </div>
+</div>
+
+<div class="ui-overlay-root">
+
+    @if (selectedExtension != null)
+    {
+        <ExtensionDetails Data="selectedExtension" OnClose="CloseAll" />
+    }
+    else if (selectedCookie != null)
+    {
+        <CookieDetails Data="selectedCookie" OnClose="CloseAll" />
+    }
+    else if (selectedInput != null)
+    {
+        <AutofillDetails Data="selectedInput" OnClose="CloseAll" />
+    }
+    else if (selectedSubEntry != null)
+    {
+        <SubEntryDetails Data="selectedSubEntry" OnClose="CloseAll" />
+    }
+    else if (selectedDomain != null)
+    {
+        <DomainDetails Data="selectedDomain" OnClose="CloseAll" />
+    }
+    else if (selectedStorage != null)
+    {
+        <StorageDetails Data="selectedStorage" OnClose="CloseAll" />
+    }
+
 </div>

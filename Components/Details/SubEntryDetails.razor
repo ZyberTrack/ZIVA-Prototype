@@ -1,26 +1,46 @@
-﻿@using ZIVA_Prototype.Components.Models.Timeline;
-
+﻿@using ZIVA_Prototype.Components.Models.Timeline
 
 <div class="entry-details">
 
     <div class="entry-header">
         <span>Page Visit</span>
-        <button class="close-btn" @onclick="OnClose">✕</button>
+
+        <button class="close-btn"
+                @onclick="OnClose">
+            ✕
+        </button>
     </div>
 
     <div class="entry-content">
-        <p><strong>URL:</strong> @(Data.Url ?? "-")</p>
-        <p><strong>Time:</strong> @Data.VisitTime</p>
+
+        <div class="entry-row">
+            <strong>URL</strong><br />
+            @(Data.Url ?? "-")
+        </div>
+
+        <div class="entry-row">
+            <strong>Time</strong><br />
+            @Data.VisitTime
+        </div>
 
         @if (!string.IsNullOrEmpty(Data.ReferrerUrl))
         {
-            <p><strong>Referrer:</strong> @Data.ReferrerUrl</p>
+            <div class="entry-row">
+                <strong>Referrer</strong><br />
+                @Data.ReferrerUrl
+            </div>
         }
+
     </div>
 
 </div>
 
 @code {
-    [Parameter] public BrowserHistoryEntry Data { get; set; }
-    [Parameter] public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public BrowserHistoryEntry Data { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
 }

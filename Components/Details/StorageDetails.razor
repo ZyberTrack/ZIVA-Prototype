@@ -1,91 +1,100 @@
-﻿@using ZIVA_Prototype.Components.Models.Timeline;
-
+﻿@using ZIVA_Prototype.Components.Models.Timeline
 
 <div class="entry-details storage-details">
 
     <div class="entry-header">
         <span>Storage Artifact</span>
-        <button class="close-btn" @onclick="OnClose">✕</button>
+
+        <button class="close-btn"
+                @onclick="OnClose">
+            ✕
+        </button>
     </div>
 
     <div class="entry-content">
 
-        <p>
-            <strong>Type:</strong>
+        <div class="entry-row">
+            <strong>Type</strong><br />
             @Data.Type
-        </p>
+        </div>
 
-        <p>
-            <strong>Origin:</strong><br />
+        <div class="entry-row">
+            <strong>Origin</strong><br />
             @Data.Origin
-        </p>
+        </div>
 
-        <p>
-            <strong>Timestamp:</strong><br />
+        <div class="entry-row">
+            <strong>Timestamp</strong><br />
             @Data.Time.ToLocalTime()
-        </p>
+        </div>
 
         @if (Data.LastModified != null)
         {
-            <p>
-                <strong>Last Modified:</strong><br />
+            <div class="entry-row">
+                <strong>Last Modified</strong><br />
                 @Data.LastModified.Value.ToLocalTime()
-            </p>
+            </div>
         }
 
-        <hr />
-
-        <p>
-            <strong>Key:</strong><br />
+        <div class="entry-row">
+            <strong>Key</strong><br />
             @Data.Key
-        </p>
+        </div>
 
-        <p>
-            <strong>Value:</strong>
-        </p>
+        <div class="entry-row">
+            <strong>Value</strong>
 
-        <div class="storage-value">
-            @Data.Value
+            <div class="storage-value">
+                @Data.Value
+            </div>
         </div>
 
         @if (Data.IsSensitive)
         {
-            <div class="risk-warning">
+            <div class="entry-row risk-warning">
                 ⚠ Sensitive / Token-like Content
             </div>
         }
 
         @if (Data.IsBinary)
         {
-            <div class="binary-warning">
+            <div class="entry-row binary-warning">
                 Binary / Encoded Content detected
             </div>
         }
 
         @if (!string.IsNullOrWhiteSpace(Data.RawKeyHex))
         {
-            <hr />
+            <div class="entry-row">
+                <strong>Raw Key (HEX)</strong>
 
-            <p><strong>Raw Key (HEX)</strong></p>
-
-            <div class="hex-block">
-                @Data.RawKeyHex
+                <div class="hex-block">
+                    @Data.RawKeyHex
+                </div>
             </div>
         }
 
         @if (!string.IsNullOrWhiteSpace(Data.RawValueHex))
         {
-            <p><strong>Raw Value (HEX)</strong></p>
+            <div class="entry-row">
+                <strong>Raw Value (HEX)</strong>
 
-            <div class="hex-block">
-                @Data.RawValueHex
+                <div class="hex-block">
+                    @Data.RawValueHex
+                </div>
             </div>
         }
 
     </div>
+
 </div>
 
 @code {
-    [Parameter] public StorageEntry Data { get; set; }
-    [Parameter] public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public StorageEntry Data { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
 }

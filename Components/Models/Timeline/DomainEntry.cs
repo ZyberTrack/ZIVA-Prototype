@@ -10,6 +10,8 @@
         public bool IsSearch { get; set; }
         public int Position { get; set; } = 0; // für Timeline
 
+        public string RenderColor { get; set; } = ""; // for domain Coloring
+
         public bool IsHeavyCluster { get; set; }
         public int HeavyClusterIndex { get; set; }
 

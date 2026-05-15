@@ -26,6 +26,6 @@ namespace ZIVA_Prototype.Components.Models.Timeline
 
         public DateTime? LastModified { get; set; }
 
-        public double Position { get; set; }
+        public int Position { get; set; }
     }
 }

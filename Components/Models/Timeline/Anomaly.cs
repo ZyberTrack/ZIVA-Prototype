@@ -8,7 +8,7 @@
 
         public string Url { get; set; } = "";
 
-        public double Position { get; set; }
+        public int Position { get; set; }
 
         public DomainEntry LinkedDomain { get; set; } = null!;
 

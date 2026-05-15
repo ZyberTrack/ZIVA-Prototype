@@ -1,24 +1,54 @@
-﻿@using ZIVA_Prototype.Components.Models.Timeline;
-@using ZIVA_Prototype.Components.Models.Enums;
+﻿@using ZIVA_Prototype.Components.Models.Timeline
+@using ZIVA_Prototype.Components.Models.Enums
 
 <div class="entry-details">
 
     <div class="entry-header">
         <span>Cookie: @Data.Name</span>
-        <button class="close-btn" @onclick="OnClose">✕</button>
+
+        <button class="close-btn"
+                @onclick="OnClose">
+            ✕
+        </button>
     </div>
 
     <div class="entry-content">
-        <p><strong>Host:</strong> @Data.Host</p>
-        <p><strong>Name:</strong> @Data.Name</p>
-        <p><strong>Created:</strong> @Data.Created</p>
-        <p><strong>Last Accessed:</strong> @Data.LastAccessed</p>
-        <p><strong>Expires:</strong> @Data.Expires</p>
+
+        <div class="entry-row">
+            <strong>Host</strong><br />
+            @Data.Host
+        </div>
+
+        <div class="entry-row">
+            <strong>Name</strong><br />
+            @Data.Name
+        </div>
+
+        <div class="entry-row">
+            <strong>Created</strong><br />
+            @Data.Created
+        </div>
+
+        <div class="entry-row">
+            <strong>Last Accessed</strong><br />
+            @Data.LastAccessed
+        </div>
+
+        <div class="entry-row">
+            <strong>Expires</strong><br />
+            @Data.Expires
+        </div>
+
     </div>
 
 </div>
 
 @code {
-    [Parameter] public BrowserCookieEntry Data { get; set; }
-    [Parameter] public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public BrowserCookieEntry Data { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
 }

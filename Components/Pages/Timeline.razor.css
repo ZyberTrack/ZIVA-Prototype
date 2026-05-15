@@ -468,22 +468,6 @@
 }
 
 
-
-
-
-/* Wenn auf Artefakt geklickt wird */
-.entry-details {
-    margin-top: 20px;
-    background-color: #f0f8ff;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #cce;
-    max-width: 600px;
-    font-size: 14px;
-}
-
-
-
 .cookie-marker {
     position: absolute;
     top: calc(43% - 10px);
@@ -668,21 +652,6 @@
     .anomaly-marker[data-severity="1"] {
         --sev-color: #c9c1bb; /* Warmes Grau mit leichtem Rotstich */
     }
-
-.entry-details {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    max-width: 500px;
-    max-height: 60vh;
-    background: #111;
-    color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.6);
-    overflow: hidden;
-    z-index: 9999;
-    font-size: 13px;
-}
 
 /* Header (Drag Area) */
 .entry-header {

@@ -14,22 +14,22 @@
 
     <div class="entry-content">
 
-        <p>
-            <strong>Type:</strong>
+        <div class="entry-row">
+            <strong>Type</strong><br />
             @GetTypeLabel(Data.Type)
-        </p>
+        </div>
 
-        <p>
-            <strong>Value:</strong>
+        <div class="entry-row">
+            <strong>Value</strong><br />
             @(string.IsNullOrWhiteSpace(Data.Value)
                 ? "-"
                 : Data.Value)
-        </p>
+        </div>
 
-        <p>
-            <strong>Timestamp:</strong>
+        <div class="entry-row">
+            <strong>Timestamp</strong><br />
             @Data.Time
-        </p>
+        </div>
 
     </div>
 

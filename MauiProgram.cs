@@ -50,6 +50,7 @@ namespace ZIVA_Prototype
             builder.Services.AddSingleton<PersistStateService>();
             builder.Services.AddSingleton<TimelineAnomalyService>();
             builder.Services.AddSingleton<TimelineColorService>();
+            builder.Services.AddSingleton<TimelineRenderCacheService>();
 
 
 #if DEBUG

@@ -10,6 +10,6 @@ namespace ZIVA_Prototype.Components.Models.Timeline
         public string? Title { get; set; }
         public string? ReferrerUrl { get; set; }
         public string? ReferrerTitle { get; set; }
-        public double Position { get; set; }
+        public int Position { get; set; }
     }
 }
