@@ -75,7 +75,9 @@
     private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
 
     private bool allExpanded = true;
-    private bool showDebug = false;
+    private bool showDebug = true;
+
+    private double artifactTableHeight = 170;
 
     // CONTEXT
     private TimelineScaleContext ScaleContext =>
@@ -968,6 +970,22 @@
         }
     }
 
+    private async Task StartArtifactResize(MouseEventArgs e)
+    {
+        await JS.InvokeVoidAsync(
+            "artifactResize.start",
+            DotNetObjectReference.Create(this));
+    }
+
+    [JSInvokable]
+    public void ResizeArtifactTable(double height)
+    {
+        artifactTableHeight =
+            Math.Max(20, Math.Min(height, 1000));
+
+        StateHasChanged();
+    }
+
     async Task ExpandAndFocus(DomainEntry domainEntry)
     {
         ResetSelection();
@@ -1405,7 +1423,12 @@
 
     @if (showDebug)
     {
-        <div class="artifact-table-overlay @(isNavOpen ? "shifted" : "full")">
+        <div class="artifact-table-overlay @(isNavOpen ? "shifted" : "full")"
+             style="height:@($"{artifactTableHeight}px")">
+
+            <div class="artifact-table-resize"
+                 @onmousedown="StartArtifactResize">
+            </div>
 
             <div class="artifact-side-header">
                 <span>Artefact Table</span>

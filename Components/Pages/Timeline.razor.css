@@ -689,14 +689,31 @@
     position: absolute;
     left: 0;
     right: 150px;
-    top: 66.5%;
     bottom: 0;
     z-index: 99999;
     display: flex;
     background: rgba(33,43,54,0.98);
     backdrop-filter: blur(10px);
     overflow: hidden;
+    min-height: 10px;
+    max-height: 95vh;
 }
+
+.artifact-table-resize {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    cursor: ns-resize;
+    z-index: 999999;
+    background: rgba(255,255,255,0.03);
+    transition: background 0.12s ease;
+}
+
+    .artifact-table-resize:hover {
+        background: rgba(255,255,255,0.12);
+    }
 
     /* Sidebar offen */
     .artifact-table-overlay.shifted {
