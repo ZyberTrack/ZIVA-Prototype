@@ -471,7 +471,6 @@
 .cookie-marker {
     position: absolute;
     top: calc(43% - 10px);
-    /*left: calc(-6px);  damit es auf der Achsenlinie liegt */
     width: 7px;
     height: 30px;
     background-color: #6846FC;

@@ -1,0 +1,158 @@
+﻿@using ZIVA_Prototype.Components.Models.Timeline;
+@using ZIVA_Prototype.Components.Models.Enums;
+
+<div class="entry-details anomaly-details"
+     style="@GetSeverityStyle()">
+
+    <div class="entry-header">
+        <span>
+            Anomaly Details
+
+            <span class="severity-badge"
+                  style="@GetBadgeStyle()">
+                SEV-@Data.Severity
+            </span>
+        </span>
+
+        <button class="close-btn"
+                @onclick="OnClose">
+            ✕
+        </button>
+    </div>
+
+    <div class="entry-content">
+
+        <div class="entry-row">
+            <strong>Type</strong><br />
+            @Data.Type
+        </div>
+
+        <div class="entry-row">
+            <strong>Description</strong><br />
+            @(string.IsNullOrWhiteSpace(Data.Description)
+                ? "-"
+                : Data.Description)
+        </div>
+
+        <div class="entry-row">
+            <strong>Severity</strong><br />
+            @Data.Severity / 5
+        </div>
+
+        <div class="entry-row">
+            <strong>Occurrences</strong><br />
+            @Data.Count
+        </div>
+
+        <div class="entry-row">
+            <strong>First Seen</strong><br />
+            @Data.FirstSeen
+        </div>
+
+        <div class="entry-row">
+            <strong>Last Seen</strong><br />
+            @Data.LastSeen
+        </div>
+
+        <div class="entry-row">
+            <strong>Duration</strong><br />
+            @((Data.LastSeen - Data.FirstSeen).ToString())
+        </div>
+
+        <div class="entry-row">
+            <strong>Target Type</strong><br />
+            @Data.TargetType
+        </div>
+
+        <div class="entry-row">
+            <strong>Timeline Position</strong><br />
+            X: @Data.Position
+        </div>
+
+        <div class="entry-row">
+            <strong>Target Position</strong><br />
+            X: @Math.Round(Data.TargetPosition, 1)
+            <br />
+            Y: @Math.Round(Data.TargetYPercent, 1)%
+        </div>
+
+        <div class="entry-row">
+            <strong>URL</strong><br />
+            @(string.IsNullOrWhiteSpace(Data.Url)
+                ? "-"
+                : Data.Url)
+        </div>
+
+        @if (Data.LinkedDomain != null)
+        {
+            <div class="entry-row">
+                <strong>Linked Domain</strong><br />
+                @Data.LinkedDomain.Domain
+            </div>
+
+            <div class="entry-row">
+                <strong>Linked Visits</strong><br />
+                @(Data.LinkedDomain.SubEntries?.Count ?? 0)
+            </div>
+
+            <div class="entry-row">
+                <strong>Domain Expanded</strong><br />
+                @(Data.LinkedDomain.IsExpanded ? "Yes" : "No")
+            </div>
+
+            <div class="entry-row">
+                <strong>Heavy Cluster</strong><br />
+                @(Data.LinkedDomain.IsHeavyCluster ? "Yes" : "No")
+            </div>
+        }
+
+    </div>
+
+</div>
+
+@code {
+
+    [Parameter]
+    public AnomalyEntry Data { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private string GetSeverityStyle()
+    {
+        return Data.Severity switch
+        {
+            5 =>
+                "border-top:3px solid #ff2b2b;" +
+                "box-shadow:0 0 18px rgba(255,43,43,0.18);",
+
+            4 =>
+                "border-top:3px solid #ff7a2b;" +
+                "box-shadow:0 0 18px rgba(255,122,43,0.16);",
+
+            3 =>
+                "border-top:3px solid #ffb52b;" +
+                "box-shadow:0 0 16px rgba(255,181,43,0.14);",
+
+            2 =>
+                "border-top:3px solid #ffe12b;" +
+                "box-shadow:0 0 14px rgba(255,225,43,0.12);",
+
+            _ =>
+                "border-top:3px solid #6cff6c;" +
+                "box-shadow:0 0 12px rgba(108,255,108,0.10);"
+        };
+    }
+
+    private string GetBadgeStyle()
+    {
+        return Data.Severity switch
+        {
+            5 => "background:#ff2b2b;",
+            4 => "background:#ff7a2b;",
+            3 => "background:#ffb52b;",
+            2 => "background:#ffe12b; color:black;",
+            _ => "background:#6cff6c; color:black;"
+        };
+    }
+}

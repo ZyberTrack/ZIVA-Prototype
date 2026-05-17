@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Microsoft.WindowsAppSDK.Runtime.Packages;
+using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
-using ZIVA_Prototype.Components.Models.Timeline;
+using System.Text;
 using ZIVA_Prototype.Components.Models.Enums;
+using ZIVA_Prototype.Components.Models.Timeline;
 
 namespace ZIVA_Prototype.Services.Timeline
 {
@@ -45,7 +46,7 @@ namespace ZIVA_Prototype.Services.Timeline
                 if (blacklistDomains.Any(b =>
                     domain.Domain.Contains(b, StringComparison.OrdinalIgnoreCase)))
                 {
-                    AddOrUpdateAnomaly(
+                    var anomaly = AddOrUpdateAnomaly(
                         anomalyIndex,
                         AnomalyType.BlacklistedDomain,
                         domain,
@@ -54,6 +55,9 @@ namespace ZIVA_Prototype.Services.Timeline
                         description: "Domain befindet sich auf der Blacklist"
                     );
 
+                    anomaly.LinkedHistory.AddRange(domain.SubEntries);
+                    anomaly.TargetType = AnomalyTargetType.Domain;
+
                     continue;
                 }
 
@@ -61,7 +65,7 @@ namespace ZIVA_Prototype.Services.Timeline
                 if (suspiciousDomains.Any(s =>
                     domain.Domain.Contains(s, StringComparison.OrdinalIgnoreCase)))
                 {
-                    AddOrUpdateAnomaly(
+                    var anomaly = AddOrUpdateAnomaly(
                         anomalyIndex,
                         AnomalyType.SuspiciousRedirect,
                         domain,
@@ -69,6 +73,11 @@ namespace ZIVA_Prototype.Services.Timeline
                         severity: 3,
                         description: "Verdächtige interne oder lokale Domain"
                     );
+
+                    anomaly.LinkedHistory.AddRange(domain.SubEntries);
+                    anomaly.TargetType = AnomalyTargetType.Domain;
+
+                    continue;
                 }
             }
 
@@ -94,7 +103,7 @@ namespace ZIVA_Prototype.Services.Timeline
         }
 
 
-        void AddOrUpdateAnomaly(
+        AnomalyEntry AddOrUpdateAnomaly(
         Dictionary<string, AnomalyEntry> index,
         AnomalyType type,
         DomainEntry domain,
@@ -114,19 +123,40 @@ namespace ZIVA_Prototype.Services.Timeline
                 existing.FirstSeen = existing.FirstSeen < first ? existing.FirstSeen : first;
                 existing.LastSeen = existing.LastSeen > last ? existing.LastSeen : last;
                 existing.Severity = Math.Max(existing.Severity, severity);
-                return;
+                return existing;
             }
 
-            index[key] = new AnomalyEntry
+            var created = new AnomalyEntry
             {
                 FirstSeen = first,
                 LastSeen = last,
+
                 LinkedDomain = domain,
+
                 Type = type,
+
                 Severity = severity,
+
                 Description = description,
-                Count = 1
+
+                Count = 1,
+
+                Url = domain.Url,
+                Domain = domain.Domain,
+
+                IsBlacklistMatch =
+        type == AnomalyType.BlacklistedDomain,
+
+                IsSuspiciousRedirect =
+        type == AnomalyType.SuspiciousRedirect,
+
+                IsDeletedHistoryIndicator =
+        type == AnomalyType.DeletedHistoryIndicator
             };
+
+            index[key] = created;
+
+            return created;
         }
 
 
@@ -178,7 +208,7 @@ namespace ZIVA_Prototype.Services.Timeline
                         cookie.Created
                     );
 
-                    AddOrUpdateAnomaly(
+                    var anomaly = AddOrUpdateAnomaly(
                         anomalyIndex,
                         AnomalyType.DeletedHistoryIndicator,
                         linkedDomain ?? new DomainEntry { Domain = cookieDomain },
@@ -186,6 +216,11 @@ namespace ZIVA_Prototype.Services.Timeline
                         severity: 4,
                         description: $"Cookie für Domain '{cookieDomain}' ohne passenden Verlaufseintrag"
                     );
+
+                    anomaly.LinkedCookies.Add(cookie);
+                    anomaly.TargetType = AnomalyTargetType.Cookie;
+                    anomaly.TargetPosition = cookie.Position;
+                    anomaly.TargetYPercent = 43;
                 }
             }
         }
@@ -222,7 +257,7 @@ namespace ZIVA_Prototype.Services.Timeline
                         autofill.DateCreated
                     );
 
-                    AddOrUpdateAnomaly(
+                    var anomaly = AddOrUpdateAnomaly(
                         anomalyIndex,
                         AnomalyType.DeletedHistoryIndicator,
                         linkedDomain ?? new DomainEntry { Domain = "[unknown]" },
@@ -230,10 +265,12 @@ namespace ZIVA_Prototype.Services.Timeline
                         severity: 5,
                         description: $"Autofill '{autofill.Name}' ohne zugehörigen Seitenaufruf"
                     );
+
+                    anomaly.TargetType = AnomalyTargetType.Autofill;
+                    anomaly.TargetPosition = autofill.Position;
+                    anomaly.TargetYPercent = 50;
                 }
             }
         }
-
-
     }
 }

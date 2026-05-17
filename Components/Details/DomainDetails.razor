@@ -37,6 +37,50 @@
                     : "Referral")
         </div>
 
+        <div class="entry-row">
+            <strong>Expanded</strong><br />
+            @(Data.IsExpanded ? "Yes" : "No")
+        </div>
+
+        <div class="entry-row">
+            <strong>Heavy Cluster</strong><br />
+            @(Data.IsHeavyCluster ? "Yes" : "No")
+        </div>
+
+        <div class="entry-row">
+            <strong>Timeline Position</strong><br />
+            @Data.Position
+        </div>
+
+        @if (RelatedAnomalies.Any())
+        {
+            <div class="entry-row">
+                <strong>Related Anomalies</strong><br />
+
+                @foreach (var anomaly in RelatedAnomalies)
+                {
+                    <div class="linked-anomaly"
+                         style="@GetAnomalyStyle(anomaly)"
+                         @onclick="() => OnFocusAnomaly.InvokeAsync(anomaly)">
+
+                        <strong>@anomaly.Type</strong>
+
+                        <br />
+
+                        Severity:
+                        @anomaly.Severity
+
+                        <br />
+
+                        @(string.IsNullOrWhiteSpace(anomaly.Description)
+                            ? "-"
+                            : anomaly.Description)
+
+                    </div>
+                }
+            </div>
+        }
+
     </div>
 
 </div>
@@ -49,4 +93,30 @@
     [Parameter]
     public EventCallback OnClose { get; set; }
 
+    [Parameter]
+    public List<AnomalyEntry> Anomalies { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<AnomalyEntry> OnFocusAnomaly { get; set; }
+
+    private List<AnomalyEntry> RelatedAnomalies =>
+        Anomalies
+            .Where(a =>
+                a.LinkedDomain == Data ||
+                a.LinkedHistory.Any(h =>
+                    Data.SubEntries.Contains(h)))
+            .OrderByDescending(a => a.Severity)
+            .ToList();
+
+    private string GetAnomalyStyle(AnomalyEntry anomaly)
+    {
+        return anomaly.Severity switch
+        {
+            5 => "border-left:4px solid #ff2b2b;",
+            4 => "border-left:4px solid #ff7a2b;",
+            3 => "border-left:4px solid #ffb52b;",
+            2 => "border-left:4px solid #ffe12b;",
+            _ => "border-left:4px solid #6cff6c;"
+        };
+    }
 }

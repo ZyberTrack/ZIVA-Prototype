@@ -31,6 +31,35 @@
             @Data.Time
         </div>
 
+        @if (RelatedAnomalies.Any())
+        {
+            <div class="entry-row">
+                <strong>Related Anomalies</strong><br />
+
+                @foreach (var anomaly in RelatedAnomalies)
+                {
+                    <div class="linked-anomaly"
+                         style="@GetAnomalyStyle(anomaly)"
+                         @onclick="() => OnFocusAnomaly.InvokeAsync(anomaly)">
+
+                        <strong>@anomaly.Type</strong>
+
+                        <br />
+
+                        Severity:
+                        @anomaly.Severity
+
+                        <br />
+
+                        @(string.IsNullOrWhiteSpace(anomaly.Description)
+                            ? "-"
+                            : anomaly.Description)
+
+                    </div>
+                }
+            </div>
+        }
+
     </div>
 
 </div>
@@ -42,6 +71,30 @@
 
     [Parameter]
     public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public List<AnomalyEntry> Anomalies { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<AnomalyEntry> OnFocusAnomaly { get; set; }
+
+    private List<AnomalyEntry> RelatedAnomalies =>
+        Anomalies
+            .Where(a => a.LinkedInputs.Contains(Data))
+            .OrderByDescending(a => a.Severity)
+            .ToList();
+
+    private string GetAnomalyStyle(AnomalyEntry anomaly)
+    {
+        return anomaly.Severity switch
+        {
+            5 => "border-left:4px solid #ff2b2b;",
+            4 => "border-left:4px solid #ff7a2b;",
+            3 => "border-left:4px solid #ffb52b;",
+            2 => "border-left:4px solid #ffe12b;",
+            _ => "border-left:4px solid #6cff6c;"
+        };
+    }
 
     private string GetTypeLabel(
         UserInputType type)

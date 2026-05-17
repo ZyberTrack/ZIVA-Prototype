@@ -46,6 +46,7 @@
     private BrowserHistoryEntry? selectedSubEntry;
     private StorageEntry? selectedStorage;
     private TimelineArtifact? focusedArtifact;
+    private AnomalyEntry? selectedAnomaly;
 
     private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
     private bool isZooming = false; // Flag to indicate if zooming is in progress
@@ -241,6 +242,7 @@
         selectedDomain = null;
         selectedSubEntry = null;
         selectedStorage = null;
+        selectedAnomaly = null;
     }
 
     async Task SelectSubEntry(
@@ -1100,9 +1102,27 @@
     {
         ResetSelection();
 
+        selectedAnomaly = anomaly;
+
         SyncFocusedArtifact(anomaly);
 
-        await CenterOnTime(anomaly.FirstSeen);
+        DateTime focusTime;
+
+        if (anomaly.FirstSeen == anomaly.LastSeen)
+        {
+            focusTime = anomaly.FirstSeen;
+        }
+        else
+        {
+            long ticks =
+                (anomaly.FirstSeen.Ticks + anomaly.LastSeen.Ticks) / 2;
+
+            focusTime = new DateTime(ticks);
+        }
+
+        await CenterOnTime(focusTime);
+
+        Refresh();
 
         StateHasChanged();
     }
@@ -1156,19 +1176,19 @@
             return artifact switch
             {
                 BrowserHistoryEntry h =>
-                    a.LinkedDomain?.SubEntries?.Contains(h) == true,
+                    a.LinkedHistory.Contains(h),
 
                 BrowserCookieEntry c =>
-                    Math.Abs((a.FirstSeen - c.Created).TotalSeconds) <= 1,
+                    a.LinkedCookies.Contains(c),
 
                 UserInputEntry i =>
-                    Math.Abs((a.FirstSeen - i.Time).TotalSeconds) <= 1,
+                    a.LinkedInputs.Contains(i),
 
                 BrowserExtensionEntry e =>
-                    Math.Abs((a.FirstSeen - e.InstallTime).TotalSeconds) <= 1,
+                    a.LinkedExtensions.Contains(e),
 
                 StorageEntry s =>
-                    Math.Abs((a.FirstSeen - s.Time).TotalSeconds) <= 1,
+                    a.LinkedStorage.Contains(s),
 
                 DomainEntry d =>
                     a.LinkedDomain == d,
@@ -1211,6 +1231,41 @@
         _ => "#9e9e9e"    // Grau
     };
 
+    string GetMarkerFocusStyle(object artifact)
+    {
+        if (!IsFocused(artifact))
+            return "";
+
+        return @"
+        transform:scale(1.4);
+        transform-origin:center;
+        filter:
+            brightness(1.25)
+            drop-shadow(0 0 6px rgba(255,255,255,0.45));
+        transition:
+            transform 0.12s ease,
+            filter 0.12s ease;
+    ";
+    }
+
+    string GetFocusedStyle(object artifact)
+    {
+        if (!IsFocused(artifact))
+            return "";
+
+        return @"
+        transform:scale(1.6);
+        transform-origin:center;
+        z-index:999;
+        filter:
+            brightness(1.35)
+            drop-shadow(0 0 6px rgba(255,255,255,0.55));
+        transition:
+            transform 0.12s ease,
+            filter 0.12s ease;
+    ";
+    }
+
     // Y-Position der Domain in Prozent
     double GetDomainYPercent(DomainEntry domain)
     {
@@ -1227,49 +1282,115 @@
     double AnomalyYPercent => 78;
 
 
-    IEnumerable<(double x, double yPercent)> GetAnomalyTargetPoints(DomainEntry domain)
+    IEnumerable<(double x, double yPercent)> GetAnomalyTargetPoints(
+    AnomalyEntry anomaly)
     {
-        double y = GetDomainYPercent(domain);
+        // -------------------------------------------------
+        // HISTORY / DOMAIN TARGETS
+        // -------------------------------------------------
 
-        if (domain.IsHeavyCluster || domain.IsExpanded)
+        var renderedSummaries = new HashSet<DomainEntry>();
+
+        foreach (var h in anomaly.LinkedHistory)
         {
-            foreach (var sub in domain.SubEntries)
-                yield return (sub.Position, y);
-            yield break;
+            var summary = SummarizedEntries.FirstOrDefault(
+                d => d.SubEntries.Contains(h));
+
+            if (summary == null)
+                continue;
+
+            double y = GetDomainYPercent(summary);
+
+            // Expandiert → einzelne History-Ziele
+            if (summary.IsExpanded)
+            {
+                yield return (h.Position, y);
+            }
+            else
+            {
+                // Nicht mehrfach dieselbe Summary rendern
+                if (renderedSummaries.Contains(summary))
+                    continue;
+
+                renderedSummaries.Add(summary);
+
+                yield return (summary.Position, y);
+            }
         }
 
-        yield return (domain.Position, y);
+        // -------------------------------------------------
+        // COOKIES
+        // -------------------------------------------------
+
+        foreach (var c in anomaly.LinkedCookies)
+        {
+            yield return (c.Position, 43);
+        }
+
+        // -------------------------------------------------
+        // INPUTS
+        // -------------------------------------------------
+
+        foreach (var i in anomaly.LinkedInputs)
+        {
+            yield return (i.Position, 50);
+        }
+
+        // -------------------------------------------------
+        // EXTENSIONS
+        // -------------------------------------------------
+
+        foreach (var e in anomaly.LinkedExtensions)
+        {
+            yield return (e.Position, 64);
+        }
+
+        // -------------------------------------------------
+        // STORAGE
+        // -------------------------------------------------
+
+        foreach (var s in anomaly.LinkedStorage)
+        {
+            yield return (s.Position, 57);
+        }
     }
 
-    // Hilfsmethode: Zielpunkt der Anomalie ermitteln (z.B. Cookie oder Autofill)
-    (double x, double yPercent)? GetAnomalyTargetPoint(AnomalyEntry anomaly)
+    bool IsAnomalyConnectionVisible(AnomalyEntry anomaly)
     {
-        switch (anomaly.Type)
+        double viewportStart = 0;
+        double viewportEnd = viewportWidth;
+
+        // Kugel sichtbar
+        if (anomaly.Position >= viewportStart &&
+            anomaly.Position <= viewportEnd)
+            return true;
+
+        // Deleted-History / einzelne Targets
+        if (anomaly.TargetPosition >= viewportStart &&
+            anomaly.TargetPosition <= viewportEnd)
+            return true;
+
+        // Domain-basierte Linien
+        if (anomaly.LinkedHistory != null)
         {
-            case AnomalyType.DeletedHistoryIndicator:
-                {
-                    // Cookie?
-                    var cookie = State.BrowserCookies?
-                    .FirstOrDefault(c =>
-                    Math.Abs((c.Created - anomaly.FirstSeen).TotalSeconds) <= 1);
+            foreach (var point in GetAnomalyTargetPoints(anomaly))
+            {
+                // Ziel sichtbar
+                if (point.x >= viewportStart &&
+                    point.x <= viewportEnd)
+                    return true;
 
-                    if (cookie != null)
-                        return (cookie.Position, 43); // Cookie-Linie
+                // Linie schneidet Viewport
+                double minX = Math.Min(point.x, anomaly.Position);
+                double maxX = Math.Max(point.x, anomaly.Position);
 
-                    // Autofill?
-                    var autofill = State.AutofillEntries?
-                    .FirstOrDefault(a =>
-                    Math.Abs((a.DateCreated - anomaly.FirstSeen).TotalSeconds) <= 1);
-
-                    if (autofill != null)
-                        return (autofill.Position, 50); // Autofill-Linie
-
-                    return null;
-                }
-
-            default:
-                return null;
+                if (maxX >= viewportStart &&
+                    minX <= viewportEnd)
+                    return true;
+            }
         }
+
+        return false;
     }
 
 
@@ -1574,7 +1695,10 @@
                         "domain-marker filled";
 
                         <div class="@domainClass"
-                             style="left: calc(@($"{domainEntry.Position}px - 10px")); color:@domainEntry.RenderColor"
+                             style="
+                            left: calc(@($"{domainEntry.Position}px - 10px"));
+                            color:@domainEntry.RenderColor;
+                            @GetMarkerFocusStyle(domainEntry)"
                              @onclick="() => ExpandAndFocus(domainEntry)">
 
                             <div class="domaine-tooltip" style="background-color:color:@domainEntry.RenderColor;">
@@ -1643,21 +1767,39 @@
                                 {
                                     // Hohles Quadrat für Suchmaschinen
                                     <div class="domain-marker square"
-                                         style="width:20px; height:20px; color:@ColorService.GetColor(sub.Url); top:calc(@topStyleSquare);">
+                                         style="
+                                        width:20px;
+                                        height:20px;
+                                        color:@ColorService.GetColor(sub.Url);
+                                        top:calc(@topStyleSquare);
+                                        @GetMarkerFocusStyle(sub)
+                                        ">
                                     </div>
                                 }
                                 else if (string.IsNullOrEmpty(sub.ReferrerUrl))
                                 {
                                     // Hohles Dreieck
-                                    <svg width="18" height="20" viewBox="0 0 18 20">
-                                        <polygon points="0,0 18,0 10,20" fill="none" stroke="currentColor" stroke-width="2" />
+                                    <svg width="18"
+                                         height="20"
+                                         viewBox="0 0 18 20"
+                                         style="@GetMarkerFocusStyle(sub)">
+
+                                        <polygon points="0,0 18,0 10,20"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 stroke-width="2" />
                                     </svg>
                                 }
                                 else
                                 {
                                     // Gefülltes Dreieck
-                                    <svg width="18" height="20" viewBox="0 0 18 20">
-                                        <polygon points="0,0 18,0 10,20" fill="currentColor" />
+                                    <svg width="18"
+                                         height="20"
+                                         viewBox="0 0 18 20"
+                                         style="@GetMarkerFocusStyle(sub)">
+
+                                        <polygon points="0,0 18,0 10,20"
+                                                 fill="currentColor" />
                                     </svg>
                                 }
 
@@ -1685,7 +1827,8 @@
             @foreach (var cookie in RenderCache.VisibleCookies)
             {
                     <div class="cookie-marker"
-                         style="left: calc(@($"{cookie.Position}px - 5px"))"
+                     style="left: calc(@($"{cookie.Position}px - 5px"));
+                         @GetFocusedStyle(cookie)"
                          data-host="@cookie.Host"
                          data-valueEncr="@cookie.EncryptedValue"
                          data-value="@cookie.Value"
@@ -1708,7 +1851,8 @@
                 };
 
                 <div class="userinput-marker @cssClass"
-                     style="left: calc(@($"{item.Position}px - 5px"))"
+                     style="left: calc(@($"{item.Position}px - 5px"));
+                    @GetFocusedStyle(item)"
                      data-value="@item.Value"
                      data-time="@item.Time"
                      data-type="@item.Type"
@@ -1721,7 +1865,8 @@
             @foreach (var ext in RenderCache.VisibleExtensions)
         {
                 <div class="extension-marker"
-                     style="left: calc(@($"{ext.Position}px - 5px"))"
+                     style="left: calc(@($"{ext.Position}px - 5px"));
+                    @GetFocusedStyle(ext)"
                      data-name="@ext.Name"
                      data-risk="@ext.RiskLevel"
                      data-score="@ext.RiskScore"
@@ -1735,7 +1880,8 @@
             @foreach (var s in RenderCache.VisibleStorage)
         {
                 <div class="storage-marker @(s.IsSensitive ? "sensitive" : "")"
-                     style="left: calc(@($"{s.Position}px - 5px"))"
+                     style="left: calc(@($"{s.Position}px - 5px"));
+                    @GetFocusedStyle(s)"
                      data-key="@s.Key"
                      data-origin="@s.Origin"
                      data-value="@s.Value"
@@ -1853,14 +1999,14 @@
         <!-- 🔌 EXTENSION → WEB STORE VERBINDUNGEN -->
         <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:18;">
 
-            @foreach (var ext in State.Extensions)
+            @foreach (var ext in RenderCache.VisibleExtensions)
             {
                 // 1️⃣ WebStore Visit finden (bleibt zeitbasiert → ok)
                 var matchingHistory = State.BrowserEntries
                     .Where(h =>
                         (h.Url.Contains("chrome.google.com/webstore") ||
                          h.Url.Contains("chromewebstore.google.com")) &&
-                        Math.Abs((h.VisitTime - ext.InstallTime).TotalMinutes) <= 10
+                        Math.Abs((h.VisitTime - ext.InstallTime).TotalMinutes) <= 300
                     )
                     .OrderBy(h => Math.Abs((h.VisitTime - ext.InstallTime).TotalSeconds))
                     .FirstOrDefault();
@@ -1919,8 +2065,8 @@
                       y2="@($"{extensionPosY}%")"
                       stroke="@color"
                       stroke-width="2"
-                      stroke-dasharray="4,3"
-                      opacity="0.8" />
+                      opacity="0.25"
+                      stroke-linecap="round" />
             }
 
         </svg>
@@ -1942,56 +2088,42 @@
                      data-type="@anomaly.Type"
                      data-description="@anomaly.Description"
                      data-severity="@anomaly.Severity"
-                     data-count="@anomaly.Count">
+                     data-count="@anomaly.Count"
+                     @onclick="() => FocusAnomaly(anomaly)">
 
-                    <!-- 🔺 Gefülltes Dreieck -->
-                    <svg width="16" height="50" viewBox="0 0 16 50">
-                        <polygon points="0,0 16,0 8,50" fill="currentColor" />
-                    </svg>
+
+                    <div style="
+                        width:@($"{10 + anomaly.Severity * 2}px");
+                        height:@($"{10 + anomaly.Severity * 2}px");
+                        border-radius:50%;
+                        background:currentColor;
+                        ">
+                    </div>
 
                 </div>
             }
 
 
             <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:15;">
-                @foreach (var anomaly in Anomalies)
+
+                @foreach (var anomaly in Anomalies.Where(IsAnomalyConnectionVisible))
                 {
                     var color = GetSeverityColor(anomaly.Severity);
 
-                    // 🧨 Deleted-History → Artefakt
-                    if (anomaly.Type == AnomalyType.DeletedHistoryIndicator)
+                    foreach (var point in GetAnomalyTargetPoints(anomaly))
                     {
-                        var target = GetAnomalyTargetPoint(anomaly);
-                        if (target == null) continue;
-
-                        <line x1="@target.Value.x"
-                              y1="@($"{target.Value.yPercent}%")"
+                        <line x1="@point.x"
+                              y1="@($"{point.yPercent}%")"
                               x2="@anomaly.Position"
                               y2="@($"{AnomalyYPercent}%")"
                               stroke="@color"
                               stroke-width="@(0.7 + anomaly.Severity)"
-                              stroke-dasharray="4,3" />
-                    }
-                    // 🔴 Domain-basierte Anomalien
-                    else
-                    {
-                        var domain = anomaly.LinkedDomain;
-                        if (domain == null) continue;
-
-                        foreach (var point in GetAnomalyTargetPoints(domain))
-                        {
-                            <line x1="@point.x"
-                                  y1="@($"{point.yPercent}%")"
-                                  x2="@anomaly.Position"
-                                  y2="@($"{AnomalyYPercent}%")"
-                                  stroke="@color"
-                                  stroke-width="@(0.7 + anomaly.Severity)"
-                                  stroke-dasharray="4,3" />
-                        }
+                              opacity="0.45"
+                              stroke-linecap="round" />
                     }
                 }
-            </svg>
 
+            </svg>
 
         </div>
 
@@ -2002,27 +2134,50 @@
 
     @if (selectedExtension != null)
     {
-        <ExtensionDetails Data="selectedExtension" OnClose="CloseAll" />
+        <ExtensionDetails Data="selectedExtension"
+                          Anomalies="Anomalies"
+                          OnFocusAnomaly="FocusAnomaly"
+                          OnClose="CloseAll" />
     }
     else if (selectedCookie != null)
     {
-        <CookieDetails Data="selectedCookie" OnClose="CloseAll" />
+        <CookieDetails Data="selectedCookie"
+                       Anomalies="Anomalies"
+                       OnFocusAnomaly="FocusAnomaly"
+                       OnClose="CloseAll" />
     }
     else if (selectedInput != null)
     {
-        <AutofillDetails Data="selectedInput" OnClose="CloseAll" />
+        <AutofillDetails Data="selectedInput"
+                         Anomalies="Anomalies"
+                         OnFocusAnomaly="FocusAnomaly"
+                         OnClose="CloseAll" />
     }
     else if (selectedSubEntry != null)
     {
-        <SubEntryDetails Data="selectedSubEntry" OnClose="CloseAll" />
+        <SubEntryDetails Data="selectedSubEntry"
+                         Anomalies="Anomalies"
+                         OnFocusAnomaly="FocusAnomaly"
+                         OnClose="CloseAll" />
     }
     else if (selectedDomain != null)
     {
-        <DomainDetails Data="selectedDomain" OnClose="CloseAll" />
+        <DomainDetails Data="selectedDomain"
+                       Anomalies="Anomalies"
+                       OnFocusAnomaly="FocusAnomaly"
+                       OnClose="CloseAll" />
     }
     else if (selectedStorage != null)
     {
-        <StorageDetails Data="selectedStorage" OnClose="CloseAll" />
+        <StorageDetails Data="selectedStorage"
+                        Anomalies="Anomalies"
+                        OnFocusAnomaly="FocusAnomaly"
+                        OnClose="CloseAll" />
+    }
+    else if (selectedAnomaly != null)
+    {
+        <AnomalyDetails Data="selectedAnomaly"
+                        OnClose="CloseAll" />
     }
 
 </div>
