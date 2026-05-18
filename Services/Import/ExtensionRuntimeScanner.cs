@@ -35,17 +35,56 @@ public class ExtensionRuntimeScanner
                 {
                     string? name = ExtractExtensionId(dir); // IndexedDB\chrome-extension_xxx\leveldb --> xxx is the extension id
 
-                    if (name == null)
-                        continue;
+                    // =====================================================
+                    // FALLBACK: ARTEFAKTNAME
+                    // =====================================================
 
+                    if (string.IsNullOrWhiteSpace(name))
+                    {
+                        string folderName =
+                            Path.GetFileName(dir);
 
-                    if (!IsValidExtensionId(name))
-                        continue;
+                        // =====================================================
+                        // GENERISCHE RUNTIME ORDNER IGNORIEREN
+                        // =====================================================
+
+                        if (IsGenericRuntimeFolder(folderName))
+                        {
+                            continue;
+                        }
+
+                        if (LooksLikeExtensionArtifact(dir))
+                        {
+                            name = SanitizeArtifactName(dir);
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
 
                     var entry =
                         GetOrCreate(
                             extensions,
                             name);
+
+                    // =====================================================
+                    // CONFIDENCE
+                    // =====================================================
+
+                    if (IsValidExtensionId(name))
+                    {
+                        entry.ConfidenceScore += 40;
+                    }
+                    else
+                    {
+                        entry.ConfidenceScore += 10;
+                    }
+
+                    if (LooksLikeExtensionArtifact(dir))
+                    {
+                        entry.ConfidenceScore += 15;
+                    }
 
                     entry.FoundInRuntimeArtifacts = true;
 
@@ -124,8 +163,8 @@ public class ExtensionRuntimeScanner
     }
 
     private IEnumerable<string>
-GetRuntimeExtensionDirectories(
-    string runtimeRoot)
+ GetRuntimeExtensionDirectories(
+     string runtimeRoot)
     {
         var results =
             new List<string>();
@@ -138,21 +177,7 @@ GetRuntimeExtensionDirectories(
         {
             try
             {
-                string path =
-                    dir.ToLowerInvariant();
-
-                // =====================================================
-                // CHROMIUM EXTENSION RUNTIME PATTERNS
-                // =====================================================
-
-                bool looksLikeExtension =
-                    path.Contains(
-                        "chrome-extension_")
-                    ||
-                    IsValidExtensionId(
-                        Path.GetFileName(dir));
-
-                if (!looksLikeExtension)
+                if (!LooksLikeExtensionArtifact(dir))
                     continue;
 
                 results.Add(dir);
@@ -166,18 +191,38 @@ GetRuntimeExtensionDirectories(
     }
 
     private BrowserExtensionEntry GetOrCreate(
-        Dictionary<string,
-        BrowserExtensionEntry> extensions,
-        string id)
+    Dictionary<string,
+    BrowserExtensionEntry> extensions,
+    string id)
     {
-        if (!extensions.ContainsKey(id))
+        string normalized =
+            NormalizeExtensionArtifactId(id);
+
+        // =====================================================
+        // EXISTIERENDE EXTENSION SUCHEN
+        // =====================================================
+
+        var existing =
+            extensions.Values
+                .FirstOrDefault(x =>
+                    NormalizeExtensionArtifactId(
+                        x.Id)
+                    == normalized);
+
+        if (existing != null)
         {
-            extensions[id] =
-                new BrowserExtensionEntry
-                {
-                    Id = id
-                };
+            return existing;
         }
+
+        // =====================================================
+        // NEUE EXTENSION
+        // =====================================================
+
+        extensions[id] =
+            new BrowserExtensionEntry
+            {
+                Id = id
+            };
 
         return extensions[id];
     }
@@ -185,50 +230,228 @@ GetRuntimeExtensionDirectories(
     private string? ExtractExtensionId(
     string path)
     {
+        if (string.IsNullOrWhiteSpace(path))
+            return null;
+
+        path =
+            path.ToLowerInvariant();
+
+        // =====================================================
+        // GESAMTEN PFAD DURCHSUCHEN
+        // =====================================================
+
+        var matches =
+            System.Text.RegularExpressions.Regex
+                .Matches(
+                    path,
+                    @"[a-p]{32}");
+
+        foreach (System.Text.RegularExpressions.Match match in matches)
+        {
+            string candidate =
+                match.Value;
+
+            if (IsValidExtensionId(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private string NormalizeExtensionArtifactId(
+    string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return raw;
+
+        raw =
+            raw.ToLowerInvariant();
+
+        // =====================================================
+        // PFAD AUFTEILEN
+        // =====================================================
+
         var parts =
-            path.Split(
+            raw.Split(
                 Path.DirectorySeparatorChar,
                 StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var part in parts)
         {
             // =====================================================
-            // 1️⃣ DIREKTE EXTENSION ID
+            // DIREKTE CHROMIUM ID
             // =====================================================
 
             if (IsValidExtensionId(part))
                 return part;
 
             // =====================================================
-            // 2️⃣ chrome-extension_<id>
+            // chrome-extension_<id>
             // =====================================================
 
-            if (part.StartsWith(
-                    "chrome-extension_"))
+            if (part.Contains("chrome-extension_"))
             {
-                string id =
-                    part.Replace(
-                        "chrome-extension_",
-                        "");
+                int start =
+                    part.IndexOf(
+                        "chrome-extension_");
 
-                // .indexeddb.leveldb entfernen
-                int dot =
-                    id.IndexOf('.');
+                string candidate =
+                    part.Substring(
+                        start +
+                        "chrome-extension_".Length);
 
-                if (dot > 0)
+                // =====================================================
+                // ALLES ABSCHNEIDEN NACH:
+                // . _
+                // =====================================================
+
+                char[] splitChars =
                 {
-                    id =
-                        id.Substring(
-                            0,
-                            dot);
+                '.',
+                '_'
+            };
+
+                foreach (char c in splitChars)
+                {
+                    candidate = candidate.Trim('-','_','.','#');
+
+                    int idx =
+                        candidate.IndexOf(c);
+
+                    if (idx > 0)
+                    {
+                        candidate =
+                            candidate.Substring(
+                                0,
+                                idx);
+                    }
                 }
 
-                if (IsValidExtensionId(id))
-                    return id;
+                if (IsValidExtensionId(candidate))
+                    return candidate;
             }
         }
 
-        return null;
+        // =====================================================
+        // FALLBACK
+        // =====================================================
+
+        // =====================================================
+        // TECHNISCHE SUFFIXE ENTFERNEN
+        // =====================================================
+
+        string[] blacklist =
+        {
+            ".indexeddb.leveldb",
+            ".indexeddb.blob",
+            ".indexeddb",
+            ".leveldb",
+            ".blob",
+            "leveldb",
+            "blob",
+            "indexeddb",
+            "_0",
+            "_1"
+        };
+
+        foreach (var item in blacklist)
+        {
+            raw =
+                raw.Replace(
+                    item,
+                    "",
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
+        raw =
+            raw.Trim(
+                '-',
+                '_',
+                '.',
+                '#',
+                ' ');
+
+        return raw;
+    }
+
+    private string SanitizeArtifactName(
+        string path)
+    {
+        string name =
+            Path.GetFileName(path);
+
+        name =
+            NormalizeExtensionArtifactId(name);
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            name =
+                $"UNKNOWN-{Math.Abs(path.GetHashCode())}";
+        }
+
+        return name;
+    }
+
+    private bool LooksLikeExtensionArtifact(
+        string path)
+    {
+        path =
+            path.ToLowerInvariant();
+
+        return
+            path.Contains("chrome-extension")
+            ||
+            path.Contains("extension")
+            ||
+            path.Contains("manifest")
+            ||
+            path.Contains("service_worker")
+            ||
+            path.Contains("background")
+            ||
+            path.Contains("indexeddb")
+            ||
+            path.Contains("leveldb")
+            ||
+            path.Contains("local storage")
+            ||
+            path.Contains("extension rules")
+            ||
+            path.Contains("extension scripts")
+            ||
+            path.Contains("webpack")
+            ||
+            path.Contains("vite")
+            ||
+            path.Contains("localhost")
+            ||
+            path.Contains("127.0.0.1");
+    }
+
+    private bool IsGenericRuntimeFolder(
+    string name)
+    {
+        name =
+            name.ToLowerInvariant();
+
+        string[] generic =
+        {
+        "leveldb",
+        "blob",
+        "indexeddb",
+        "local storage",
+        "cache",
+        "code cache",
+        "shared_proto_db",
+        "service worker",
+        "session storage",
+        "databases",
+        "metadata"
+    };
+
+        return generic.Contains(name);
     }
 
     private bool IsValidExtensionId(string id)

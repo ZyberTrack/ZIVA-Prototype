@@ -1209,6 +1209,7 @@
                     a.LinkedStorage.Contains(s),
 
                 DomainEntry d =>
+                    a.TargetType == AnomalyTargetType.Domain &&
                     a.LinkedDomain == d,
 
                 AnomalyEntry an =>
@@ -1591,7 +1592,13 @@
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(a)"
                                 @onclick="() => FocusAnomaly(a)">
-                                @a.Type <br />
+                                <span style="
+                                    color:@GetSeverityColor(a.Severity);
+                                    font-weight:700;
+                                    font-size:14px;">
+                                    @a.Type
+                                </span>
+                                <br />
                                 px=@Math.Round((decimal)a.Position, 1)
                             </li>
                         }

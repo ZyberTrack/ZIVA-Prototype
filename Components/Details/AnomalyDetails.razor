@@ -24,7 +24,16 @@
 
         <div class="entry-row">
             <strong>Type</strong><br />
-            @Data.Type
+
+            <span style="
+                color:@GetSeverityTextColor();
+                font-weight:800;
+                font-size:16px;
+                letter-spacing:0.3px;">
+
+                @Data.Type
+
+            </span>
         </div>
 
         <div class="entry-row">
@@ -153,6 +162,18 @@
             3 => "background:#ffb52b;",
             2 => "background:#ffe12b; color:black;",
             _ => "background:#6cff6c; color:black;"
+        };
+    }
+
+    private string GetSeverityTextColor()
+    {
+        return Data.Severity switch
+        {
+            5 => "#ff4b4b",
+            4 => "#ff8a3d",
+            3 => "#ffc14d",
+            2 => "#ffe75c",
+            _ => "#7dff7d"
         };
     }
 }
