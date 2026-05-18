@@ -1,4 +1,6 @@
-﻿namespace ZIVA_Prototype.Components.Models.Timeline
+﻿using System.Text.Json.Serialization;
+
+namespace ZIVA_Prototype.Components.Models.Timeline
 {
 
     public class DomainEntry
@@ -20,6 +22,9 @@
 
         public bool IsExpanded { get; set; }
         public List<BrowserHistoryEntry> SubEntries { get; set; } = new();
+
+        [JsonIgnore]
+        public List<ArtifactRelationEntry> Relations { get; set; } = new(); // Für Verknüpfungen zu anderen Artefakten
     }
 
 }

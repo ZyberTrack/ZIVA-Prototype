@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace ZIVA_Prototype.Components.Models.Timeline
 {
     public class WebDataAutofillEntry
@@ -8,6 +10,9 @@ namespace ZIVA_Prototype.Components.Models.Timeline
         public DateTime DateLastUsed { get; set; }
         public int Count { get; set; }            // wie oft benutzt
         public int Position { get; set; }         // für Timeline-Darstellung
+
+        [JsonIgnore]
+        public List<ArtifactRelationEntry> Relations { get; set; } = new(); // Für Verknüpfungen zu anderen Artefakten
     }
 
 

@@ -189,31 +189,7 @@ namespace ZIVA_Prototype.Services.Timeline
                 // DELETED HISTORY CORRELATION
                 // =====================================================
 
-                bool hasMatchingHistory = summarizedEntries.Any(h =>
-            (
-            h.Url.Contains(
-                "chrome.google.com/webstore",
-                StringComparison.OrdinalIgnoreCase)
-            ||
-            h.Url.Contains(
-                "chromewebstore.google.com",
-                StringComparison.OrdinalIgnoreCase)
-        )
-        &&
-        h.VisitTime <= ext.InstallTime
-        &&
-        (ext.InstallTime - h.VisitTime)
-            .TotalSeconds <= 300);
-
-                if (!hasMatchingHistory)
-                {
-                    orphanArtifacts.Add(
-                        new OrphanArtifact
-                        {
-                            Time = ext.InstallTime,
-                            Extension = ext
-                        });
-                }
+                bool hasMatchingHistory = ext.Relations.Any(r => r.Type == ArtifactRelationType.ExtensionToWebStore);
 
                 // =====================================================
                 // NO REAL SIGNAL
@@ -466,96 +442,75 @@ namespace ZIVA_Prototype.Services.Timeline
         }
 
         private void DetectOrphanCookies(
-            List<OrphanArtifact> orphanArtifacts,
-            List<DomainEntry> summarizedEntries,
-            List<BrowserCookieEntry> cookies,
-            int toleranceSeconds = 60)
+     List<OrphanArtifact> orphanArtifacts,
+     List<DomainEntry> summarizedEntries,
+     List<BrowserCookieEntry> cookies,
+     int toleranceSeconds = 60)
         {
-            if (cookies == null) return;
+            if (cookies == null)
+                return;
 
             foreach (var cookie in cookies)
             {
-
-
-                // IGNORE BROWSER BACKGROUND TRAFFIC
+                // IGNORE BACKGROUND
                 if (cookie.Category ==
                     CookieCategory.BrowserBackground)
                 {
                     continue;
                 }
 
-                string cookieDomain = NormalizeDomain(cookie.Host);
+                bool hasRelation =
+                    cookie.Relations.Any(r =>
+                        r.Type ==
+                        ArtifactRelationType
+                            .CookieToHistory);
 
-                bool hasMatchingHistory = summarizedEntries.Any(domain =>
-                {
-                    string domainNorm = NormalizeDomain(domain.Domain);
+                if (hasRelation)
+                    continue;
 
-                    if (!domainNorm.EndsWith(cookieDomain) &&
-                        !cookieDomain.EndsWith(domainNorm))
-                        return false;
-
-                    return Math.Abs((domain.VisitTime - cookie.Created).TotalSeconds)
-                           <= toleranceSeconds;
-                });
-
-                if (!hasMatchingHistory)
-                {
-                    orphanArtifacts.Add(
-                        new OrphanArtifact
-                        {
-                            Time = cookie.Created,
-                            Cookie = cookie
-                        });
-                }
+                orphanArtifacts.Add(
+                    new OrphanArtifact
+                    {
+                        Time = cookie.Created,
+                        Cookie = cookie
+                    });
             }
         }
 
-
-        private DomainEntry? FindClosestDomain(
-            List<DomainEntry> summarizedEntries,
-            DateTime time)
-        {
-            return summarizedEntries
-                .OrderBy(d => Math.Abs((d.VisitTime - time).TotalSeconds))
-                .FirstOrDefault();
-        }
-
         private void DetectOrphanAutofill(
-            List<OrphanArtifact> orphanArtifacts,
-            List<DomainEntry> summarizedEntries,
-            List<WebDataAutofillEntry> autofillEntries,
-            List<UserInputEntry> userInputs,
-            int toleranceSeconds = 120)
+    List<OrphanArtifact> orphanArtifacts,
+    List<DomainEntry> summarizedEntries,
+    List<WebDataAutofillEntry> autofillEntries,
+    List<UserInputEntry> userInputs,
+    int toleranceSeconds = 120)
         {
-            if (autofillEntries == null) return;
+            if (autofillEntries == null)
+                return;
 
-            foreach (var autofill in autofillEntries)
+            foreach (var input in userInputs
+                .Where(x => x.Type ==
+                            UserInputType.Autofill))
             {
-                bool hasMatchingDomain = summarizedEntries.Any(domain =>
-                    Math.Abs((domain.VisitTime - autofill.DateCreated).TotalSeconds)
-                    <= toleranceSeconds
-                );
+                bool hasRelation =
+                    input.Relations.Any(r =>
+                        r.Type ==
+                        ArtifactRelationType
+                            .AutofillToHistory);
 
-                if (!hasMatchingDomain)
-                {
-                    var linkedInput =
-                        userInputs.FirstOrDefault(x =>
-                            x.Type == UserInputType.Autofill
-                            &&
-                            x.Value == autofill.Value
-                            &&
-                            Math.Abs(
-                                (x.Time - autofill.DateCreated)
-                                .TotalSeconds) < 5);
+                if (hasRelation)
+                    continue;
 
-                    orphanArtifacts.Add(
-                        new OrphanArtifact
-                        {
-                            Time = autofill.DateCreated,
-                            Autofill = autofill,
-                            Input = linkedInput
-                        });
-                }
+                var autofill =
+                    autofillEntries.FirstOrDefault(a =>
+                        a.Value == input.Value);
+
+                orphanArtifacts.Add(
+                    new OrphanArtifact
+                    {
+                        Time = input.Time,
+                        Autofill = autofill,
+                        Input = input
+                    });
             }
         }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace ZIVA_Prototype.Components.Models.Timeline
 {
@@ -141,6 +142,9 @@ namespace ZIVA_Prototype.Components.Models.Timeline
 
 
         public int Position { get; set; } // Timeline
+
+        [JsonIgnore]
+        public List<ArtifactRelationEntry> Relations { get; set; } = new(); // Für Verknüpfungen zu anderen Artefakten
     }
 
     // 🔥 Sauberer RiskLevel

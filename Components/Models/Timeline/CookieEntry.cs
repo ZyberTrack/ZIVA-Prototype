@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using ZIVA_Prototype.Components.Models.Enums;
 
 namespace ZIVA_Prototype.Components.Models.Timeline
@@ -17,5 +18,8 @@ namespace ZIVA_Prototype.Components.Models.Timeline
         public int Position { get; set; } // für Timeline, falls genutzt
 
         public CookieCategory Category { get; set; }
+
+        [JsonIgnore]
+        public List<ArtifactRelationEntry> Relations { get; set; } = new(); // Für Verknüpfungen zu anderen Artefakten
     }
 }

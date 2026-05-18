@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace ZIVA_Prototype.Components.Models.Timeline
 {
@@ -15,5 +16,8 @@ namespace ZIVA_Prototype.Components.Models.Timeline
         public BrowserExtensionEntry? Extension { get; set; }
 
         public UserInputEntry? Input { get; set; }
+
+        [JsonIgnore]
+        public List<ArtifactRelationEntry> Relations { get; set; } = new(); // Für Verknüpfungen zu anderen Artefakten
     }
 }

@@ -13,6 +13,7 @@
 @inject TimelineAnomalyService AnomalyService
 @inject TimelineColorService ColorService
 @inject TimelineRenderCacheService RenderCache
+@inject ArtifactRelationService RelationService
 
 
 @code {
@@ -364,6 +365,14 @@
             State.StorageEntries,
             x => x.Time,
             (x, pos) => x.Position = pos
+        );
+
+        RelationService.BuildRelations(
+            SummarizedEntries,
+            State.BrowserCookies,
+            UserInputs,
+            State.Extensions,
+            State.StorageEntries
         );
 
         Anomalies = AnomalyService.Detect(
@@ -1843,11 +1852,6 @@
                 </div>
             }
 
-
-
-
-
-
             <!-- Cookies Einträge in der Zeitachse -->
             @foreach (var cookie in RenderCache.VisibleCookies)
             {
@@ -1918,192 +1922,164 @@
         }
 
 
-            <!-- SVG-Sammelcontainer für alle Linien -->
-            <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:18;">
+            <!-- RELATION LINES -->
+            <svg style="
+                position:absolute;
+                left:0;
+                top:0;
+                width:100%;
+                height:100%;
+                pointer-events:none;
+                z-index:18;">
 
-                @foreach (var artifact in State.BrowserCookies.Cast<object>()
-                                .Concat(State.AutofillEntries))
+                @foreach (var cookie in RenderCache.VisibleCookies)
                 {
-
-                    string? artifactDomain = artifact switch
+                    foreach (var relation in cookie.Relations)
                     {
-                        BrowserCookieEntry c =>
-                        !string.IsNullOrWhiteSpace(c.Host) ? c.Host.TrimStart('.') :
-                        !string.IsNullOrWhiteSpace(c.Name) ? c.Name.TrimStart('.') : null,
-                        WebDataAutofillEntry a => a.Name.TrimStart('.'),
-                        _ => null
-                    };
+                        if (relation.Domain == null)
+                            continue;
 
-                    if (string.IsNullOrEmpty(artifactDomain))
-                        continue;
+                        double domainPosX =
+                            relation.Domain.Position;
 
+                        double domainPosY =
+                            GetDomainYPercent(
+                                relation.Domain);
 
-                    DateTime artifactTime = artifact switch
-                    {
-                        BrowserCookieEntry c => c.Created,
-                        WebDataAutofillEntry a => a.DateCreated,
-                        _ => DateTime.MinValue
-                    };
+                        double cookiePosX =
+                            cookie.Position - 2;
 
-                    double artifactPosX = artifact switch
-                    {
-                        BrowserCookieEntry c => c.Position - 2 ,
-                        WebDataAutofillEntry a => a.Position - 2,
-                        _ => 0
-                    };
+                        double cookiePosY = 43;
 
-                    // DomainEntry matching nach Zeit (max 10s) & Domain/Name enthalten
-                    DomainEntry? matchingDomain = SummarizedEntries
-                    .Where(d =>
-                    {
-                        var domainNormalized = d.Domain.TrimStart('.').ToLower();
-                        var artifactNormalized = artifact switch
-                        {
-                            BrowserCookieEntry c => !string.IsNullOrWhiteSpace(c.Host) ? c.Host.TrimStart('.').ToLower() :
-                                        !string.IsNullOrWhiteSpace(c.Name) ? c.Name.TrimStart('.').ToLower() : "",
-                            WebDataAutofillEntry a => a.Name.TrimStart('.').ToLower(),
-                            _ => ""
-                        };
-
-                        return !string.IsNullOrEmpty(artifactNormalized) &&
-                                    (domainNormalized.EndsWith(artifactNormalized) || artifactNormalized.EndsWith(domainNormalized));
-                    })
-                    .OrderBy(d => Math.Abs((artifactTime - d.VisitTime).TotalSeconds))
-                    .FirstOrDefault(d => Math.Abs((artifactTime - d.VisitTime).TotalSeconds) <= 10);
-
-
-
-                    if (matchingDomain == null)
-                        continue;
-
-
-                    @if (matchingDomain != null)
-                    {
-                        var matchingSub = matchingDomain.SubEntries?
-                        .Where(s => artifactDomain.Contains(s.Url))
-                        .OrderBy(s => Math.Abs((artifactTime - s.VisitTime).TotalSeconds))
-                        .FirstOrDefault();
-
-                        double domainPosX = matchingSub?.Position ?? matchingDomain.Position;
-
-                        double domainPosY;
-
-                        double offsetPx = 25 + heavyClusterSpacingPx * (matchingDomain.HeavyClusterIndex - 1);
-                        double offsetPercent = (offsetPx / containerHeight) * 100.0;
-
-
-                        if (matchingDomain.IsHeavyCluster)
-                        {
-                            domainPosY = baseTop - offsetPercent;
-                            domainPosY = Math.Round(domainPosY);
-
-                        }
-                        else
-                        {
-                            // Normale Domain oder SubEntry
-                            domainPosY = baseTop;
-                        }
-
-                        double artifactPosY = artifact switch
-                        {
-                            BrowserCookieEntry => 43,   // Cookies oben
-                            WebDataAutofillEntry => 50, // Autofill etwas darunter
-                            _ => 33
-                        };
-
-                        string color = ColorService.GetColor(matchingDomain.Url);
+                        string color =
+                            ColorService.GetColor(
+                                relation.Domain.Url);
 
                         <line x1="@domainPosX"
                               y1="@($"{domainPosY}%")"
-                              x2="@artifactPosX"
-                              y2="@($"{artifactPosY}%")"
+                              x2="@cookiePosX"
+                              y2="@($"{cookiePosY}%")"
                               stroke="@color"
-                              stroke-width="2" />
+                              stroke-width="2"
+                              opacity="0.25"
+                              stroke-linecap="round" />
+                    }
+                }
+
+                @foreach (var input in RenderCache.VisibleInputs)
+                {
+                    foreach (var relation in input.Relations)
+                    {
+                        if (relation.Domain == null)
+                            continue;
+
+                        double domainPosX =
+                            relation.Domain.Position;
+
+                        double domainPosY =
+                            GetDomainYPercent(
+                                relation.Domain);
+
+                        double inputPosX =
+                            input.Position - 2;
+
+                        double inputPosY =
+                            input.Type switch
+                            {
+                                UserInputType.Autofill => 50,
+                                UserInputType.Favicon => 50,
+                                _ => 50
+                            };
+
+                        string color =
+                            ColorService.GetColor(
+                                relation.Domain.Url);
+
+                        <line x1="@domainPosX"
+                              y1="@($"{domainPosY}%")"
+                              x2="@inputPosX"
+                              y2="@($"{inputPosY}%")"
+                              stroke="@color"
+                              stroke-width="2"
+                              opacity="0.25"
+                              stroke-linecap="round" />
+                    }
+                }
+
+                @foreach (var ext in RenderCache.VisibleExtensions)
+                {
+                    foreach (var relation in ext.Relations)
+                    {
+                        if (relation.Type !=
+                            ArtifactRelationType
+                                .ExtensionToWebStore)
+                            continue;
+
+                        if (relation.Domain == null)
+                            continue;
+
+                        double domainPosX =
+                            relation.Domain.Position;
+
+                        double domainPosY =
+                            GetDomainYPercent(
+                                relation.Domain);
+
+                        double extPosX =
+                            ext.Position;
+
+                        double extPosY = 64;
+
+                        string color =
+                            ColorService.GetColor(
+                                relation.Domain.Url);
+
+                        <line x1="@domainPosX"
+                              y1="@($"{domainPosY}%")"
+                              x2="@extPosX"
+                              y2="@($"{extPosY}%")"
+                              stroke="@color"
+                              stroke-width="2"
+                              opacity="0.25"
+                              stroke-linecap="round" />
+                    }
+                }
+
+                @foreach (var storage in RenderCache.VisibleStorage)
+                {
+                    foreach (var relation in storage.Relations)
+                    {
+                        if (relation.Domain == null)
+                            continue;
+
+                        double domainPosX =
+                            relation.Domain.Position;
+
+                        double domainPosY =
+                            GetDomainYPercent(
+                                relation.Domain);
+
+                        double storagePosX =
+                            storage.Position;
+
+                        double storagePosY = 57;
+
+                        string color =
+                            ColorService.GetColor(
+                                relation.Domain.Url);
+
+                        <line x1="@domainPosX"
+                              y1="@($"{domainPosY}%")"
+                              x2="@storagePosX"
+                              y2="@($"{storagePosY}%")"
+                              stroke="@color"
+                              stroke-width="2"
+                              opacity="0.25"
+                              stroke-linecap="round" />
                     }
                 }
 
             </svg>
-
-        <!-- 🔌 EXTENSION → WEB STORE VERBINDUNGEN -->
-        <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:18;">
-
-            @foreach (var ext in RenderCache.VisibleExtensions)
-            {
-                // 1️⃣ WebStore Visit finden (bleibt zeitbasiert → ok)
-                    var matchingHistory = State.BrowserEntries
-                        .Where(h =>
-                            (
-                                h.Url.Contains("chrome.google.com/webstore")
-                                ||
-                                h.Url.Contains("chromewebstore.google.com")
-                            )
-                            &&
-                            h.VisitTime <= ext.InstallTime
-                            &&
-                            (ext.InstallTime - h.VisitTime).TotalSeconds <= 300
-                        )
-                        .OrderByDescending(h => h.VisitTime)
-                        .FirstOrDefault();
-
-                if (matchingHistory == null)
-                    continue;
-
-                // 2️⃣ 🔥 DomainEntry sauber über SubEntries matchen (KEIN Zeit-Hack mehr)
-                var matchingDomain = SummarizedEntries
-                    .FirstOrDefault(d =>
-                        d.SubEntries.Any(s => s.Url == matchingHistory.Url)
-                    );
-
-                // 🔁 Fallback (falls kein exakter Match)
-                if (matchingDomain == null)
-                {
-                    var host = new Uri(matchingHistory.Url).Host;
-
-                    matchingDomain = SummarizedEntries
-                        .FirstOrDefault(d =>
-                            host.Contains(d.Domain) || d.Domain.Contains(host)
-                        );
-                }
-
-                if (matchingDomain == null)
-                    continue;
-
-                // 3️⃣ Domain Position
-                double domainPosX = matchingDomain.Position;
-
-                double domainPosY;
-                double offsetPx = 25 + heavyClusterSpacingPx * (matchingDomain.HeavyClusterIndex - 1);
-                double offsetPercent = (offsetPx / containerHeight) * 100.0;
-
-                if (matchingDomain.IsHeavyCluster)
-                {
-                    domainPosY = baseTop - offsetPercent;
-                    domainPosY = Math.Round(domainPosY);
-                }
-                else
-                {
-                    domainPosY = baseTop;
-                }
-
-                // 4️⃣ Extension Position
-                double extensionPosX = ext.Position;
-                double extensionPosY = 64;
-
-                // 5️⃣ Farbe
-                    string color = ColorService.GetColor(matchingDomain.Url);
-
-                // 6️⃣ Linie
-                <line x1="@domainPosX"
-                      y1="@($"{domainPosY}%")"
-                      x2="@extensionPosX"
-                      y2="@($"{extensionPosY}%")"
-                      stroke="@color"
-                      stroke-width="2"
-                      opacity="0.25"
-                      stroke-linecap="round" />
-            }
-
-        </svg>
 
             @foreach (var anomaly in RenderCache.VisibleAnomalies)
             {

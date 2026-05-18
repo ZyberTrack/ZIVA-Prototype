@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace ZIVA_Prototype.Components.Models.Timeline
 {
@@ -13,5 +14,8 @@ namespace ZIVA_Prototype.Components.Models.Timeline
         public string IconUrl { get; set; } = "";
 
         public int Position { get; set; }
+
+        [JsonIgnore]
+        public List<ArtifactRelationEntry> Relations { get; set; } = new(); // Für Verknüpfungen zu anderen Artefakten
     }
 }
