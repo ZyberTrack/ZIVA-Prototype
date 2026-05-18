@@ -48,13 +48,55 @@ namespace ZIVA_Prototype.Services.Import
                         using var reader = command.ExecuteReader();
                         while (reader.Read())
                         {
+                            var created =
+    FromChromeTime(
+        reader.IsDBNull(2)
+            ? 0
+            : reader.GetInt64(2));
+
+                            var lastUsed =
+                                FromChromeTime(
+                                    reader.IsDBNull(3)
+                                        ? 0
+                                        : reader.GetInt64(3));
+
+                            // =====================================================
+                            // INVALID TIMESTAMPS
+                            // =====================================================
+
+                            if (created == null &&
+                                lastUsed == null)
+                            {
+                                continue;
+                            }
+
                             list.Add(new WebDataAutofillEntry
                             {
-                                Name = reader.IsDBNull(0) ? "" : reader.GetString(0),
-                                Value = reader.IsDBNull(1) ? "" : reader.GetString(1),
-                                DateCreated = FromChromeTime(reader.IsDBNull(2) ? 0 : reader.GetInt64(2)),
-                                DateLastUsed = FromChromeTime(reader.IsDBNull(3) ? 0 : reader.GetInt64(3)),
-                                Count = reader.IsDBNull(4) ? 0 : reader.GetInt32(4),
+                                Name =
+                                    reader.IsDBNull(0)
+                                        ? ""
+                                        : reader.GetString(0),
+
+                                Value =
+                                    reader.IsDBNull(1)
+                                        ? ""
+                                        : reader.GetString(1),
+
+                                DateCreated =
+                                    created
+                                        ?? lastUsed
+                                        ?? DateTime.Now,
+
+                                DateLastUsed =
+                                    lastUsed
+                                        ?? created
+                                        ?? DateTime.Now,
+
+                                Count =
+                                    reader.IsDBNull(4)
+                                        ? 0
+                                        : reader.GetInt32(4),
+
                                 Position = 0
                             });
                         }
@@ -99,12 +141,49 @@ namespace ZIVA_Prototype.Services.Import
         }
 
         // 🕒 Chrome Zeit → DateTime
-        private DateTime FromChromeTime(long microseconds)
+        private DateTime? FromChromeTime(
+    long microseconds)
         {
-            if (microseconds <= 0) return DateTime.MinValue;
+            // =====================================================
+            // INVALID / EMPTY CHROMIUM TIME
+            // =====================================================
 
-            var epoch = new DateTime(1601, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            return epoch.AddMilliseconds(microseconds / 1000.0).ToLocalTime();
+            if (microseconds <= 0)
+                return null;
+
+            try
+            {
+                var epoch =
+                    new DateTime(
+                        1601,
+                        1,
+                        1,
+                        0,
+                        0,
+                        0,
+                        DateTimeKind.Utc);
+
+                var date =
+                    epoch.AddMilliseconds(
+                        microseconds / 1000.0)
+                        .ToLocalTime();
+
+                // =====================================================
+                // INVALID RANGE
+                // =====================================================
+
+                if (date.Year < 2000)
+                    return null;
+
+                if (date.Year > 2100)
+                    return null;
+
+                return date;
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

@@ -347,7 +347,7 @@ public class ExtensionFolderScanner
 
 
     private DateTime GetBestExtensionTimestamp(
-        string versionDir)
+    string versionDir)
     {
         try
         {
@@ -356,47 +356,31 @@ public class ExtensionFolderScanner
                     versionDir,
                     "manifest.json");
 
-            if (File.Exists(manifestPath))
+            if (!File.Exists(manifestPath))
             {
-                DateTime manifestTime =
-                    File.GetCreationTimeUtc(
-                        manifestPath);
-
-                if (manifestTime.Year >= 2015 &&
-                    manifestTime <= DateTime.UtcNow)
-                {
-                    return manifestTime;
-                }
+                return DateTime.UtcNow;
             }
 
-            var dir =
-                new DirectoryInfo(versionDir);
+            // =====================================================
+            // MANIFEST WRITE TIME
+            // BEST INSTALL / UPDATE INDICATOR
+            // =====================================================
 
-            var files =
-                dir.GetFiles(
-                    "*",
-                    SearchOption.AllDirectories);
+            DateTime manifestTime =
+                File.GetLastWriteTimeUtc(
+                    manifestPath);
 
-            if (files.Length == 0)
+            if (manifestTime.Year >= 2015 &&
+                manifestTime <= DateTime.UtcNow)
             {
-                return dir.CreationTimeUtc;
+                return manifestTime;
             }
-
-            DateTime earliest =
-                files.Min(f =>
-                    f.CreationTimeUtc);
-
-            if (earliest.Year >= 2015)
-            {
-                return earliest;
-            }
-
-            return dir.CreationTimeUtc;
         }
         catch
         {
-            return DateTime.UtcNow;
         }
+
+        return DateTime.UtcNow;
     }
 
     private string ResolveExtensionName(
@@ -515,6 +499,7 @@ public class ExtensionFolderScanner
 
         return rawName;
     }
+
 
     private BrowserExtensionEntry GetOrCreate(
         Dictionary<string,

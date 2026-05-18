@@ -11,9 +11,11 @@ namespace ZIVA_Prototype.Services.Timeline
     public class TimelineAnomalyService
     {
         public List<AnomalyEntry> Detect(
-            List<DomainEntry> summarizedEntries,
-            List<BrowserCookieEntry> cookies,
-            List<WebDataAutofillEntry> autofillEntries,
+        List<DomainEntry> summarizedEntries,
+        List<BrowserCookieEntry> cookies,
+        List<WebDataAutofillEntry> autofillEntries,
+        List<UserInputEntry> userInputs,
+        List<BrowserExtensionEntry> extensions,
             List<string> blacklistDomains,
             List<string> suspiciousDomains)
         {
@@ -33,7 +35,13 @@ namespace ZIVA_Prototype.Services.Timeline
             DetectOrphanAutofill(
                 anomalyIndex,
                 summarizedEntries,
-                autofillEntries
+                autofillEntries,
+                userInputs
+            );
+
+            DetectSuspiciousExtensions(
+                anomalyIndex,
+                extensions
             );
 
             foreach (var domain in summarizedEntries)
@@ -102,6 +110,205 @@ namespace ZIVA_Prototype.Services.Timeline
             };
         }
 
+        private void DetectSuspiciousExtensions(
+    Dictionary<string, AnomalyEntry> anomalyIndex,
+    List<BrowserExtensionEntry> extensions)
+        {
+            if (extensions == null)
+                return;
+
+            foreach (var ext in extensions)
+            {
+                // =====================================================
+                // SUSPICIOUS ID
+                // =====================================================
+
+                bool suspiciousId =
+                    string.IsNullOrWhiteSpace(ext.Id)
+                    ||
+                    ext.Id.Length < 32
+                    ||
+                    !ext.Id.All(c => c >= 'a' && c <= 'p');
+
+                if (suspiciousId)
+                {
+                    var extensionAnomaly =
+                        new AnomalyEntry
+                        {
+                            Type =
+                                AnomalyType.SuspiciousExtension,
+
+                            Title =
+                                ext.Name,
+
+                            Severity =
+                                ext.InstallLocation.Contains(
+                                    "localhost",
+                                    StringComparison.OrdinalIgnoreCase)
+                                ||
+                                ext.Id.Contains(
+                                    "localhost",
+                                    StringComparison.OrdinalIgnoreCase)
+                                ||
+                                ext.Name.Contains(
+                                    "localhost",
+                                    StringComparison.OrdinalIgnoreCase)
+                                    ? 5
+                                    : ext.IsUnpacked
+                                        ? 4
+                                        : 2,
+
+                            Confidence =
+                                90,
+
+                            Description =
+                                ext.InstallLocation.Contains(
+                                    "localhost",
+                                    StringComparison.OrdinalIgnoreCase)
+                                    ? "Localhost developer extension detected"
+                                    : ext.IsUnpacked
+                                        ? "Developer / unpacked extension detected"
+                                        : "Extension not installed from Chrome Web Store",
+
+                            FirstSeen =
+                                ext.InstallTime,
+
+                            LastSeen =
+                                ext.LastRuntimeActivity != default
+                                    ? ext.LastRuntimeActivity
+                                    : ext.InstallTime,
+
+                            TargetType =
+                                AnomalyTargetType.Extension,
+
+                            TargetPosition =
+                                ext.Position,
+
+                            TargetYPercent =
+                                64,
+
+                            LinkedExtensions =
+                            {
+                                ext
+                            },
+
+                            Url =
+                                ext.InstallLocation,
+
+                            Domain =
+                                ext.Name,
+
+                            Color =
+                                ext.InstallLocation.Contains(
+                                    "localhost",
+                                    StringComparison.OrdinalIgnoreCase)
+                                    ? "#ff2b2b"
+                                    : ext.IsUnpacked
+                                        ? "#ff7a2b"
+                                        : "#ffe12b",
+
+                            Tags =
+                            {
+                                "extension",
+                                "suspicious-extension",
+                                "persistence",
+                                "runtime-artifact"
+                            },
+
+                            Evidence =
+                            {
+                                $"Extension ID: {ext.Id}",
+                                $"Source: {(ext.IsFromWebStore ? "WebStore" : "Non-WebStore")}",
+                                $"Install Path: {ext.InstallLocation}",
+                                $"Runtime Artifacts: {ext.RuntimeArtifacts.Count}",
+                                "Invalid Chromium extension ID"
+                            }
+                        };
+
+                    anomalyIndex[
+                        $"suspicious_ext_id:{ext.Id}"] =
+                            extensionAnomaly;
+
+                    continue;
+                }
+
+                // =====================================================
+                // NON WEBSTORE
+                // =====================================================
+
+                var anomaly =
+                    new AnomalyEntry
+                    {
+                        Type =
+                            AnomalyType.SuspiciousExtension,
+
+                        Title =
+                            ext.Name,
+
+                        Severity =
+                            ext.IsUnpacked ? 3 : 2,
+
+                        Confidence =
+                            ext.IsUnpacked ? 80 : 60,
+
+                        Description =
+                            ext.IsUnpacked
+                                ? "Developer / unpacked extension detected"
+                                : "Extension not installed from Chrome Web Store",
+
+                        FirstSeen =
+                            ext.InstallTime,
+
+                        LastSeen =
+                            ext.LastRuntimeActivity != default
+                                ? ext.LastRuntimeActivity
+                                : ext.InstallTime,
+
+                        TargetType =
+                            AnomalyTargetType.Extension,
+
+                        TargetPosition =
+                            ext.Position,
+
+                        TargetYPercent =
+                            64,
+
+                        LinkedExtensions =
+                        {
+                            ext
+                        },
+
+                        Url =
+                            ext.InstallLocation,
+
+                        Domain =
+                            ext.Name,
+
+                        Color =
+                            ext.IsUnpacked
+                                ? "#ffb52b"
+                                : "#ffe12b",
+
+                        Tags =
+                        {
+                            "extension",
+                            "browser-extension",
+                            "developer-extension"
+                        },
+
+                        Evidence =
+                        {
+                            $"Extension ID: {ext.Id}",
+                            $"Install Path: {ext.InstallLocation}",
+                            $"Permissions: {ext.AllPermissions.Count}",
+                            $"Runtime Artifacts: {ext.RuntimeArtifacts.Count}",
+                            ext.IsUnpacked
+                                ? "Unpacked developer extension"
+                                : "Non WebStore extension"
+                        }
+                    };
+            }
+        }
 
         AnomalyEntry AddOrUpdateAnomaly(
         Dictionary<string, AnomalyEntry> index,
@@ -217,6 +424,10 @@ namespace ZIVA_Prototype.Services.Timeline
                         description: $"Cookie für Domain '{cookieDomain}' ohne passenden Verlaufseintrag"
                     );
 
+                    anomaly.Evidence.Add($"Cookie: {cookie.Name}");
+
+                    anomaly.Evidence.Add($"Domain: {cookie.Host}");
+
                     anomaly.LinkedCookies.Add(cookie);
                     anomaly.TargetType = AnomalyTargetType.Cookie;
                     anomaly.TargetPosition = cookie.Position;
@@ -239,6 +450,7 @@ namespace ZIVA_Prototype.Services.Timeline
             Dictionary<string, AnomalyEntry> anomalyIndex,
             List<DomainEntry> summarizedEntries,
             List<WebDataAutofillEntry> autofillEntries,
+            List<UserInputEntry> userInputs,
             int toleranceSeconds = 120)
         {
             if (autofillEntries == null) return;
@@ -265,6 +477,22 @@ namespace ZIVA_Prototype.Services.Timeline
                         severity: 5,
                         description: $"Autofill '{autofill.Name}' ohne zugehörigen Seitenaufruf"
                     );
+
+                    var linkedInput =
+                        userInputs.FirstOrDefault(x =>
+                            x.Type == UserInputType.Autofill
+                            &&
+                            x.Value == autofill.Value
+                            &&
+                            Math.Abs(
+                                (x.Time - autofill.DateCreated)
+                                .TotalSeconds) < 5);
+
+                                        if (linkedInput != null)
+                                        {
+                                            anomaly.LinkedInputs.Add(
+                                                linkedInput);
+                                        }
 
                     anomaly.TargetType = AnomalyTargetType.Autofill;
                     anomaly.TargetPosition = autofill.Position;

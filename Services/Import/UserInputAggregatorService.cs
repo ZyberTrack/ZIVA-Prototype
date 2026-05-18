@@ -30,23 +30,29 @@ namespace ZIVA_Prototype.Services.Import
                     ExtractSearchQuery(
                         h.Url);
 
-                if (!string.IsNullOrWhiteSpace(
-                    query))
-                {
-                    list.Add(
-                        new UserInputEntry
-                        {
-                            Time =
-                                h.VisitTime,
+                if (string.IsNullOrWhiteSpace(query))
+                    continue;
 
-                            Value =
-                                query,
+                var normalized =
+                    NormalizeTimestamp(
+                        h.VisitTime);
 
-                            Type =
-                                UserInputType
-                                    .SearchQuery
-                        });
-                }
+                if (normalized == null)
+                    continue;
+
+                list.Add(
+                    new UserInputEntry
+                    {
+                        Time =
+                            normalized.Value,
+
+                        Value =
+                            query,
+
+                        Type =
+                            UserInputType
+                                .SearchQuery
+                    });
             }
 
             // =====================================================
@@ -55,23 +61,32 @@ namespace ZIVA_Prototype.Services.Import
 
             foreach (var a in autofill)
             {
-                if (!string.IsNullOrWhiteSpace(
+                if (string.IsNullOrWhiteSpace(
                     a.Value))
                 {
-                    list.Add(
-                        new UserInputEntry
-                        {
-                            Time =
-                                a.DateCreated,
-
-                            Value =
-                                a.Value,
-
-                            Type =
-                                UserInputType
-                                    .Autofill
-                        });
+                    continue;
                 }
+
+                var normalized =
+                    NormalizeTimestamp(
+                        a.DateCreated);
+
+                if (normalized == null)
+                    continue;
+
+                list.Add(
+                    new UserInputEntry
+                    {
+                        Time =
+                            normalized.Value,
+
+                        Value =
+                            a.Value,
+
+                        Type =
+                            UserInputType
+                                .Autofill
+                    });
             }
 
             // =====================================================
@@ -80,11 +95,18 @@ namespace ZIVA_Prototype.Services.Import
 
             foreach (var favicon in favicons)
             {
+                var normalized =
+                    NormalizeTimestamp(
+                        favicon.Time);
+
+                if (normalized == null)
+                    continue;
+
                 list.Add(
                     new UserInputEntry
                     {
                         Time =
-                            favicon.Time,
+                            normalized.Value,
 
                         Value =
                             favicon.PageUrl,
@@ -125,6 +147,25 @@ namespace ZIVA_Prototype.Services.Import
             {
                 return null;
             }
+        }
+
+        private DateTime? NormalizeTimestamp(
+    DateTime timestamp)
+        {
+            // =====================================================
+            // INVALID / DEFAULT / CHROMIUM ZERO
+            // =====================================================
+
+            if (timestamp == default)
+                return null;
+
+            if (timestamp.Year < 2000)
+                return null;
+
+            if (timestamp.Year > 2100)
+                return null;
+
+            return timestamp;
         }
     }
 }
