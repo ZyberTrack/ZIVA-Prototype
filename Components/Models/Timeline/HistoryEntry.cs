@@ -15,5 +15,10 @@ namespace ZIVA_Prototype.Components.Models.Timeline
 
         [JsonIgnore]
         public List<ArtifactRelationEntry> Relations { get; set; } = new(); // Für Verknüpfungen zu anderen Artefakten
+
+        // Für Badges oder schnelle Filter
+        public int HighestAnomalySeverity { get; set; }
+
+        public bool HasAnomaly => HighestAnomalySeverity > 0;
     }
 }

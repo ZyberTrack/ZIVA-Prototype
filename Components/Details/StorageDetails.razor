@@ -1,9 +1,21 @@
 ﻿@using ZIVA_Prototype.Components.Models.Timeline
 
-<div class="entry-details storage-details">
+<div class="entry-details storage-details anomaly-details"
+     style="@GetSeverityStyle()">
 
     <div class="entry-header">
-        <span>Storage Artifact</span>
+        <span>Storage Artifact
+            @if (Data.HighestAnomalySeverity >= 3)
+            {
+                <span class="severity-badge"
+                      style="@GetArtifactBadgeStyle()">
+
+                    SEV-@Data.HighestAnomalySeverity
+
+                </span>
+            }
+
+        </span>
 
         <button class="close-btn"
                 @onclick="OnClose">
@@ -147,6 +159,44 @@
             3 => "border-left:4px solid #ffb52b;",
             2 => "border-left:4px solid #ffe12b;",
             _ => "border-left:4px solid #6cff6c;"
+        };
+    }
+
+    private string GetSeverityStyle()
+    {
+        return Data.HighestAnomalySeverity switch
+        {
+            5 =>
+                "border-top:3px solid #ff2b2b;" +
+                "box-shadow:0 0 18px rgba(255,43,43,0.18);",
+
+            4 =>
+                "border-top:3px solid #ff7a2b;" +
+                "box-shadow:0 0 18px rgba(255,122,43,0.16);",
+
+            3 =>
+                "border-top:3px solid #ffb52b;" +
+                "box-shadow:0 0 16px rgba(255,181,43,0.14);",
+
+            2 =>
+                "border-top:3px solid #ffe12b;" +
+                "box-shadow:0 0 14px rgba(255,225,43,0.12);",
+
+            _ =>
+                "border-top:3px solid #6cff6c;" +
+                "box-shadow:0 0 12px rgba(108,255,108,0.10);"
+        };
+    }
+
+    private string GetArtifactBadgeStyle()
+    {
+        return Data.HighestAnomalySeverity switch
+        {
+            5 => "background:#ff2b2b;",
+            4 => "background:#ff7a2b;",
+            3 => "background:#ffb52b;",
+            2 => "background:#ffe12b; color:black;",
+            _ => "background:#6cff6c; color:black;"
         };
     }
 }

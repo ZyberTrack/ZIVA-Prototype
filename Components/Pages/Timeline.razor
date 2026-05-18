@@ -1229,16 +1229,61 @@
         return matches.Max(a => a.Severity);
     }
 
-    string GetArtifactStyle(object artifact)
+    private string GetArtifactStyle(
+    object artifact)
     {
-        var severity = GetArtifactSeverity(artifact);
+        int severity = 0;
 
-        if (severity == null)
-            return "";
+        switch (artifact)
+        {
+            case BrowserCookieEntry c:
+                severity =
+                    c.HighestAnomalySeverity;
+                break;
 
-        var bg = GetSeverityBackground(severity.Value);
+            case BrowserExtensionEntry e:
+                severity =
+                    e.HighestAnomalySeverity;
+                break;
 
-        return $"background:{bg};";
+            case UserInputEntry i:
+                severity =
+                    i.HighestAnomalySeverity;
+                break;
+
+            case StorageEntry s:
+                severity =
+                    s.HighestAnomalySeverity;
+                break;
+
+            case DomainEntry d:
+                severity =
+                    d.HighestAnomalySeverity;
+                break;
+
+            case BrowserHistoryEntry h:
+                severity =
+                    h.HighestAnomalySeverity;
+                break;
+
+            case AnomalyEntry a:
+                severity =
+                    a.Severity;
+                break;
+        }
+
+        string borderColor = severity switch
+        {
+            5 => "#ff2b2b",
+            4 => "#ff7a2b",
+            3 => "#ffb52b",
+            2 => "#ffe12b",
+            1 => "#6cff6c",
+            _ => "rgba(255,255,255,0.25)"
+        };
+
+        return
+            $"border-left:3px solid {borderColor};";
     }
 
     
@@ -1450,7 +1495,23 @@
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(e)"
                                 @onclick="() => FocusHistoryFromTable(e)">
+                                @if (e.HighestAnomalySeverity > 0)
+                                {
+                                    <div style="
+                                        position:absolute;
+                                        top:6px;
+                                        right:6px;
+                                        background:@GetSeverityColor(e.HighestAnomalySeverity);
+                                        color:white;
+                                        font-size:10px;
+                                        font-weight:700;
+                                        padding:1px 6px;
+                                        border-radius:999px;
+                                        box-shadow:0 0 6px rgba(0,0,0,0.25);">
 
+                                        @e.HighestAnomalySeverity
+                                    </div>
+                                }
                                 @e.VisitTime <br />
                                 @(e.Url?.Length > 90
                                     ? e.Url.Substring(0, 90) + "..."
@@ -1473,7 +1534,23 @@
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(e)"
                                 @onclick="() => SelectCookie(e)">
+                                @if (e.HighestAnomalySeverity > 0)
+                                {
+                                    <div style="
+                                        position:absolute;
+                                        top:6px;
+                                        right:6px;
+                                        background:@GetSeverityColor(e.HighestAnomalySeverity);
+                                        color:white;
+                                        font-size:10px;
+                                        font-weight:700;
+                                        padding:1px 6px;
+                                        border-radius:999px;
+                                        box-shadow:0 0 6px rgba(0,0,0,0.25);">
 
+                                        @e.HighestAnomalySeverity
+                                    </div>
+                                }
                                 @e.Name <br />
                                 @(e.Value?.Length > 80 ? e.Value.Substring(0, 80) + "..." : e.Value) <br />
                                 @e.LastAccessed <br />
@@ -1493,7 +1570,23 @@
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(e)"
                                 @onclick="() => SelectInput(e)">
+                                @if (e.HighestAnomalySeverity > 0)
+                                {
+                                    <div style="
+                                        position:absolute;
+                                        top:6px;
+                                        right:6px;
+                                        background:@GetSeverityColor(e.HighestAnomalySeverity);
+                                        color:white;
+                                        font-size:10px;
+                                        font-weight:700;
+                                        padding:1px 6px;
+                                        border-radius:999px;
+                                        box-shadow:0 0 6px rgba(0,0,0,0.25);">
 
+                                        @e.HighestAnomalySeverity
+                                    </div>
+                                }
                                 @e.Type <br />
 
                                 @(e.Value?.Length > 100
@@ -1519,7 +1612,23 @@
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(e)"
                                 @onclick="() => SelectExtension(e)">
+                                @if (e.HighestAnomalySeverity > 0)
+                                {
+                                    <div style="
+                                        position:absolute;
+                                        top:6px;
+                                        right:6px;
+                                        background:@GetSeverityColor(e.HighestAnomalySeverity);
+                                        color:white;
+                                        font-size:10px;
+                                        font-weight:700;
+                                        padding:1px 6px;
+                                        border-radius:999px;
+                                        box-shadow:0 0 6px rgba(0,0,0,0.25);">
 
+                                        @e.HighestAnomalySeverity
+                                    </div>
+                                }
                                 <strong>@e.Name</strong><br />
 
                                 @e.InstallTime <br />
@@ -1540,7 +1649,23 @@
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(s)"
                                 @onclick="() => SelectStorage(s)">
+                                @if (s.HighestAnomalySeverity > 0)
+                                {
+                                    <div style="
+                                        position:absolute;
+                                        top:6px;
+                                        right:6px;
+                                        background:@GetSeverityColor(s.HighestAnomalySeverity);
+                                        color:white;
+                                        font-size:10px;
+                                        font-weight:700;
+                                        padding:1px 6px;
+                                        border-radius:999px;
+                                        box-shadow:0 0 6px rgba(0,0,0,0.25);">
 
+                                        @s.HighestAnomalySeverity
+                                    </div>
+                                }
                                 <strong>@s.Key</strong><br />
 
                                 Type: @s.Type <br />
@@ -1568,7 +1693,23 @@
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(d)"
                                 @onclick="() => ExpandAndFocus(d)">
+                                @if (d.HighestAnomalySeverity > 0)
+                                {
+                                    <div style="
+                                        position:absolute;
+                                        top:6px;
+                                        right:6px;
+                                        background:@GetSeverityColor(d.HighestAnomalySeverity);
+                                        color:white;
+                                        font-size:10px;
+                                        font-weight:700;
+                                        padding:1px 6px;
+                                        border-radius:999px;
+                                        box-shadow:0 0 6px rgba(0,0,0,0.25);">
 
+                                        @d.HighestAnomalySeverity
+                                    </div>
+                                }
                                 <strong>@d.Domain</strong><br />
 
                                 URL:
@@ -1596,6 +1737,23 @@
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(a)"
                                 @onclick="() => FocusAnomaly(a)">
+                                @if (a.Severity > 0)
+                                {
+                                    <div style="
+                                        position:absolute;
+                                        top:6px;
+                                        right:6px;
+                                        background:@GetSeverityColor(a.Severity);
+                                        color:white;
+                                        font-size:10px;
+                                        font-weight:700;
+                                        padding:1px 6px;
+                                        border-radius:999px;
+                                        box-shadow:0 0 6px rgba(0,0,0,0.25);">
+
+                                        @a.Severity
+                                    </div>
+                                }
                                 <span style="
                                     color:@GetSeverityColor(a.Severity);
                                     font-weight:700;

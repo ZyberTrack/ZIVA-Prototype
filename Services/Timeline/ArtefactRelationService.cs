@@ -159,16 +159,59 @@ namespace ZIVA_Prototype.Services.Timeline
                 if (string.IsNullOrWhiteSpace(input.Value))
                     continue;
 
-                var matchingDomain =
-                    domains
-                    .OrderBy(d =>
-                        Math.Abs(
-                            (input.Time - d.VisitTime)
-                            .TotalSeconds))
-                    .FirstOrDefault(d =>
-                        Math.Abs(
-                            (input.Time - d.VisitTime)
-                            .TotalMinutes) <= 5);
+                DomainEntry? matchingDomain = null;
+
+                // =====================================================
+                // FAVICON MATCHING
+                // =====================================================
+
+                if (input.Type == UserInputType.Favicon)
+                {
+                    string faviconUrl =
+                        input.Value?
+                        .Trim()
+                        .ToLower() ?? "";
+
+                    matchingDomain =
+                        domains
+                        .Where(d =>
+                            !string.IsNullOrWhiteSpace(d.Url))
+                        .Where(d =>
+                            d.Url.ToLower().Contains(faviconUrl)
+                            ||
+                            faviconUrl.Contains(
+                                d.Domain.ToLower()))
+                        .OrderBy(d =>
+                            Math.Abs(
+                                (input.Time - d.VisitTime)
+                                .TotalSeconds))
+                        .FirstOrDefault();
+
+                    // fallback auf Zeit
+                    matchingDomain ??=
+                        domains
+                        .OrderBy(d =>
+                            Math.Abs(
+                                (input.Time - d.VisitTime)
+                                .TotalSeconds))
+                        .FirstOrDefault(d =>
+                            Math.Abs(
+                                (input.Time - d.VisitTime)
+                                .TotalMinutes) <= 5);
+                }
+                else
+                {
+                    matchingDomain =
+                        domains
+                        .OrderBy(d =>
+                            Math.Abs(
+                                (input.Time - d.VisitTime)
+                                .TotalSeconds))
+                        .FirstOrDefault(d =>
+                            Math.Abs(
+                                (input.Time - d.VisitTime)
+                                .TotalMinutes) <= 5);
+                }
 
                 if (matchingDomain == null)
                     continue;
@@ -220,11 +263,18 @@ namespace ZIVA_Prototype.Services.Timeline
             foreach (var ext in extensions)
             {
                 var matchingDomain =
-                    domains
-                    .FirstOrDefault(d =>
-                        d.Url.Contains("chrome.google.com/webstore")
-                        ||
-                        d.Url.Contains("chromewebstore.google.com"));
+                        domains
+                        .Where(d =>
+                            d.Url.Contains("chrome.google.com/webstore")
+                            ||
+                            d.Url.Contains("chromewebstore.google.com"))
+                        .Where(d =>
+                            d.VisitTime <= ext.InstallTime)
+                        .OrderBy(d =>
+                            Math.Abs(
+                                (ext.InstallTime - d.VisitTime)
+                                .TotalSeconds))
+                        .FirstOrDefault();
 
                 if (matchingDomain == null)
                     continue;
@@ -235,7 +285,7 @@ namespace ZIVA_Prototype.Services.Timeline
 
                 if ((ext.InstallTime -
                      matchingDomain.VisitTime)
-                    .TotalMinutes > 5)
+                    .TotalMinutes > 10)
                     continue;
 
                 var relation =

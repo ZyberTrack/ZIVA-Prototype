@@ -777,6 +777,7 @@
     }
 
     .artifact-column li {
+        position: relative;
         margin-bottom: 8px;
         padding: 6px 8px;
         background: rgba(255,255,255,0.04);

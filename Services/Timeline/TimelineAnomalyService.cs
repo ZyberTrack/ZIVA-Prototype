@@ -69,6 +69,11 @@ namespace ZIVA_Prototype.Services.Timeline
                 summarizedEntries
             );
 
+            DetectOrphanExtensions(
+                orphanArtifacts,
+                extensions
+            );
+
             BuildDeletedHistoryPhases(
                 anomalyIndex,
                 orphanArtifacts,
@@ -120,6 +125,10 @@ namespace ZIVA_Prototype.Services.Timeline
             }
 
             anomalies.AddRange(anomalyIndex.Values.Where(x => x.Type != AnomalyType.Unknown));
+
+            ApplyCorrelationSeverityBoost(anomalies);
+
+            ApplyArtifactSeverityBadges(anomalies); //für die Anzeige von Badges in den Artefakten
 
             return anomalies;
         }
@@ -423,23 +432,35 @@ namespace ZIVA_Prototype.Services.Timeline
             return created;
         }
 
-
-        string NormalizeDomain(string input)
+        private void DetectOrphanExtensions(
+    List<OrphanArtifact> orphanArtifacts,
+    List<BrowserExtensionEntry> extensions)
         {
-            if (string.IsNullOrWhiteSpace(input))
-                return "";
+            foreach (var ext in extensions)
+            {
+                bool hasWebStoreRelation =
+                    ext.Relations.Any(r =>
+                        r.Type ==
+                        ArtifactRelationType
+                            .ExtensionToWebStore);
 
-            input = input.Trim().ToLower();
+                // nur unpacked / non-webstore relevant
+                if (ext.IsFromWebStore &&
+                    hasWebStoreRelation)
+                {
+                    continue;
+                }
 
-            if (input.StartsWith("."))
-                input = input[1..];
-
-            // URLs erlauben
-            if (Uri.TryCreate(input, UriKind.Absolute, out var uri))
-                return uri.Host;
-
-            return input;
+                // wenn kein passender Store Visit
+                orphanArtifacts.Add(
+                    new OrphanArtifact
+                    {
+                        Time = ext.InstallTime,
+                        Extension = ext
+                    });
+            }
         }
+
 
         private void DetectOrphanCookies(
      List<OrphanArtifact> orphanArtifacts,
@@ -655,6 +676,227 @@ namespace ZIVA_Prototype.Services.Timeline
             anomalyIndex[
                 $"deleted-history:{phaseIndex}"] =
                     anomaly;
+        }
+
+        private void ApplyCorrelationSeverityBoost(
+    List<AnomalyEntry> anomalies)
+        {
+            // =====================================================
+            // ORIGINAL SEVERITIES
+            // =====================================================
+
+            var originalSeverity =
+                anomalies.ToDictionary(
+                    x => x,
+                    x => x.Severity);
+
+            // =====================================================
+            // EXTENSION COUNTS
+            // =====================================================
+
+            var extensionCounts =
+                new Dictionary<BrowserExtensionEntry, int>();
+
+            foreach (var anomaly in anomalies)
+            {
+                foreach (var ext in anomaly.LinkedExtensions)
+                {
+                    if (!extensionCounts.ContainsKey(ext))
+                        extensionCounts[ext] = 0;
+
+                    extensionCounts[ext]++;
+                }
+            }
+
+            // =====================================================
+            // COOKIE COUNTS
+            // =====================================================
+
+            var cookieCounts =
+                new Dictionary<BrowserCookieEntry, int>();
+
+            foreach (var anomaly in anomalies)
+            {
+                foreach (var cookie in anomaly.LinkedCookies)
+                {
+                    if (!cookieCounts.ContainsKey(cookie))
+                        cookieCounts[cookie] = 0;
+
+                    cookieCounts[cookie]++;
+                }
+            }
+
+            // =====================================================
+            // INPUT COUNTS
+            // =====================================================
+
+            var inputCounts =
+                new Dictionary<UserInputEntry, int>();
+
+            foreach (var anomaly in anomalies)
+            {
+                foreach (var input in anomaly.LinkedInputs)
+                {
+                    if (!inputCounts.ContainsKey(input))
+                        inputCounts[input] = 0;
+
+                    inputCounts[input]++;
+                }
+            }
+
+            // =====================================================
+            // APPLY BOOSTS
+            // =====================================================
+
+            foreach (var anomaly in anomalies)
+            {
+                bool shouldBoost = false;
+
+                // EXTENSIONS
+                if (anomaly.LinkedExtensions.Any(e =>
+                    extensionCounts.TryGetValue(e, out var count)
+                    && count >= 3))
+                {
+                    shouldBoost = true;
+                }
+
+                // COOKIES
+                if (anomaly.LinkedCookies.Any(c =>
+                    cookieCounts.TryGetValue(c, out var count)
+                    && count >= 3))
+                {
+                    shouldBoost = true;
+                }
+
+                // INPUTS
+                if (anomaly.LinkedInputs.Any(i =>
+                    inputCounts.TryGetValue(i, out var count)
+                    && count >= 3))
+                {
+                    shouldBoost = true;
+                }
+
+                if (!shouldBoost)
+                    continue;
+
+                anomaly.IsCorrelated = true;
+
+                anomaly.CorrelationBoost = 1;
+
+            }
+        }
+
+        private void ApplyArtifactSeverityBadges(
+    List<AnomalyEntry> anomalies)
+        {
+            foreach (var anomaly in anomalies)
+            {
+                // =====================================================
+                // COOKIES
+                // =====================================================
+
+                foreach (var cookie in anomaly.LinkedCookies)
+                {
+                    int effectiveSeverity =
+                        anomaly.Severity +
+                        anomaly.CorrelationBoost;
+
+                    cookie.HighestAnomalySeverity =
+                        Math.Max(
+                            cookie.HighestAnomalySeverity,
+                            Math.Min(5, effectiveSeverity));
+                }
+
+                // =====================================================
+                // EXTENSIONS
+                // =====================================================
+
+                foreach (var ext in anomaly.LinkedExtensions)
+                {
+                    int effectiveSeverity =
+                        Math.Min(
+                            5,
+                            anomaly.Severity +
+                            anomaly.CorrelationBoost);
+
+                    ext.HighestAnomalySeverity =
+                        Math.Max(
+                            ext.HighestAnomalySeverity,
+                            effectiveSeverity);
+                }
+
+                // =====================================================
+                // INPUTS
+                // =====================================================
+
+                foreach (var input in anomaly.LinkedInputs)
+                {
+                    int effectiveSeverity =
+                        Math.Min(
+                            5,
+                            anomaly.Severity +
+                            anomaly.CorrelationBoost);
+
+                    input.HighestAnomalySeverity =
+                        Math.Max(
+                            input.HighestAnomalySeverity,
+                            effectiveSeverity);
+                }
+
+                // =====================================================
+                // STORAGE
+                // =====================================================
+
+                foreach (var storage in anomaly.LinkedStorage)
+                {
+                    int effectiveSeverity =
+                        Math.Min(
+                            5,
+                            anomaly.Severity +
+                            anomaly.CorrelationBoost);
+
+                    storage.HighestAnomalySeverity =
+                        Math.Max(
+                            storage.HighestAnomalySeverity,
+                            effectiveSeverity);
+                }
+
+                // =====================================================
+                // HISTORY
+                // =====================================================
+
+                foreach (var history in anomaly.LinkedHistory)
+                {
+                    int effectiveSeverity =
+                        Math.Min(
+                            5,
+                            anomaly.Severity +
+                            anomaly.CorrelationBoost);
+
+                    history.HighestAnomalySeverity =
+                        Math.Max(
+                            history.HighestAnomalySeverity,
+                            effectiveSeverity);
+                }
+
+                // =====================================================
+                // DOMAINS
+                // =====================================================
+
+                if (anomaly.LinkedDomain != null)
+                {
+                    int effectiveSeverity =
+                        Math.Min(
+                            5,
+                            anomaly.Severity +
+                            anomaly.CorrelationBoost);
+
+                    anomaly.LinkedDomain.HighestAnomalySeverity =
+                        Math.Max(
+                            anomaly.LinkedDomain.HighestAnomalySeverity,
+                            effectiveSeverity);
+                }
+            }
         }
     }
 }

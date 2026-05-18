@@ -137,6 +137,16 @@
         public List<string> Evidence { get; set; } = new();
 
         public List<string> Notes { get; set; } = new();
+
+        // ----------------------------------------------------
+        // SEVERITYBOOST
+        // ----------------------------------------------------
+
+        public int CorrelationBoost { get; set; }
+
+        public int RelatedAnomalyCount { get; set; }
+
+        public bool IsCorrelated { get; set; }
     }
 
 
