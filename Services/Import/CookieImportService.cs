@@ -65,12 +65,78 @@ namespace ZIVA_Prototype.Services.Import
                         Created = creationTime,
                         Expires = expiresTime,
                         LastAccessed = accessTime,
-                        Position = 0
+                        Position = 0,
+                        Category = DetectCategory(host),
                     });
                 }
 
                 return cookies;
             });
+        }
+
+        private CookieCategory DetectCategory(
+    string host)
+        {
+            if (string.IsNullOrWhiteSpace(host))
+            {
+                return CookieCategory.Unknown;
+            }
+
+            host =
+                host.ToLowerInvariant();
+
+            // =====================================================
+            // BROWSER / INFRASTRUCTURE
+            // =====================================================
+
+            string[] browserInfra =
+            {
+        "ogs.google.com",
+        "accounts.google.com",
+        "clients.google.com",
+        "clients2.google.com",
+        "update.googleapis.com",
+        "safebrowsing.googleapis.com",
+        "optimizationguide-pa.googleapis.com",
+        "gstatic.com",
+        "googleapis.com",
+        "edge.microsoft.com",
+        "msedge.net",
+        "firefox.com",
+        "mozilla.net"
+    };
+
+            if (browserInfra.Any(x =>
+                    host.Contains(x)))
+            {
+                return CookieCategory.BrowserBackground;
+            }
+
+            // =====================================================
+            // TRACKING
+            // =====================================================
+
+            string[] tracking =
+            {
+        "doubleclick.net",
+        "googlesyndication.com",
+        "googleadservices.com",
+        "facebook.com",
+        "analytics",
+        "tracker"
+    };
+
+            if (tracking.Any(x =>
+                    host.Contains(x)))
+            {
+                return CookieCategory.Tracking;
+            }
+
+            // =====================================================
+            // DEFAULT
+            // =====================================================
+
+            return CookieCategory.UserBrowsing;
         }
 
         private DateTime FromChromeUtc(long chromeTime)

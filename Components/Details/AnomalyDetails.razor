@@ -44,6 +44,18 @@
         </div>
 
         <div class="entry-row">
+            <strong>Confidence</strong><br />
+
+            <span style="
+                color:#9ad1ff;
+                font-weight:700;">
+
+                @Data.Confidence%
+
+            </span>
+        </div>
+
+        <div class="entry-row">
             <strong>Severity</strong><br />
             @Data.Severity / 5
         </div>
@@ -112,6 +124,129 @@
             <div class="entry-row">
                 <strong>Heavy Cluster</strong><br />
                 @(Data.LinkedDomain.IsHeavyCluster ? "Yes" : "No")
+            </div>
+        }
+
+        @if (Data.Evidence.Any())
+        {
+            <div class="entry-row">
+                <strong>Evidence</strong>
+
+                <ul style="
+                    margin-top:10px;
+                    padding-left:18px;">
+
+                    @foreach (var evidence in Data.Evidence.Distinct())
+                    {
+                        <li style="
+                            margin-top:6px;
+                            color:#d6e4f0;
+                            line-height:1.45;">
+
+                            @evidence
+
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @if (Data.LinkedExtensions.Any())
+        {
+            <div class="entry-row">
+                <strong>Linked Extensions</strong>
+
+                <ul style="
+                    margin-top:10px;
+                    padding-left:18px;">
+
+                    @foreach (var ext in Data.LinkedExtensions.Distinct())
+                    {
+                        <li style="margin-top:8px;">
+
+                            <span style="
+                                color:@GetSeverityTextColor();
+                                font-weight:700;">
+
+                                @ext.Name
+
+                            </span>
+
+                            <br />
+
+                            <span style="
+                                font-size:12px;
+                                opacity:0.75;">
+
+                                @ext.Id
+
+                            </span>
+
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @if (Data.LinkedInputs.Any())
+        {
+            <div class="entry-row">
+                <strong>Linked Inputs</strong>
+
+                <ul style="
+                    margin-top:10px;
+                    padding-left:18px;">
+
+                    @foreach (var input in Data.LinkedInputs.Distinct())
+                    {
+                        <li style="margin-top:8px;">
+
+                            <span style="
+                                color:@GetSeverityTextColor();
+                                font-weight:700;">
+
+                                @input.Type
+
+                            </span>
+
+                            <br />
+
+                            @input.Value
+
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @if (Data.LinkedCookies.Any())
+        {
+            <div class="entry-row">
+                <strong>Linked Cookies</strong>
+
+                <ul style="
+                    margin-top:10px;
+                    padding-left:18px;">
+
+                    @foreach (var cookie in Data.LinkedCookies.Distinct())
+                    {
+                        <li style="margin-top:8px;">
+
+                            <span style="
+                                color:@GetSeverityTextColor();
+                                font-weight:700;">
+
+                                @cookie.Name
+
+                            </span>
+
+                            <br />
+
+                            @cookie.Host
+
+                        </li>
+                    }
+                </ul>
             </div>
         }
 

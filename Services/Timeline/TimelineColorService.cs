@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ZIVA_Prototype.Components.Models.Enums;
 
 namespace ZIVA_Prototype.Services.Timeline
 {
@@ -94,6 +95,30 @@ namespace ZIVA_Prototype.Services.Timeline
             int B = (int)((b + m) * 255);
 
             return $"rgb({R},{G},{B})";
+        }
+
+        public string GetCookieColor(CookieCategory category)
+        {
+            return category switch
+            {
+                CookieCategory.BrowserBackground =>
+                    "#4da3ff", // blau
+
+                CookieCategory.Authentication =>
+                    "#52d273", // grün
+
+                CookieCategory.Tracking =>
+                    "#ffb347", // orange
+
+                CookieCategory.Analytics =>
+                    "#d98cff", // violett
+
+                CookieCategory.UserBrowsing =>
+                    "#6846FC", // dein aktuelles lila
+
+                _ =>
+                    "#9e9e9e" // fallback grau
+            };
         }
     }
 }

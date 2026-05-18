@@ -97,6 +97,14 @@ public class ExtensionRuntimeScanner
                     {
                         entry.RuntimeArtifacts.Add(dir);
 
+                        // =====================================================
+                        // SIMPLE RUNTIME KEYWORD PARSING
+                        // =====================================================
+
+                        TryParseRuntimeKeywords(
+                            dir,
+                            entry);
+
                         if (dir.Contains(".leveldb",StringComparison.OrdinalIgnoreCase))
                         {
                             entry.RuntimeArtifacts
@@ -188,6 +196,113 @@ public class ExtensionRuntimeScanner
         }
 
         return results;
+    }
+
+    private void TryParseRuntimeKeywords(
+    string path,
+    BrowserExtensionEntry entry)
+    {
+        try
+        {
+            // =====================================================
+            // NUR KLEINE DATEIEN
+            // =====================================================
+
+            var files =
+                Directory.GetFiles(
+                    path,
+                    "*",
+                    SearchOption.TopDirectoryOnly)
+                .Where(f =>
+                    f.EndsWith(".ldb",
+                        StringComparison.OrdinalIgnoreCase)
+                    ||
+                    f.EndsWith(".log",
+                        StringComparison.OrdinalIgnoreCase)
+                    ||
+                    f.EndsWith(".blob",
+                        StringComparison.OrdinalIgnoreCase))
+                .Take(5);
+
+            foreach (var file in files)
+            {
+                try
+                {
+                    // =====================================================
+                    // KLEINE DATEIEN LIMIT
+                    // =====================================================
+
+                    var info =
+                        new FileInfo(file);
+
+                    if (info.Length >
+                        1024 * 1024 * 5)
+                    {
+                        continue;
+                    }
+
+                    byte[] data = File.ReadAllBytes(file);
+
+                    string text =
+                        System.Text.Encoding.UTF8
+                            .GetString(data);
+
+                    // =====================================================
+                    // LOCALHOST
+                    // =====================================================
+
+                    if (text.Contains(
+                            "localhost",
+                            StringComparison.OrdinalIgnoreCase)
+                        ||
+                        text.Contains(
+                            "127.0.0.1",
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!entry.HostPermissions.Contains(
+                            "localhost"))
+                        {
+                            entry.HostPermissions.Add(
+                                "localhost");
+                        }
+                    }
+
+                    // =====================================================
+                    // SCRIPTING
+                    // =====================================================
+
+                    string[] dangerous =
+                    {
+                    "scripting",
+                    "webrequestblocking",
+                    "webrequest",
+                    "debugger",
+                    "nativemessaging"
+                };
+
+                    foreach (var keyword in dangerous)
+                    {
+                        if (text.Contains(
+                                keyword,
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (!entry.AllPermissions.Contains(
+                                    keyword))
+                            {
+                                entry.AllPermissions.Add(
+                                    keyword);
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                }
+            }
+        }
+        catch
+        {
+        }
     }
 
     private BrowserExtensionEntry GetOrCreate(

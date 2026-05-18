@@ -100,11 +100,32 @@ public class ExtensionFolderScanner
                     // FALLBACK WEBSTORE DETECTION
                     // =====================================================
 
-                    if (!entry.IsUnpacked &&
-                        entry.FoundInExtensionsFolder &&
-                        IsValidExtensionId(entry.Id))
+                    // =====================================================
+                    // UNPACKED / SIDELOADED DETECTION
+                    // =====================================================
+
+                    // echte WebStore Extensions
+                    // haben normalerweise Google Update URLs
+
+                    entry.IsUnpacked = false;
+
+                    // =====================================================
+                    // LOCAL / DEV INDICATORS
+                    // =====================================================
+
+                    if (versionDir.Contains(
+                            "localhost",
+                            StringComparison.OrdinalIgnoreCase)
+                        ||
+                        versionDir.Contains(
+                            "dev",
+                            StringComparison.OrdinalIgnoreCase)
+                        ||
+                        versionDir.Contains(
+                            "test",
+                            StringComparison.OrdinalIgnoreCase))
                     {
-                        entry.IsFromWebStore = true;
+                        entry.IsUnpacked = true;
                     }
 
                     entry.ConfidenceScore += 50;
@@ -114,19 +135,6 @@ public class ExtensionFolderScanner
                 }
             }
         }
-    }
-
-    private bool IsValidExtensionId(string id)
-    {
-        if (string.IsNullOrWhiteSpace(id))
-            return false;
-
-        if (id.Length != 32)
-            return false;
-
-        return id.All(c =>
-            c >= 'a' &&
-            c <= 'p');
     }
 
     private void ParseManifest(

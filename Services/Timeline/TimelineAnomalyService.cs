@@ -26,23 +26,53 @@ namespace ZIVA_Prototype.Services.Timeline
 
             var anomalyIndex = new Dictionary<string, AnomalyEntry>();
 
+            var orphanArtifacts = new List<OrphanArtifact>();
+
+            // =====================================================
+            // LEGITIME HISTORY ALS BASISANOMALIEN REGISTRIEREN
+            // =====================================================
+
+            foreach (var domain in summarizedEntries)
+            {
+                anomalyIndex[
+                    $"history:{domain.VisitTime.Ticks}"] =
+                        new AnomalyEntry
+                        {
+                            Type =
+                                AnomalyType.Unknown,
+
+                            FirstSeen =
+                                domain.VisitTime,
+
+                            LastSeen =
+                                domain.VisitTime
+                        };
+            }
+
             DetectOrphanCookies(
-                anomalyIndex,
+                orphanArtifacts,
                 summarizedEntries,
                 cookies
             );
 
             DetectOrphanAutofill(
-                anomalyIndex,
+                orphanArtifacts,
                 summarizedEntries,
                 autofillEntries,
                 userInputs
             );
 
             DetectSuspiciousExtensions(
+                orphanArtifacts,
                 anomalyIndex,
-                extensions
+                extensions,
+                summarizedEntries
             );
+
+            BuildDeletedHistoryPhases(
+                anomalyIndex,
+                orphanArtifacts,
+                summarizedEntries);
 
             foreach (var domain in summarizedEntries)
             {
@@ -89,7 +119,7 @@ namespace ZIVA_Prototype.Services.Timeline
                 }
             }
 
-            anomalies.AddRange(anomalyIndex.Values);
+            anomalies.AddRange(anomalyIndex.Values.Where(x => x.Type != AnomalyType.Unknown));
 
             return anomalies;
         }
@@ -102,8 +132,7 @@ namespace ZIVA_Prototype.Services.Timeline
         {
             return type switch
             {
-                AnomalyType.DeletedHistoryIndicator =>
-                    $"{type}:{domain.Domain.ToLower()}:{time:yyyyMMddHHmmss}:{artifactId}",
+                AnomalyType.DeletedHistoryIndicator => $"{type}:active", // Damit nicht jedes Mal eine neue Anomalie erstellt wird.
 
                 _ =>
                     $"{type}:{domain.Domain.ToLower()}"
@@ -111,8 +140,10 @@ namespace ZIVA_Prototype.Services.Timeline
         }
 
         private void DetectSuspiciousExtensions(
+    List<OrphanArtifact> orphanArtifacts,
     Dictionary<string, AnomalyEntry> anomalyIndex,
-    List<BrowserExtensionEntry> extensions)
+    List<BrowserExtensionEntry> extensions,
+    List<DomainEntry> summarizedEntries)
         {
             if (extensions == null)
                 return;
@@ -120,120 +151,120 @@ namespace ZIVA_Prototype.Services.Timeline
             foreach (var ext in extensions)
             {
                 // =====================================================
-                // SUSPICIOUS ID
+                // SIGNALS
                 // =====================================================
 
-                bool suspiciousId =
-                    string.IsNullOrWhiteSpace(ext.Id)
+                bool localhostCommunication =
+                    ext.AllPermissions.Any(p =>
+                        p.Contains(
+                            "localhost",
+                            StringComparison.OrdinalIgnoreCase))
                     ||
-                    ext.Id.Length < 32
+                    ext.HostPermissions.Any(p =>
+                        p.Contains(
+                            "localhost",
+                            StringComparison.OrdinalIgnoreCase))
                     ||
-                    !ext.Id.All(c => c >= 'a' && c <= 'p');
+                    ext.ContentScripts.Any(c =>
+                        c.Contains(
+                            "localhost",
+                            StringComparison.OrdinalIgnoreCase));
 
-                if (suspiciousId)
+                bool dangerousScripting =
+                    ext.AllPermissions.Any(p =>
+                        p.Contains(
+                            "scripting",
+                            StringComparison.OrdinalIgnoreCase))
+                    ||
+                    ext.AllPermissions.Any(p =>
+                        p.Contains(
+                            "webRequestBlocking",
+                            StringComparison.OrdinalIgnoreCase));
+
+                bool runtimeActive =
+                    ext.RuntimeArtifacts.Any();
+
+
+                // =====================================================
+                // DELETED HISTORY CORRELATION
+                // =====================================================
+
+                bool hasMatchingHistory = summarizedEntries.Any(h =>
+            (
+            h.Url.Contains(
+                "chrome.google.com/webstore",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            h.Url.Contains(
+                "chromewebstore.google.com",
+                StringComparison.OrdinalIgnoreCase)
+        )
+        &&
+        h.VisitTime <= ext.InstallTime
+        &&
+        (ext.InstallTime - h.VisitTime)
+            .TotalSeconds <= 300);
+
+                if (!hasMatchingHistory)
                 {
-                    var extensionAnomaly =
-                        new AnomalyEntry
+                    orphanArtifacts.Add(
+                        new OrphanArtifact
                         {
-                            Type =
-                                AnomalyType.SuspiciousExtension,
+                            Time = ext.InstallTime,
+                            Extension = ext
+                        });
+                }
 
-                            Title =
-                                ext.Name,
+                // =====================================================
+                // NO REAL SIGNAL
+                // =====================================================
 
-                            Severity =
-                                ext.InstallLocation.Contains(
-                                    "localhost",
-                                    StringComparison.OrdinalIgnoreCase)
-                                ||
-                                ext.Id.Contains(
-                                    "localhost",
-                                    StringComparison.OrdinalIgnoreCase)
-                                ||
-                                ext.Name.Contains(
-                                    "localhost",
-                                    StringComparison.OrdinalIgnoreCase)
-                                    ? 5
-                                    : ext.IsUnpacked
-                                        ? 4
-                                        : 2,
-
-                            Confidence =
-                                90,
-
-                            Description =
-                                ext.InstallLocation.Contains(
-                                    "localhost",
-                                    StringComparison.OrdinalIgnoreCase)
-                                    ? "Localhost developer extension detected"
-                                    : ext.IsUnpacked
-                                        ? "Developer / unpacked extension detected"
-                                        : "Extension not installed from Chrome Web Store",
-
-                            FirstSeen =
-                                ext.InstallTime,
-
-                            LastSeen =
-                                ext.LastRuntimeActivity != default
-                                    ? ext.LastRuntimeActivity
-                                    : ext.InstallTime,
-
-                            TargetType =
-                                AnomalyTargetType.Extension,
-
-                            TargetPosition =
-                                ext.Position,
-
-                            TargetYPercent =
-                                64,
-
-                            LinkedExtensions =
-                            {
-                                ext
-                            },
-
-                            Url =
-                                ext.InstallLocation,
-
-                            Domain =
-                                ext.Name,
-
-                            Color =
-                                ext.InstallLocation.Contains(
-                                    "localhost",
-                                    StringComparison.OrdinalIgnoreCase)
-                                    ? "#ff2b2b"
-                                    : ext.IsUnpacked
-                                        ? "#ff7a2b"
-                                        : "#ffe12b",
-
-                            Tags =
-                            {
-                                "extension",
-                                "suspicious-extension",
-                                "persistence",
-                                "runtime-artifact"
-                            },
-
-                            Evidence =
-                            {
-                                $"Extension ID: {ext.Id}",
-                                $"Source: {(ext.IsFromWebStore ? "WebStore" : "Non-WebStore")}",
-                                $"Install Path: {ext.InstallLocation}",
-                                $"Runtime Artifacts: {ext.RuntimeArtifacts.Count}",
-                                "Invalid Chromium extension ID"
-                            }
-                        };
-
-                    anomalyIndex[
-                        $"suspicious_ext_id:{ext.Id}"] =
-                            extensionAnomaly;
-
+                if (!localhostCommunication
+                    &&
+                    !ext.IsUnpacked
+                    &&
+                    ext.IsFromWebStore
+                    &&
+                    !dangerousScripting)
+                {
                     continue;
                 }
 
                 // =====================================================
-                // NON WEBSTORE
+                // SEVERITY
+                // =====================================================
+
+                int severity = 2;
+
+                if (dangerousScripting)
+                    severity = 3;
+
+                if (!ext.IsFromWebStore)
+                    severity = 3;
+
+                if (ext.IsUnpacked)
+                    severity = 4;
+
+                if (localhostCommunication)
+                    severity = 5;
+
+                // =====================================================
+                // DESCRIPTION
+                // =====================================================
+
+                string description =
+                    localhostCommunication
+                        ? "Extension communicates with localhost infrastructure"
+                        : ext.IsUnpacked
+                            ? "Developer / unpacked extension detected"
+                            : !ext.IsFromWebStore
+                                ? "Extension not installed from Chrome Web Store"
+                                : dangerousScripting
+                                    ? "Extension has scripting capabilities"
+                                    : "Suspicious extension detected";
+
+                // =====================================================
+                // CREATE
                 // =====================================================
 
                 var anomaly =
@@ -243,24 +274,26 @@ namespace ZIVA_Prototype.Services.Timeline
                             AnomalyType.SuspiciousExtension,
 
                         Title =
-                            ext.Name,
+                            string.IsNullOrWhiteSpace(ext.Name)
+                                ? ext.Id
+                                : ext.Name,
 
                         Severity =
-                            ext.IsUnpacked ? 3 : 2,
+                            severity,
 
                         Confidence =
-                            ext.IsUnpacked ? 80 : 60,
+                            localhostCommunication
+                                ? 95
+                                : 75,
 
                         Description =
-                            ext.IsUnpacked
-                                ? "Developer / unpacked extension detected"
-                                : "Extension not installed from Chrome Web Store",
+                            description,
 
                         FirstSeen =
                             ext.InstallTime,
 
                         LastSeen =
-                            ext.LastRuntimeActivity != default
+                            runtimeActive
                                 ? ext.LastRuntimeActivity
                                 : ext.InstallTime,
 
@@ -275,7 +308,7 @@ namespace ZIVA_Prototype.Services.Timeline
 
                         LinkedExtensions =
                         {
-                            ext
+                    ext
                         },
 
                         Url =
@@ -285,28 +318,75 @@ namespace ZIVA_Prototype.Services.Timeline
                             ext.Name,
 
                         Color =
-                            ext.IsUnpacked
-                                ? "#ffb52b"
-                                : "#ffe12b",
-
-                        Tags =
-                        {
-                            "extension",
-                            "browser-extension",
-                            "developer-extension"
-                        },
+                            severity switch
+                            {
+                                5 => "#ff2b2b",
+                                4 => "#ff7a2b",
+                                3 => "#ffb52b",
+                                2 => "#ffe12b",
+                                _ => "#6cff6c"
+                            },
 
                         Evidence =
                         {
-                            $"Extension ID: {ext.Id}",
-                            $"Install Path: {ext.InstallLocation}",
-                            $"Permissions: {ext.AllPermissions.Count}",
-                            $"Runtime Artifacts: {ext.RuntimeArtifacts.Count}",
-                            ext.IsUnpacked
-                                ? "Unpacked developer extension"
-                                : "Non WebStore extension"
+                    $"Extension ID: {ext.Id}",
+                    $"Source: {(ext.IsFromWebStore ? "WebStore" : "Non-WebStore")}",
+                    $"Unpacked: {ext.IsUnpacked}",
+                    $"Runtime Active: {runtimeActive}"
                         }
                     };
+
+                // =====================================================
+                // LOCALHOST
+                // =====================================================
+
+                if (localhostCommunication)
+                {
+                    anomaly.Evidence.Add(
+                        "Localhost communication detected");
+                }
+
+                // =====================================================
+                // SCRIPTING
+                // =====================================================
+
+                if (dangerousScripting)
+                {
+                    anomaly.Evidence.Add(
+                        "Dangerous scripting capability");
+
+                    foreach (var permission in ext.AllPermissions
+                        .Where(p =>
+                            p.Contains(
+                                "scripting",
+                                StringComparison.OrdinalIgnoreCase)
+                            ||
+                            p.Contains(
+                                "webRequestBlocking",
+                                StringComparison.OrdinalIgnoreCase)))
+                    {
+                        anomaly.Evidence.Add(
+                            $"Permission: {permission}");
+                    }
+                }
+
+                // =====================================================
+                // RUNTIME
+                // =====================================================
+
+                if (runtimeActive)
+                {
+                    anomaly.Evidence.Add(
+                        "Runtime artifacts detected");
+                }
+
+                // =====================================================
+                // STORE
+                // =====================================================
+
+                anomalyIndex[$"extension:{ext.Id}"] = anomaly;
+
+                
             }
         }
 
@@ -330,6 +410,7 @@ namespace ZIVA_Prototype.Services.Timeline
                 existing.FirstSeen = existing.FirstSeen < first ? existing.FirstSeen : first;
                 existing.LastSeen = existing.LastSeen > last ? existing.LastSeen : last;
                 existing.Severity = Math.Max(existing.Severity, severity);
+                existing.Evidence = existing.Evidence.Distinct().ToList();
                 return existing;
             }
 
@@ -385,7 +466,7 @@ namespace ZIVA_Prototype.Services.Timeline
         }
 
         private void DetectOrphanCookies(
-            Dictionary<string, AnomalyEntry> anomalyIndex,
+            List<OrphanArtifact> orphanArtifacts,
             List<DomainEntry> summarizedEntries,
             List<BrowserCookieEntry> cookies,
             int toleranceSeconds = 60)
@@ -394,6 +475,15 @@ namespace ZIVA_Prototype.Services.Timeline
 
             foreach (var cookie in cookies)
             {
+
+
+                // IGNORE BROWSER BACKGROUND TRAFFIC
+                if (cookie.Category ==
+                    CookieCategory.BrowserBackground)
+                {
+                    continue;
+                }
+
                 string cookieDomain = NormalizeDomain(cookie.Host);
 
                 bool hasMatchingHistory = summarizedEntries.Any(domain =>
@@ -410,28 +500,12 @@ namespace ZIVA_Prototype.Services.Timeline
 
                 if (!hasMatchingHistory)
                 {
-                    var linkedDomain = FindClosestDomain(
-                        summarizedEntries,
-                        cookie.Created
-                    );
-
-                    var anomaly = AddOrUpdateAnomaly(
-                        anomalyIndex,
-                        AnomalyType.DeletedHistoryIndicator,
-                        linkedDomain ?? new DomainEntry { Domain = cookieDomain },
-                        new[] { cookie.Created },
-                        severity: 4,
-                        description: $"Cookie für Domain '{cookieDomain}' ohne passenden Verlaufseintrag"
-                    );
-
-                    anomaly.Evidence.Add($"Cookie: {cookie.Name}");
-
-                    anomaly.Evidence.Add($"Domain: {cookie.Host}");
-
-                    anomaly.LinkedCookies.Add(cookie);
-                    anomaly.TargetType = AnomalyTargetType.Cookie;
-                    anomaly.TargetPosition = cookie.Position;
-                    anomaly.TargetYPercent = 43;
+                    orphanArtifacts.Add(
+                        new OrphanArtifact
+                        {
+                            Time = cookie.Created,
+                            Cookie = cookie
+                        });
                 }
             }
         }
@@ -447,7 +521,7 @@ namespace ZIVA_Prototype.Services.Timeline
         }
 
         private void DetectOrphanAutofill(
-            Dictionary<string, AnomalyEntry> anomalyIndex,
+            List<OrphanArtifact> orphanArtifacts,
             List<DomainEntry> summarizedEntries,
             List<WebDataAutofillEntry> autofillEntries,
             List<UserInputEntry> userInputs,
@@ -464,20 +538,6 @@ namespace ZIVA_Prototype.Services.Timeline
 
                 if (!hasMatchingDomain)
                 {
-                    var linkedDomain = FindClosestDomain(
-                        summarizedEntries,
-                        autofill.DateCreated
-                    );
-
-                    var anomaly = AddOrUpdateAnomaly(
-                        anomalyIndex,
-                        AnomalyType.DeletedHistoryIndicator,
-                        linkedDomain ?? new DomainEntry { Domain = "[unknown]" },
-                        new[] { autofill.DateCreated },
-                        severity: 5,
-                        description: $"Autofill '{autofill.Name}' ohne zugehörigen Seitenaufruf"
-                    );
-
                     var linkedInput =
                         userInputs.FirstOrDefault(x =>
                             x.Type == UserInputType.Autofill
@@ -488,17 +548,158 @@ namespace ZIVA_Prototype.Services.Timeline
                                 (x.Time - autofill.DateCreated)
                                 .TotalSeconds) < 5);
 
-                                        if (linkedInput != null)
-                                        {
-                                            anomaly.LinkedInputs.Add(
-                                                linkedInput);
-                                        }
-
-                    anomaly.TargetType = AnomalyTargetType.Autofill;
-                    anomaly.TargetPosition = autofill.Position;
-                    anomaly.TargetYPercent = 50;
+                    orphanArtifacts.Add(
+                        new OrphanArtifact
+                        {
+                            Time = autofill.DateCreated,
+                            Autofill = autofill,
+                            Input = linkedInput
+                        });
                 }
             }
+        }
+
+        private void BuildDeletedHistoryPhases(
+    Dictionary<string, AnomalyEntry> anomalyIndex,
+    List<OrphanArtifact> orphanArtifacts,
+    List<DomainEntry> summarizedEntries)
+        {
+            if (!orphanArtifacts.Any())
+                return;
+
+            var ordered =
+                orphanArtifacts
+                    .OrderBy(x => x.Time)
+                    .ToList();
+
+            int phaseIndex = 0;
+
+            var currentPhase =
+                new List<OrphanArtifact>();
+
+            DateTime? currentEnd =
+                null;
+
+            foreach (var artifact in ordered)
+            {
+                var nextHistory =
+                    summarizedEntries
+                        .Where(h =>
+                            h.VisitTime > artifact.Time)
+                        .OrderBy(h => h.VisitTime)
+                        .FirstOrDefault();
+
+                if (currentEnd != null
+                    &&
+                    artifact.Time > currentEnd)
+                {
+                    CreateDeletedHistoryPhase(
+                        anomalyIndex,
+                        currentPhase,
+                        phaseIndex++);
+
+                    currentPhase.Clear();
+                }
+
+                currentPhase.Add(artifact);
+
+                if (nextHistory != null)
+                {
+                    currentEnd =
+                        nextHistory.VisitTime;
+                }
+            }
+
+            if (currentPhase.Any())
+            {
+                CreateDeletedHistoryPhase(
+                    anomalyIndex,
+                    currentPhase,
+                    phaseIndex);
+            }
+        }
+
+        private void CreateDeletedHistoryPhase(
+    Dictionary<string, AnomalyEntry> anomalyIndex,
+    List<OrphanArtifact> artifacts,
+    int phaseIndex)
+        {
+            if (!artifacts.Any())
+                return;
+
+            var first =
+                artifacts.Min(x => x.Time);
+
+            var last =
+                artifacts.Max(x => x.Time);
+
+            var anomaly =
+                new AnomalyEntry
+                {
+                    Type =
+                        AnomalyType.DeletedHistoryIndicator,
+
+                    Title =
+                        $"Deleted History Phase #{phaseIndex + 1}",
+
+                    Description =
+                        "Artefakte ohne passenden Verlaufseintrag",
+
+                    Severity =
+                        4,
+
+                    Confidence =
+                        90,
+
+                    FirstSeen =
+                        first,
+
+                    LastSeen =
+                        last,
+
+                    Count =
+                        artifacts.Count,
+
+                    Color =
+                        "#ff7a2b"
+                };
+
+            foreach (var artifact in artifacts)
+            {
+                if (artifact.Cookie != null)
+                {
+                    anomaly.LinkedCookies.Add(
+                        artifact.Cookie);
+
+                    anomaly.Evidence.Add(
+                        $"Cookie: {artifact.Cookie.Name}");
+                }
+
+                if (artifact.Autofill != null)
+                {
+                    anomaly.Evidence.Add(
+                        $"Autofill: {artifact.Autofill.Name}");
+                }
+
+                if (artifact.Extension != null)
+                {
+                    anomaly.LinkedExtensions.Add(
+                        artifact.Extension);
+
+                    anomaly.Evidence.Add(
+                        $"Extension: {artifact.Extension.Name}");
+                }
+
+                if (artifact.Input != null)
+                {
+                    anomaly.LinkedInputs.Add(
+                        artifact.Input);
+                }
+            }
+
+            anomalyIndex[
+                $"deleted-history:{phaseIndex}"] =
+                    anomaly;
         }
     }
 }

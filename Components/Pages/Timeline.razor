@@ -548,25 +548,18 @@
         {
             DateTime positionTime;
 
-            switch (a.Type)
+            if (a.FirstSeen == a.LastSeen)
             {
-                case AnomalyType.DeletedHistoryIndicator:
-                    // 🔥 exakt am Artefakt
-                    positionTime = a.FirstSeen;
-                    break;
+                positionTime = a.FirstSeen;
+            }
+            else
+            {
+                long ticks =
+                    (a.FirstSeen.Ticks +
+                     a.LastSeen.Ticks) / 2;
 
-                default:
-                    // 🔁 Mittelwert bei echten Zeitspannen
-                    if (a.FirstSeen == a.LastSeen)
-                    {
-                        positionTime = a.FirstSeen;
-                    }
-                    else
-                    {
-                        long ticks = (a.FirstSeen.Ticks + a.LastSeen.Ticks) / 2;
-                        positionTime = new DateTime(ticks);
-                    }
-                    break;
+                positionTime =
+                    new DateTime(ticks);
             }
 
             a.Position = (int)TimelineScaleService.TimeToPixel(positionTime, ScaleContext) - (int)scrollIndex;
@@ -1858,9 +1851,12 @@
             <!-- Cookies Einträge in der Zeitachse -->
             @foreach (var cookie in RenderCache.VisibleCookies)
             {
-                    <div class="cookie-marker"
-                     style="left: calc(@($"{cookie.Position}px - 5px"));
-                         @GetFocusedStyle(cookie)"
+                <div class="cookie-marker"
+                     style="
+                    left: calc(@($"{cookie.Position}px - 5px"));
+                    --marker-color:@ColorService.GetCookieColor(cookie.Category);
+                    color:@ColorService.GetCookieColor(cookie.Category);
+                    @GetFocusedStyle(cookie)"
                          data-host="@cookie.Host"
                          data-valueEncr="@cookie.EncryptedValue"
                          data-value="@cookie.Value"
@@ -2034,14 +2030,20 @@
             @foreach (var ext in RenderCache.VisibleExtensions)
             {
                 // 1️⃣ WebStore Visit finden (bleibt zeitbasiert → ok)
-                var matchingHistory = State.BrowserEntries
-                    .Where(h =>
-                        (h.Url.Contains("chrome.google.com/webstore") ||
-                         h.Url.Contains("chromewebstore.google.com")) &&
-                        Math.Abs((h.VisitTime - ext.InstallTime).TotalMinutes) <= 300
-                    )
-                    .OrderBy(h => Math.Abs((h.VisitTime - ext.InstallTime).TotalSeconds))
-                    .FirstOrDefault();
+                    var matchingHistory = State.BrowserEntries
+                        .Where(h =>
+                            (
+                                h.Url.Contains("chrome.google.com/webstore")
+                                ||
+                                h.Url.Contains("chromewebstore.google.com")
+                            )
+                            &&
+                            h.VisitTime <= ext.InstallTime
+                            &&
+                            (ext.InstallTime - h.VisitTime).TotalSeconds <= 300
+                        )
+                        .OrderByDescending(h => h.VisitTime)
+                        .FirstOrDefault();
 
                 if (matchingHistory == null)
                     continue;

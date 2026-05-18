@@ -1,3 +1,5 @@
+using ZIVA_Prototype.Components.Models.Enums;
+
 namespace ZIVA_Prototype.Components.Models.Timeline
 {
     public class BrowserCookieEntry
@@ -13,5 +15,7 @@ namespace ZIVA_Prototype.Components.Models.Timeline
         public DateTime LastAccessed { get; set; }
 
         public int Position { get; set; } // für Timeline, falls genutzt
+
+        public CookieCategory Category { get; set; }
     }
 }
