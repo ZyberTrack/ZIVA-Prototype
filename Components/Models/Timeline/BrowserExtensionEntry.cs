@@ -50,6 +50,10 @@ namespace ZIVA_Prototype.Components.Models.Timeline
         // ⏱️ Zeit
         public DateTime InstallTime { get; set; }
 
+        public DateTime LastRuntimeActivity { get; set; }
+
+        public DateTime LastFilesystemActivity { get; set; }
+
         // ⚠️ Optional: nur wenn du es wirklich brauchst
         // public int Position { get; set; }
 
@@ -100,6 +104,19 @@ namespace ZIVA_Prototype.Components.Models.Timeline
         public bool HasServiceWorker { get; set; }
 
         public int ConfidenceScore { get; set; }
+
+        public bool IsInstalled =>
+    FoundInPreferences ||
+    FoundInSecurePreferences ||
+    FoundInExtensionsFolder;
+
+        public bool HasRuntimeEvidence =>
+            FoundInRuntimeArtifacts;
+
+        public bool IsFilesystemOnly =>
+            FoundInFilesystem &&
+            !IsInstalled &&
+            !HasRuntimeEvidence;
 
         // =====================================================
         // FORENSIC HELPERS

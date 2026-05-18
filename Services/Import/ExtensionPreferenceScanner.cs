@@ -44,6 +44,46 @@ public class ExtensionPreferenceScanner
         return null;
     }
 
+    public void ScanPreferenceOnlyExtensions(
+    JsonElement? extensionSettings,
+    Dictionary<string,
+    BrowserExtensionEntry> extensions)
+    {
+        try
+        {
+            if (!extensionSettings.HasValue)
+                return;
+
+            foreach (var ext in
+                     extensionSettings.Value
+                     .EnumerateObject())
+            {
+                string extensionId =
+                    ext.Name;
+
+                if (!extensions.ContainsKey(
+                        extensionId))
+                {
+                    extensions[extensionId] =
+                        new BrowserExtensionEntry
+                        {
+                            Id = extensionId
+                        };
+                }
+
+                var entry =
+                    extensions[extensionId];
+
+                ApplyPreferenceData(
+                    extensionSettings,
+                    entry);
+            }
+        }
+        catch
+        {
+        }
+    }
+
     public void ApplyPreferenceData(
         JsonElement? extensionSettings,
         BrowserExtensionEntry entry)

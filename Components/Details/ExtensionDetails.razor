@@ -14,6 +14,17 @@
     <div class="entry-content">
 
         <div class="entry-row">
+            <strong>Extension ID</strong><br />
+
+            <span style="
+                font-family:monospace;
+                word-break:break-all;
+                color:#9ecbff;">
+                @Data.Id
+            </span>
+        </div>
+
+        <div class="entry-row">
             <strong>Risk</strong><br />
             @Data.RiskLevel (@Data.RiskScore)
         </div>
@@ -27,6 +38,24 @@
             <strong>Installed</strong><br />
             @Data.InstallTime.ToLocalTime()
         </div>
+
+        @if (Data.LastFilesystemActivity != default)
+        {
+            <div class="entry-row">
+                <strong>Last Filesystem Activity</strong><br />
+
+                @Data.LastFilesystemActivity.ToLocalTime()
+            </div>
+        }
+
+        @if (Data.LastRuntimeActivity != default)
+        {
+            <div class="entry-row">
+                <strong>Last Runtime Activity</strong><br />
+
+                @Data.LastRuntimeActivity.ToLocalTime()
+            </div>
+        }
 
         <div class="entry-row">
             <strong>Enabled</strong><br />
@@ -42,11 +71,111 @@
                     : "Unknown")
         </div>
 
+        <div class="entry-row">
+            <strong>Evidence</strong><br />
+
+            @if (Data.IsInstalled)
+            {
+                <div>✔ Installed Extension Evidence</div>
+            }
+
+            @if (Data.HasRuntimeEvidence)
+            {
+                <div>✔ Runtime Activity Detected</div>
+            }
+
+            @if (Data.IsFilesystemOnly)
+            {
+                <div>⚠ Filesystem-only Artifact</div>
+            }
+
+            @if (Data.IsResidualArtifact)
+            {
+                <div>⚠ Residual / Removed Artifact</div>
+            }
+
+            @if (Data.ManifestMissing)
+            {
+                <div>⚠ Manifest Missing</div>
+            }
+
+            @if (!Data.HasTimestamp)
+            {
+                <div>⚠ No Reliable Timestamp</div>
+            }
+        </div>
+
+        <div class="entry-row">
+            <strong>Found In</strong>
+
+            <ul>
+
+                @if (Data.FoundInPreferences)
+                {
+                    <li>Preferences</li>
+                }
+
+                @if (Data.FoundInSecurePreferences)
+                {
+                    <li>Secure Preferences</li>
+                }
+
+                @if (Data.FoundInExtensionsFolder)
+                {
+                    <li>Extensions Folder</li>
+                }
+
+                @if (Data.FoundInRuntimeArtifacts)
+                {
+                    <li>Runtime Artifacts</li>
+                }
+
+                @if (Data.FoundInFilesystem)
+                {
+                    <li>Filesystem Scan</li>
+                }
+
+                @if (Data.FoundInHistory)
+                {
+                    <li>Browser History</li>
+                }
+
+            </ul>
+        </div>
+
+        @if (Data.SourceTypes.Any())
+        {
+            <div class="entry-row">
+                <strong>Runtime Sources</strong>
+
+                <ul>
+                    @foreach (var s in Data.SourceTypes.Distinct())
+                    {
+                        <li>@s</li>
+                    }
+                </ul>
+            </div>
+        }
+
         @if (!string.IsNullOrWhiteSpace(Data.InstallLocation))
         {
             <div class="entry-row">
                 <strong>Install Path</strong><br />
                 @Data.InstallLocation
+            </div>
+        }
+
+        @if (Data.RuntimeArtifacts.Any())
+        {
+            <div class="entry-row">
+                <strong>Runtime Artifacts</strong>
+
+                <ul>
+                    @foreach (var r in Data.RuntimeArtifacts.Take(10))
+                    {
+                        <li>@r</li>
+                    }
+                </ul>
             </div>
         }
 

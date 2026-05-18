@@ -31,18 +31,15 @@ public class ExtensionRuntimeScanner
                 if (!Directory.Exists(fullPath))
                     continue;
 
-                foreach (var dir in
-                         Directory.GetDirectories(
-                             fullPath,
-                             "*",
-                             SearchOption.AllDirectories))
+                foreach (var dir in GetRuntimeExtensionDirectories(fullPath)) // Local Extension Settings/<id> Extension Scripts/< id > IndexedDB / chrome - extension_<id>
                 {
-                    string name =
-                        Path.GetFileName(dir);
+                    string? name = ExtractExtensionId(dir); // IndexedDB\chrome-extension_xxx\leveldb --> xxx is the extension id
 
-                    // Chromium Extension IDs
-                    // sind normalerweise 32 Zeichen
-                    if (name.Length < 20)
+                    if (name == null)
+                        continue;
+
+
+                    if (!IsValidExtensionId(name))
                         continue;
 
                     var entry =
@@ -50,14 +47,37 @@ public class ExtensionRuntimeScanner
                             extensions,
                             name);
 
-                    entry.FoundInRuntimeArtifacts =
-                        true;
+                    entry.FoundInRuntimeArtifacts = true;
 
-                    entry.RuntimeArtifacts
-                        .Add(dir);
+                    if (!entry.FoundInExtensionsFolder && !entry.FoundInPreferences)
+                    {
+                        entry.IsResidualArtifact = true;
+                    }
 
-                    entry.SourceTypes
-                        .Add(runtimeDir);
+                    if (!entry.RuntimeArtifacts.Contains(dir))
+                    {
+                        entry.RuntimeArtifacts.Add(dir);
+
+                        if (dir.Contains(".leveldb",StringComparison.OrdinalIgnoreCase))
+                        {
+                            entry.RuntimeArtifacts
+                                .Add("[LevelDB]");
+                        }
+
+                        if (dir.Contains(
+                                ".blob",
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            entry.RuntimeArtifacts
+                                .Add("[BlobStorage]");
+                        }
+                    }
+
+                    if (!entry.SourceTypes.Contains(runtimeDir))
+                    {
+                        entry.SourceTypes
+                            .Add(runtimeDir);
+                    }
 
                     // =====================================================
                     // TIMESTAMP
@@ -80,6 +100,11 @@ public class ExtensionRuntimeScanner
                                         artifactTime);
                             }
                         }
+                        if (artifactTime > entry.LastRuntimeActivity)
+                        {
+                            entry.LastRuntimeActivity =
+                                artifactTime;
+                        }
                     }
                     catch
                     {
@@ -98,6 +123,48 @@ public class ExtensionRuntimeScanner
         }
     }
 
+    private IEnumerable<string>
+GetRuntimeExtensionDirectories(
+    string runtimeRoot)
+    {
+        var results =
+            new List<string>();
+
+        foreach (var dir in
+                 Directory.GetDirectories(
+                     runtimeRoot,
+                     "*",
+                     SearchOption.AllDirectories))
+        {
+            try
+            {
+                string path =
+                    dir.ToLowerInvariant();
+
+                // =====================================================
+                // CHROMIUM EXTENSION RUNTIME PATTERNS
+                // =====================================================
+
+                bool looksLikeExtension =
+                    path.Contains(
+                        "chrome-extension_")
+                    ||
+                    IsValidExtensionId(
+                        Path.GetFileName(dir));
+
+                if (!looksLikeExtension)
+                    continue;
+
+                results.Add(dir);
+            }
+            catch
+            {
+            }
+        }
+
+        return results;
+    }
+
     private BrowserExtensionEntry GetOrCreate(
         Dictionary<string,
         BrowserExtensionEntry> extensions,
@@ -113,5 +180,67 @@ public class ExtensionRuntimeScanner
         }
 
         return extensions[id];
+    }
+
+    private string? ExtractExtensionId(
+    string path)
+    {
+        var parts =
+            path.Split(
+                Path.DirectorySeparatorChar,
+                StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var part in parts)
+        {
+            // =====================================================
+            // 1️⃣ DIREKTE EXTENSION ID
+            // =====================================================
+
+            if (IsValidExtensionId(part))
+                return part;
+
+            // =====================================================
+            // 2️⃣ chrome-extension_<id>
+            // =====================================================
+
+            if (part.StartsWith(
+                    "chrome-extension_"))
+            {
+                string id =
+                    part.Replace(
+                        "chrome-extension_",
+                        "");
+
+                // .indexeddb.leveldb entfernen
+                int dot =
+                    id.IndexOf('.');
+
+                if (dot > 0)
+                {
+                    id =
+                        id.Substring(
+                            0,
+                            dot);
+                }
+
+                if (IsValidExtensionId(id))
+                    return id;
+            }
+        }
+
+        return null;
+    }
+
+    private bool IsValidExtensionId(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return false;
+
+        if (id.Length != 32)
+            return false;
+
+        return id.All(c =>
+            c >= 'a' &&
+            c <= 'p');
     }
 }
