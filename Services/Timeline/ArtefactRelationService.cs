@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Microsoft.WindowsAppSDK.Runtime.Packages;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using ZIVA_Prototype.Components.Models.Enums;
 using ZIVA_Prototype.Components.Models.Timeline;
 
@@ -141,6 +143,9 @@ namespace ZIVA_Prototype.Services.Timeline
                             "Cookie domain matches history domain"
                     };
 
+                if (matchingDomain.VisitTime > cookie.Created)
+                    continue;
+
                 cookie.Relations.Add(relation);
                 matchingDomain.Relations.Add(relation);
             }
@@ -247,6 +252,9 @@ namespace ZIVA_Prototype.Services.Timeline
                             "User input timestamp correlates with history"
                     };
 
+                if (matchingDomain.VisitTime > input.Time)
+                    continue;
+
                 input.Relations.Add(relation);
                 matchingDomain.Relations.Add(relation);
             }
@@ -307,6 +315,9 @@ namespace ZIVA_Prototype.Services.Timeline
                             "Extension install preceded by WebStore visit"
                     };
 
+                if (matchingDomain.VisitTime > ext.InstallTime)
+                    continue;
+
                 ext.Relations.Add(relation);
                 matchingDomain.Relations.Add(relation);
             }
@@ -356,6 +367,9 @@ namespace ZIVA_Prototype.Services.Timeline
                         Reason =
                             "Storage origin matches history domain"
                     };
+
+                if (matchingDomain.VisitTime > s.Time)
+                    continue;
 
                 s.Relations.Add(relation);
                 matchingDomain.Relations.Add(relation);
