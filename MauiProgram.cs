@@ -52,6 +52,7 @@ namespace ZIVA_Prototype
             builder.Services.AddSingleton<TimelineColorService>();
             builder.Services.AddSingleton<TimelineRenderCacheService>();
             builder.Services.AddSingleton<ArtifactRelationService>();
+            builder.Services.AddSingleton<TimelineSearchService>();
 
 
 #if DEBUG

@@ -14,6 +14,7 @@
 @inject TimelineColorService ColorService
 @inject TimelineRenderCacheService RenderCache
 @inject ArtifactRelationService RelationService
+@inject TimelineSearchService SearchService
 
 
 @code {
@@ -74,6 +75,11 @@
     private int currentZoomIndex = 5; // Start bei 10 Minuten (600 Sekunden)
     private int currentPivotIndex = 0; // Index in State.BrowserEntries
     private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
+
+    //Suche
+    private string SearchText = "";
+    private List<SearchResult> SearchResults = new();
+    private int CurrentSearchIndex = -1;
 
     private bool allExpanded = true;
     private bool showDebug = true;
@@ -1012,6 +1018,54 @@
 
         StateHasChanged();
     }
+    //------------------------------------------------------------
+    // SUCHE
+    //------------------------------------------------------------
+
+    private async Task RunSearch()
+    {
+        SearchResults = SearchService.Search(SearchText,TimelineArtifacts);
+
+        CurrentSearchIndex = SearchResults.Count > 0 ? 0 : -1;
+
+        await FocusCurrentSearchResult();
+    }
+
+    private async Task NextSearchResult()
+    {
+        if (!SearchResults.Any())
+            return;
+
+        CurrentSearchIndex++;
+
+        if (CurrentSearchIndex >= SearchResults.Count)
+            CurrentSearchIndex = 0;
+
+        await FocusCurrentSearchResult();
+    }
+
+    private async Task PreviousSearchResult()
+    {
+        if (!SearchResults.Any())
+            return;
+
+        CurrentSearchIndex--;
+
+        if (CurrentSearchIndex < 0)
+            CurrentSearchIndex = SearchResults.Count - 1;
+
+        await FocusCurrentSearchResult();
+    }
+
+    private async Task FocusCurrentSearchResult()
+    {
+        if (CurrentSearchIndex < 0 ||
+            CurrentSearchIndex >= SearchResults.Count)
+            return;
+
+        await FocusArtifact(
+            SearchResults[CurrentSearchIndex].Artifact);
+    }
 
 
 
@@ -1817,6 +1871,33 @@
 
     <!-- RIGHT SIDE OF TIMELINE -->
     <div class="timeless-area">
+
+        <div class="timeline-search">
+
+            <input type="text"
+                   placeholder="Search..."
+                   @bind="SearchText"
+                   @bind:event="oninput" />
+
+            <button @onclick="RunSearch">
+                Search
+            </button>
+
+            <button @onclick="PreviousSearchResult">
+                ◀
+            </button>
+
+            <button @onclick="NextSearchResult">
+                ▶
+            </button>
+
+            <div>
+                @(SearchResults.Count == 0
+                    ? "No results"
+                    : $"{CurrentSearchIndex + 1}/{SearchResults.Count}")
+            </div>
+
+        </div>
 
         <div class="timeless-header">
             TOOLS
