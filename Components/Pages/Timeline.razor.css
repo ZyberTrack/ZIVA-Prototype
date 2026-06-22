@@ -821,3 +821,23 @@
 .userinput-marker.favicon {
     background: #ffcc33;
 }
+
+.timeline-search {
+    position: absolute;
+    top: 50px;
+    right: 380px;
+    z-index: 9999;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 8px;
+    background: rgba(25,25,25,0.92);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    backdrop-filter: blur(8px);
+}
+
+.search-counter {
+    color: white;
+    font-weight: 600;
+}

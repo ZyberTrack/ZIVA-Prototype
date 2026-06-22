@@ -1872,32 +1872,6 @@
     <!-- RIGHT SIDE OF TIMELINE -->
     <div class="timeless-area">
 
-        <div class="timeline-search">
-
-            <input type="text"
-                   placeholder="Search..."
-                   @bind="SearchText"
-                   @bind:event="oninput" />
-
-            <button @onclick="RunSearch">
-                Search
-            </button>
-
-            <button @onclick="PreviousSearchResult">
-                ◀
-            </button>
-
-            <button @onclick="NextSearchResult">
-                ▶
-            </button>
-
-            <div>
-                @(SearchResults.Count == 0
-                    ? "No results"
-                    : $"{CurrentSearchIndex + 1}/{SearchResults.Count}")
-            </div>
-
-        </div>
 
         <div class="timeless-header">
             TOOLS
@@ -1917,6 +1891,34 @@
 
 
     <div class="timeline-container">
+
+        <div class="timeline-search">
+
+            <input type="text"
+                   placeholder="Search..."
+                   @bind="SearchText"
+                   @bind:event="oninput" />
+
+            <button @onclick="RunSearch">
+                Search
+            </button>
+
+            <button @onclick="PreviousSearchResult">
+                ◀
+            </button>
+
+            <button @onclick="NextSearchResult">
+                ▶
+            </button>
+
+            <div class="search-counter">
+                @(SearchResults.Count == 0
+                    ? "No results"
+                    : $"{CurrentSearchIndex + 1}/{SearchResults.Count}")
+            </div>
+
+        </div>
+
         <!-- Externer Container mit fixer Breite & overflow -->
         <div id="scroll-container" class="scroll-wrapper scroll-wrapper-timeline" @ref="scrollDivRef">
             <!-- Zeitachsn Balken -->
