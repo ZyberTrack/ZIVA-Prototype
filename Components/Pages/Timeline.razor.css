@@ -879,3 +879,15 @@
         border-left: 3px solid #00b4ff;
         font-weight: 600;
     }
+
+
+
+.focused-artifact-label {
+    position: absolute;
+    transform: translateX(-50%);
+    color: black;
+    font-size: 12px;
+    font-weight: 700;
+    z-index: 40;
+    pointer-events: none;
+}

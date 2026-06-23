@@ -308,6 +308,63 @@
                .Select(f => f.Description));
     }
 
+    private string GetFocusedArtifactLabel()
+    {
+        if (focusedArtifact == null)
+            return "";
+
+        return focusedArtifact.Data switch
+        {
+            BrowserHistoryEntry h => h.Url,
+            BrowserCookieEntry c => c.Name,
+            UserInputEntry i => i.Value,
+            BrowserExtensionEntry e => e.Name,
+            StorageEntry s => s.Value,
+            AnomalyEntry a => a.Type.ToString(),
+            _ => ""
+        };
+    }
+
+    private int GetFocusedArtifactPosition()
+    {
+        if (focusedArtifact == null)
+            return 0;
+
+        return focusedArtifact.Data switch
+        {
+            BrowserHistoryEntry h => h.Position,
+            BrowserCookieEntry c => c.Position,
+            UserInputEntry i => i.Position, // Wird nicht angerzeigt???
+            BrowserExtensionEntry e => e.Position,
+            StorageEntry s => s.Position,
+            AnomalyEntry a => a.Position,
+            _ => 0
+        };
+    }
+
+    private string GetFocusedArtifactYPixel()
+    {
+        if (focusedArtifact == null)
+            return "20%";
+
+        return focusedArtifact.Data switch
+        {
+            BrowserHistoryEntry => "33%",
+
+            BrowserCookieEntry => "43%",
+
+            UserInputEntry => "50%",
+
+            StorageEntry => "57%",
+
+            BrowserExtensionEntry => "64%",
+
+            AnomalyEntry => "78%",
+
+            _ => "20%"
+        };
+    }
+
     //------------------------------------------------------------
     // Initial Render
     //------------------------------------------------------------
@@ -1996,6 +2053,43 @@
                 int heavyClusterIndex = 1; // Zähler für versetzte Heavy Cluster-Linien
             }
 
+            <!-- Überschrift über focused artefact -->
+            @if (focusedArtifact != null)
+            {
+                <div class="focused-artifact-label"
+                     style="
+                    left:@($"{GetFocusedArtifactPosition()}px");
+                    top:20%;">
+
+                    @GetFocusedArtifactLabel()
+
+                </div>
+            }
+
+            @if (focusedArtifact != null && focusedArtifact.Data is not BrowserHistoryEntry && focusedArtifact.Data is not DomainEntry)
+            {
+                <svg style="
+                    position:absolute;
+                    left:0;
+                    top:0;
+                    width:100%;
+                    height:100%;
+                    pointer-events:none;
+                    z-index:39;">
+
+                    <line x1="@GetFocusedArtifactPosition()"
+                          y1="22%"
+                          x2="@GetFocusedArtifactPosition()"
+                          y2="@GetFocusedArtifactYPixel()"
+                          stroke="black"
+                          stroke-width="1.5"
+                          opacity="0.5" />
+
+                </svg>
+            }
+
+            
+
             @foreach (var domainEntry in SummarizedEntries)
             {
 
@@ -2132,11 +2226,38 @@
                                     }
                                 </div>
                             </div>
+
+                            @if (IsFocused(sub))
+                            {
+                                <svg style="
+                                    position:absolute;
+                                    left:0;
+                                    top:0;
+                                    width:100%;
+                                    height:100%;
+                                    pointer-events:none;
+                                    z-index:39;">
+
+                                    <line x1="@sub.Position"
+                                          y1="22%"
+                                          x2="@sub.Position"
+                                          y2="@topStyle"
+                                          stroke="black"
+                                          stroke-width="1.5"
+                                          opacity="0.5" />
+
+                                </svg>
+                            }
+
                         }
 
                     }
                 </div>
             }
+
+
+
+
 
             <!-- Cookies Einträge in der Zeitachse -->
             @foreach (var cookie in RenderCache.VisibleCookies)
