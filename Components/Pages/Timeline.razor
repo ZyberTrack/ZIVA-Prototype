@@ -308,6 +308,16 @@
                .Select(f => f.Description));
     }
 
+    private string TrimLabel(string text, int maxLength = 40)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return "";
+
+        return text.Length > maxLength
+            ? text.Substring(0, maxLength) + "..."
+            : text;
+    }
+
     private string GetFocusedArtifactLabel()
     {
         if (focusedArtifact == null)
@@ -315,12 +325,18 @@
 
         return focusedArtifact.Data switch
         {
-            BrowserHistoryEntry h => h.Url,
-            BrowserCookieEntry c => c.Name,
-            UserInputEntry i => i.Value,
-            BrowserExtensionEntry e => e.Name,
-            StorageEntry s => s.Value,
-            AnomalyEntry a => a.Type.ToString(),
+            BrowserHistoryEntry h => TrimLabel(h.Url),
+
+            BrowserCookieEntry c => TrimLabel(c.Name),
+
+            UserInputEntry i => TrimLabel(i.Value),
+
+            BrowserExtensionEntry e => TrimLabel(e.Name),
+
+            StorageEntry s => TrimLabel(s.Value),
+
+            AnomalyEntry a => TrimLabel(a.Type.ToString()),
+
             _ => ""
         };
     }
@@ -1251,6 +1267,20 @@
         await CenterOnTime(artifact.Time);
 
         Refresh();
+
+        if (artifact.Type == ArtifactType.UserInput)
+        {
+            var oldInput = (UserInputEntry)artifact.Data;
+
+            var newInput = UserInputs.FirstOrDefault(x =>
+                x.Time == oldInput.Time &&
+                x.Value == oldInput.Value);
+
+            if (newInput != null)
+            {
+                SyncFocusedArtifact(newInput);
+            }
+        }
 
         StateHasChanged();
     }
