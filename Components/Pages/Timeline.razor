@@ -1067,6 +1067,16 @@
             SearchResults[CurrentSearchIndex].Artifact);
     }
 
+    private async Task SelectSearchResult(int index)
+    {
+        if (index < 0 || index >= SearchResults.Count)
+            return;
+
+        CurrentSearchIndex = index;
+
+        await FocusCurrentSearchResult();
+    }
+
 
 
     //------------------------------------------------------------
@@ -1894,28 +1904,54 @@
 
         <div class="timeline-search">
 
-            <input type="text"
-                   placeholder="Search..."
-                   @bind="SearchText"
-                   @bind:event="oninput" />
+            <div class="search-toolbar">
 
-            <button @onclick="RunSearch">
-                Search
-            </button>
+                <input type="text"
+                       placeholder="Search..."
+                       @bind="SearchText"
+                       @bind:event="oninput" />
 
-            <button @onclick="PreviousSearchResult">
-                ◀
-            </button>
+                <button @onclick="RunSearch">
+                    Search
+                </button>
 
-            <button @onclick="NextSearchResult">
-                ▶
-            </button>
+                <button @onclick="PreviousSearchResult">
+                    ◀
+                </button>
 
-            <div class="search-counter">
-                @(SearchResults.Count == 0
-                    ? "No results"
-                    : $"{CurrentSearchIndex + 1}/{SearchResults.Count}")
+                <button @onclick="NextSearchResult">
+                    ▶
+                </button>
+
+                <div class="search-counter">
+                    @(SearchResults.Count == 0
+                        ? "No results"
+                        : $"{CurrentSearchIndex + 1}/{SearchResults.Count}")
+                </div>
+
             </div>
+
+            @if (SearchResults.Any())
+            {
+                <div class="search-results-list">
+
+                    @for (int i = 0; i < SearchResults.Count; i++)
+                    {
+                        var result = SearchResults[i];
+
+                        <div class="search-result-item
+                            @(i == CurrentSearchIndex
+                                 ? "active"
+                                 : "")"
+                             @onclick="() => SelectSearchResult(i)">
+
+                            @result.DisplayText
+
+                        </div>
+                    }
+
+                </div>
+            }
 
         </div>
 
