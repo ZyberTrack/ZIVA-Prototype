@@ -77,9 +77,29 @@
     private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
 
     //Suche
-    private string SearchText = "";
     private List<SearchResult> SearchResults = new();
+
     private int CurrentSearchIndex = -1;
+
+    private string _searchText = "";
+
+    private string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            _searchText = value;
+
+            SearchResults = string.IsNullOrWhiteSpace(value)
+                ? new()
+                : SearchService.Search(
+                    value,
+                    TimelineArtifacts);
+
+            CurrentSearchIndex =
+                SearchResults.Count > 0 ? 0 : -1;
+        }
+    }
 
     private bool allExpanded = true;
     private bool showDebug = true;
@@ -1022,15 +1042,6 @@
     // SUCHE
     //------------------------------------------------------------
 
-    private async Task RunSearch()
-    {
-        SearchResults = SearchService.Search(SearchText,TimelineArtifacts);
-
-        CurrentSearchIndex = SearchResults.Count > 0 ? 0 : -1;
-
-        await FocusCurrentSearchResult();
-    }
-
     private async Task NextSearchResult()
     {
         if (!SearchResults.Any())
@@ -1059,8 +1070,11 @@
 
     private async Task FocusCurrentSearchResult()
     {
-        if (CurrentSearchIndex < 0 ||
-            CurrentSearchIndex >= SearchResults.Count)
+        //DEBUG
+        var artifact = SearchResults[CurrentSearchIndex].Artifact;
+        Console.WriteLine(TimelineArtifacts.Contains(artifact));
+
+        if (CurrentSearchIndex < 0 || CurrentSearchIndex >= SearchResults.Count)
             return;
 
         await FocusArtifact(
@@ -1911,10 +1925,6 @@
                        @bind="SearchText"
                        @bind:event="oninput" />
 
-                <button @onclick="RunSearch">
-                    Search
-                </button>
-
                 <button @onclick="PreviousSearchResult">
                     ◀
                 </button>
@@ -1937,13 +1947,12 @@
 
                     @for (int i = 0; i < SearchResults.Count; i++)
                     {
-                        var result = SearchResults[i];
+                        var index = i;
+                        var result = SearchResults[index];
 
                         <div class="search-result-item
-                            @(i == CurrentSearchIndex
-                                 ? "active"
-                                 : "")"
-                             @onclick="() => SelectSearchResult(i)">
+                            @(i == CurrentSearchIndex ? "active" : "")"
+                             @onclick="() => SelectSearchResult(index)">
 
                             @result.DisplayText
 

@@ -826,8 +826,8 @@
     position: absolute;
     top: 50px;
     right: 380px;
-    z-index: 9999;
-    width: 440px;
+    z-index: 999999;
+    width: 420px;
     display: flex;
     flex-direction: column;
     padding: 8px;
