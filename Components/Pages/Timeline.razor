@@ -139,7 +139,7 @@
     private List<TimelineArtifact> TimelineArtifacts = new();
     private int currentArtifactIndex = 0;
 
-     // Suchmaschinen Domains für Erkennung
+    // Suchmaschinen Domains für Erkennung
     string[] searchEngines = new[]
     {
     "google.",            // Google (alle Länderdomains)
@@ -424,11 +424,15 @@
 
         var aggregator = new UserInputAggregatorService();
 
-        UserInputs = aggregator.Build(
-            State.BrowserEntries,
-            State.AutofillEntries,
-            State.Favicons
-        );
+        if (!UserInputs.Any()) // Nur neu bauen, wenn sich was geändert hat.
+        {
+            UserInputs = aggregator.Build(
+                State.BrowserEntries,
+                State.AutofillEntries,
+                State.Favicons,
+                UserInputs
+            );
+        }
 
         RecalculatePositions(
         State.BrowserEntries,
@@ -1273,8 +1277,7 @@
             var oldInput = (UserInputEntry)artifact.Data;
 
             var newInput = UserInputs.FirstOrDefault(x =>
-                x.Time == oldInput.Time &&
-                x.Value == oldInput.Value);
+                x.Id == oldInput.Id);
 
             if (newInput != null)
             {

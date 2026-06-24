@@ -15,10 +15,18 @@ namespace ZIVA_Prototype.Services.Import
         public List<UserInputEntry> Build(
             List<BrowserHistoryEntry> history,
             List<WebDataAutofillEntry> autofill,
-            List<FaviconEntry> favicons)
+            List<FaviconEntry> favicons,
+            List<UserInputEntry>? existingInputs = null)
         {
             var list =
                 new List<UserInputEntry>();
+
+            var existingLookup =
+                existingInputs?
+                .ToDictionary(
+                    x => $"{x.Type}|{x.Time.Ticks}|{x.Value}",
+                    x => x.Id)
+                ?? new Dictionary<string, Guid>();
 
             // =====================================================
             // SEARCH QUERIES
@@ -40,19 +48,22 @@ namespace ZIVA_Prototype.Services.Import
                 if (normalized == null)
                     continue;
 
-                list.Add(
-                    new UserInputEntry
-                    {
-                        Time =
-                            normalized.Value,
+                var item = new UserInputEntry
+                {
+                    Time = normalized.Value,
+                    Value = query,
+                    Type = UserInputType.SearchQuery
+                };
 
-                        Value =
-                            query,
+                string key =
+                    $"{item.Type}|{item.Time.Ticks}|{item.Value}";
 
-                        Type =
-                            UserInputType
-                                .SearchQuery
-                    });
+                if (existingLookup.TryGetValue(key, out var id))
+                {
+                    item.Id = id;
+                }
+
+                list.Add(item);
             }
 
             // =====================================================
@@ -74,19 +85,22 @@ namespace ZIVA_Prototype.Services.Import
                 if (normalized == null)
                     continue;
 
-                list.Add(
-                    new UserInputEntry
-                    {
-                        Time =
-                            normalized.Value,
+                var item = new UserInputEntry
+                {
+                    Time = normalized.Value,
+                    Value = a.Value,
+                    Type = UserInputType.Autofill
+                };
 
-                        Value =
-                            a.Value,
+                string key =
+                    $"{item.Type}|{item.Time.Ticks}|{item.Value}";
 
-                        Type =
-                            UserInputType
-                                .Autofill
-                    });
+                if (existingLookup.TryGetValue(key, out var id))
+                {
+                    item.Id = id;
+                }
+
+                list.Add(item);
             }
 
             // =====================================================
@@ -102,19 +116,22 @@ namespace ZIVA_Prototype.Services.Import
                 if (normalized == null)
                     continue;
 
-                list.Add(
-                    new UserInputEntry
-                    {
-                        Time =
-                            normalized.Value,
+                var item = new UserInputEntry
+                {
+                    Time = normalized.Value,
+                    Value = favicon.PageUrl,
+                    Type = UserInputType.Favicon
+                };
 
-                        Value =
-                            favicon.PageUrl,
+                string key =
+                    $"{item.Type}|{item.Time.Ticks}|{item.Value}";
 
-                        Type =
-                            UserInputType
-                                .Favicon
-                    });
+                if (existingLookup.TryGetValue(key, out var id))
+                {
+                    item.Id = id;
+                }
+
+                list.Add(item);
             }
 
             // =====================================================

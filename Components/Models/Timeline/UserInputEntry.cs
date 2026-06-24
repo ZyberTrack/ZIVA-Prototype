@@ -7,6 +7,8 @@ namespace ZIVA_Prototype.Components.Models.Timeline
 {
     public class UserInputEntry
     {
+        public Guid Id { get; set; } = Guid.NewGuid(); // Für stabile Identifikation, auch wenn sich der Inhalt ändert
+
         public DateTime Time { get; set; }
         public string Value { get; set; } = "";
         public UserInputType Type { get; set; }
