@@ -76,6 +76,24 @@
     private int currentPivotIndex = 0; // Index in State.BrowserEntries
     private int SecondsPerSpacing => zoomLevels[currentZoomIndex].seconds;  //  Zoomstufe in Sekunden und bestimmt Dauer eines Intervalls
 
+    // Für domäne Filterung
+    private List<string> AvailableDomains = new();
+    private string? _selectedDomainFilter;
+
+    private string? SelectedDomainFilter
+    {
+        get => _selectedDomainFilter;
+        set
+        {
+            if (_selectedDomainFilter == value)
+                return;
+
+            _selectedDomainFilter = value;
+
+            _ = ApplyDomainFilter();
+        }
+    }
+
     //Suche
     private List<SearchResult> SearchResults = new();
 
@@ -438,7 +456,7 @@
         State.BrowserEntries,
         x => x.VisitTime,
         (x, pos) => x.Position = pos
-    );
+        );
 
         RecalculatePositions(
             State.BrowserCookies,
@@ -504,6 +522,12 @@
             Anomalies,
             viewportWidth
         );
+
+        AvailableDomains = SummarizedEntries
+        .Select(d => d.Domain)
+        .Distinct()
+        .OrderBy(d => d)
+        .ToList();
     }
 
     private void BuildArtifactTimeline()
@@ -1168,7 +1192,32 @@
         await FocusCurrentSearchResult();
     }
 
+    //------------------------------------------------------------
+    // FILTER
+    //------------------------------------------------------------
 
+    private Task ApplyDomainFilter()
+    {
+        if (string.IsNullOrWhiteSpace(SelectedDomainFilter))
+        {
+            // Filter zurücksetzen
+        }
+        else
+        {
+            // Domain filtern
+        }
+
+        StateHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+    private async Task OnDomainFilterChanged(ChangeEventArgs e)
+    {
+        SelectedDomainFilter = e.Value?.ToString();
+
+        await ApplyDomainFilter();
+    }
 
     //------------------------------------------------------------
 	// Verschiedene Hilfsmethoden
@@ -2031,6 +2080,19 @@
 
             </div>
 
+            <div class="timeline-domain-filter">
+
+                <select @bind="SelectedDomainFilter">
+                    <option value="">Filter: All Domains</option>
+
+                    @foreach (var domain in AvailableDomains)
+                    {
+                        <option value="@domain">@domain</option>
+                    }
+                </select>
+
+            </div>
+
             @if (SearchResults.Any())
             {
                 <div class="search-results-list">
@@ -2052,7 +2114,12 @@
                 </div>
             }
 
+
+
+
         </div>
+
+        
 
         <!-- Externer Container mit fixer Breite & overflow -->
         <div id="scroll-container" class="scroll-wrapper scroll-wrapper-timeline" @ref="scrollDivRef">
