@@ -30,6 +30,8 @@ namespace ZIVA_Prototype.Components.Models.Timeline
         public int HighestAnomalySeverity { get; set; }
 
         public bool HasAnomaly => HighestAnomalySeverity > 0;
+
+        public double RenderYPercent { get; set; } = 33; // Für Domäne Summeries
     }
 
 }

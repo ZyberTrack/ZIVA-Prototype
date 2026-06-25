@@ -69,20 +69,36 @@ namespace ZIVA_Prototype.Services.Timeline
                     var extensionSet = extensions.ToHashSet();
                     var storageSet = storage.ToHashSet();
 
+                    // Langfristig auf ungefilterte Listen zugreifen, um umgewollte Filterung zu vermeiden
                     anomalies = anomalies
                         .Where(a =>
                             a.LinkedDomain?.Domain == activeDomain ||
-                            a.LinkedHistory.Any(historySet.Contains) ||
-                            a.LinkedCookies.Any(cookieSet.Contains) ||
-                            a.LinkedInputs.Any(inputSet.Contains) ||
-                            a.LinkedExtensions.Any(extensionSet.Contains) ||
-                            a.LinkedStorage.Any(storageSet.Contains))
+
+                            a.LinkedHistory.Any(h =>
+                                domains.Any(d => d.SubEntries.Contains(h))) ||
+
+                            a.LinkedCookies.Any(c =>
+                                c.Relations.Any(r => r.Domain?.Domain == activeDomain)) ||
+
+                            a.LinkedInputs.Any(i =>
+                                i.Relations.Any(r => r.Domain?.Domain == activeDomain)) ||
+
+                            a.LinkedExtensions.Any(e =>
+                                e.Relations.Any(r => r.Domain?.Domain == activeDomain)) ||
+
+                            a.LinkedStorage.Any(s =>
+                                s.Relations.Any(r => r.Domain?.Domain == activeDomain))
+                        )
                         .ToList();
                 }
             }
 
             VisibleCookies = cookies
                 .Where(c => IsVisible(c.Position, viewportWidth))
+                .ToList();
+
+            VisibleHistory = history
+                .Where(h => IsVisible(h.Position, viewportWidth))
                 .ToList();
 
             VisibleInputs = inputs
@@ -97,12 +113,12 @@ namespace ZIVA_Prototype.Services.Timeline
                 .Where(s => IsVisible(s.Position, viewportWidth))
                 .ToList();
 
-            VisibleDomains = domains
-                .Where(d => IsVisible(d.Position, viewportWidth))
-                .ToList();
+            var visibleHistorySet = VisibleHistory.ToHashSet();
 
-            VisibleHistory = history
-                .Where(h => IsVisible(h.Position, viewportWidth))
+            VisibleDomains = domains
+                .Where(d =>
+                    visibleHistorySet.Overlaps(d.SubEntries) ||
+                    IsVisible(d.Position, viewportWidth))
                 .ToList();
 
             VisibleAnomalies = anomalies

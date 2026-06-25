@@ -1240,6 +1240,16 @@
 	// Verschiedene Hilfsmethoden
     //------------------------------------------------------------
 
+    private DomainEntry? GetRenderedDomain(DomainEntry? domain)
+    {
+        if (domain == null)
+            return null;
+
+        return RenderCache.VisibleDomains.FirstOrDefault(d =>
+            d.Domain == domain.Domain);
+    }
+
+
     // zentriert Timeline um ein entry.
     private async Task CenterOnEntry(int index)
     {
@@ -1569,7 +1579,7 @@
     }
 
     // Y-Position der Domain in Prozent
-    double GetDomainYPercent(DomainEntry domain)
+    /*double GetDomainYPercent(DomainEntry domain)
     {
         if (!domain.IsHeavyCluster)
             return baseTop;
@@ -1578,7 +1588,7 @@
         double offsetPercent = (offsetPx / containerHeight) * 100.0;
 
         return Math.Round(baseTop - offsetPercent);
-    }
+    }*/
 
     // Y-Position der Anomalie in Pixel
     double AnomalyYPercent => 78;
@@ -1601,7 +1611,7 @@
             if (summary == null)
                 continue;
 
-            double y = GetDomainYPercent(summary);
+            double y = summary.RenderYPercent;
 
             // Expandiert → einzelne History-Ziele
             if (summary.IsExpanded)
@@ -2220,6 +2230,7 @@
                         //     style="left:@($"{domainEntry.Position}px"); top: calc(33% - 35px);">
                         //   @domainEntry.Domain
                         //</div>
+
                         // Normale Domain Marker
                         string domainClass = domainEntry.IsSearch ? "domain-marker square" :
                         domainEntry.IsDirect ? "domain-marker hollow" :
@@ -2246,13 +2257,28 @@
                         string topStyle = $"calc({baseTop}% - 12px)";
                         string topStyleSquare = $"calc({baseTop}% + 5px)";
 
+                        // Standard-Y für Relationen
+                        domainEntry.RenderYPercent = baseTop;
+
                         if (isHeavy)
                         {
                             topStyle = $"calc({baseTop}% - 18px - {heavyClusterIndex * heavyClusterSpacingPx}px)";
+
+                            // zusätzlich speichern
+                            double offsetPx = 25 + heavyClusterSpacingPx * (heavyClusterIndex - 1);
+                            double offsetPercent = (offsetPx / containerHeight) * 100.0;
+                            domainEntry.RenderYPercent = Math.Round(baseTop - offsetPercent);
+
                             heavyClusterIndex++;
 
-                            double firstPos = domainEntry.SubEntries.First().Position;
-                            double lastPos = domainEntry.SubEntries.Last().Position;
+                            var visibleSubs = domainEntry.SubEntries
+                                .Where(RenderCache.VisibleHistory.Contains)
+                                .ToList();
+
+                            if (visibleSubs.Any())
+                            {
+                                double firstPos = visibleSubs.First().Position;
+                                double lastPos = visibleSubs.Last().Position;
 
                             <div class="heavy-cluster-line"
                                  style="position:absolute;
@@ -2263,6 +2289,8 @@
                             background-color:@domainEntry.RenderColor;
                             z-index:20;">
                             </div>
+
+                            }
                         }
 
                         /*
@@ -2281,7 +2309,7 @@
 
 
                         // SubEntries anzeigen
-                        @foreach (var sub in RenderCache.VisibleHistory)
+                        @foreach (var sub in domainEntry.SubEntries.Where(RenderCache.VisibleHistory.Contains))
                         {
                             bool isSearch = sub.Url.Contains("google.") || sub.Url.Contains("bing.com") || sub.Url.Contains("duckduckgo.com");
 
@@ -2460,24 +2488,21 @@
                 {
                     foreach (var relation in cookie.Relations)
                     {
-                        if (relation.Domain == null)
+                        var domainEntry = GetRenderedDomain(relation.Domain);
+
+                        if (domainEntry == null)
                             continue;
 
-                        double domainPosX =
-                            relation.Domain.Position;
+                        double domainPosX = domainEntry.Position;
+                        double domainPosY = domainEntry.RenderYPercent;
 
-                        double domainPosY =
-                            GetDomainYPercent(
-                                relation.Domain);
+                        string color =
+                            ColorService.GetColor(domainEntry.Url);
 
                         double cookiePosX =
                             cookie.Position - 2;
 
                         double cookiePosY = 43;
-
-                        string color =
-                            ColorService.GetColor(
-                                relation.Domain.Url);
 
                         <line x1="@domainPosX"
                               y1="@($"{domainPosY}%")"
@@ -2494,15 +2519,16 @@
                 {
                     foreach (var relation in input.Relations)
                     {
-                        if (relation.Domain == null)
+                        var domainEntry = GetRenderedDomain(relation.Domain);
+
+                        if (domainEntry == null)
                             continue;
 
-                        double domainPosX =
-                            relation.Domain.Position;
+                        double domainPosX = domainEntry.Position;
+                        double domainPosY = domainEntry.RenderYPercent;
 
-                        double domainPosY =
-                            GetDomainYPercent(
-                                relation.Domain);
+                        string color =
+                            ColorService.GetColor(domainEntry.Url);
 
                         double inputPosX =
                             input.Position - 2;
@@ -2514,10 +2540,6 @@
                                 UserInputType.Favicon => 50,
                                 _ => 50
                             };
-
-                        string color =
-                            ColorService.GetColor(
-                                relation.Domain.Url);
 
                         <line x1="@domainPosX"
                               y1="@($"{domainPosY}%")"
@@ -2539,24 +2561,21 @@
                                 .ExtensionToWebStore)
                             continue;
 
-                        if (relation.Domain == null)
+                        var domainEntry = GetRenderedDomain(relation.Domain);
+
+                        if (domainEntry == null)
                             continue;
 
-                        double domainPosX =
-                            relation.Domain.Position;
+                        double domainPosX = domainEntry.Position;
+                        double domainPosY = domainEntry.RenderYPercent;
 
-                        double domainPosY =
-                            GetDomainYPercent(
-                                relation.Domain);
+                        string color =
+                            ColorService.GetColor(domainEntry.Url);
 
                         double extPosX =
                             ext.Position;
 
                         double extPosY = 64;
-
-                        string color =
-                            ColorService.GetColor(
-                                relation.Domain.Url);
 
                         <line x1="@domainPosX"
                               y1="@($"{domainPosY}%")"
@@ -2573,24 +2592,21 @@
                 {
                     foreach (var relation in storage.Relations)
                     {
-                        if (relation.Domain == null)
+                        var domainEntry = GetRenderedDomain(relation.Domain);
+
+                        if (domainEntry == null)
                             continue;
 
-                        double domainPosX =
-                            relation.Domain.Position;
+                        double domainPosX = domainEntry.Position;
+                        double domainPosY = domainEntry.RenderYPercent;
 
-                        double domainPosY =
-                            GetDomainYPercent(
-                                relation.Domain);
+                        string color =
+                            ColorService.GetColor(domainEntry.Url);
 
                         double storagePosX =
                             storage.Position;
 
                         double storagePosY = 57;
-
-                        string color =
-                            ColorService.GetColor(
-                                relation.Domain.Url);
 
                         <line x1="@domainPosX"
                               y1="@($"{domainPosY}%")"
@@ -2640,7 +2656,7 @@
 
             <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:15;">
 
-                @foreach (var anomaly in Anomalies.Where(IsAnomalyConnectionVisible))
+                @foreach (var anomaly in RenderCache.VisibleAnomalies.Where(IsAnomalyConnectionVisible))
                 {
                     var color = GetSeverityColor(anomaly.Severity);
 
