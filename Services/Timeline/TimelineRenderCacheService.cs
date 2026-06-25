@@ -18,18 +18,69 @@ namespace ZIVA_Prototype.Services.Timeline
 
         public List<DomainEntry> VisibleDomains { get; private set; } = new();
 
+        public List<BrowserHistoryEntry> VisibleHistory { get; private set; } = new();
+
         public List<AnomalyEntry> VisibleAnomalies { get; private set; } = new();
 
 
         public void BuildVisibleCaches(
+            List<BrowserHistoryEntry> history,
             List<BrowserCookieEntry> cookies,
             List<UserInputEntry> inputs,
             List<BrowserExtensionEntry> extensions,
             List<StorageEntry> storage,
             List<DomainEntry> domains,
             List<AnomalyEntry> anomalies,
-            int viewportWidth)
+            int viewportWidth,
+            string? activeDomain = null)
         {
+            if (!string.IsNullOrWhiteSpace(activeDomain))
+            {
+                domains = domains
+                    .Where(d => d.Domain == activeDomain)
+                    .ToList();
+
+                if (domains.Any())
+                {
+                    history = domains
+                        .SelectMany(d => d.SubEntries)
+                        .ToList();
+
+                    cookies = cookies
+                        .Where(c => c.Relations.Any(r => r.Domain?.Domain == activeDomain))
+                        .ToList();
+
+                    inputs = inputs
+                        .Where(i => i.Relations.Any(r => r.Domain?.Domain == activeDomain))
+                        .ToList();
+
+                    extensions = extensions
+                        .Where(e => e.Relations.Any(r => r.Domain?.Domain == activeDomain))
+                        .ToList();
+
+                    storage = storage
+                        .Where(s => s.Relations.Any(r => r.Domain?.Domain == activeDomain))
+                        .ToList();
+
+                    // Für schnelle Contains()-Abfragen
+                    var historySet = history.ToHashSet();
+                    var cookieSet = cookies.ToHashSet();
+                    var inputSet = inputs.ToHashSet();
+                    var extensionSet = extensions.ToHashSet();
+                    var storageSet = storage.ToHashSet();
+
+                    anomalies = anomalies
+                        .Where(a =>
+                            a.LinkedDomain?.Domain == activeDomain ||
+                            a.LinkedHistory.Any(historySet.Contains) ||
+                            a.LinkedCookies.Any(cookieSet.Contains) ||
+                            a.LinkedInputs.Any(inputSet.Contains) ||
+                            a.LinkedExtensions.Any(extensionSet.Contains) ||
+                            a.LinkedStorage.Any(storageSet.Contains))
+                        .ToList();
+                }
+            }
+
             VisibleCookies = cookies
                 .Where(c => IsVisible(c.Position, viewportWidth))
                 .ToList();
@@ -48,6 +99,10 @@ namespace ZIVA_Prototype.Services.Timeline
 
             VisibleDomains = domains
                 .Where(d => IsVisible(d.Position, viewportWidth))
+                .ToList();
+
+            VisibleHistory = history
+                .Where(h => IsVisible(h.Position, viewportWidth))
                 .ToList();
 
             VisibleAnomalies = anomalies

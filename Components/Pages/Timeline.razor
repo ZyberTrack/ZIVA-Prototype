@@ -90,9 +90,18 @@
 
             _selectedDomainFilter = value;
 
-            _ = ApplyDomainFilter();
+            ApplyDomainFilter();
         }
     }
+
+    private List<DomainEntry> VisibleDomains = new();
+    private List<BrowserHistoryEntry> VisibleHistory = new();
+    private List<BrowserCookieEntry> VisibleCookies = new();
+    private List<UserInputEntry> VisibleInputs = new();
+    private List<BrowserExtensionEntry> VisibleExtensions = new();
+    private List<StorageEntry> VisibleStorage = new();
+    private List<AnomalyEntry> VisibleAnomalies = new();
+
 
     //Suche
     private List<SearchResult> SearchResults = new();
@@ -514,13 +523,15 @@
         InvokeAsync(StateHasChanged);
 
         RenderCache.BuildVisibleCaches(
+            State.BrowserEntries,
             State.BrowserCookies,
             UserInputs,
             State.Extensions,
             State.StorageEntries,
             SummarizedEntries,
             Anomalies,
-            viewportWidth
+            viewportWidth,
+            SelectedDomainFilter
         );
 
         AvailableDomains = SummarizedEntries
@@ -528,6 +539,17 @@
         .Distinct()
         .OrderBy(d => d)
         .ToList();
+
+        VisibleDomains = SummarizedEntries;
+        VisibleHistory = State.BrowserEntries;
+        VisibleCookies = State.BrowserCookies;
+        VisibleInputs = UserInputs;
+        VisibleExtensions = State.Extensions;
+        VisibleStorage = State.StorageEntries;
+        VisibleAnomalies = Anomalies;
+
+        ApplyDomainFilter();
+
     }
 
     private void BuildArtifactTimeline()
@@ -1196,27 +1218,22 @@
     // FILTER
     //------------------------------------------------------------
 
-    private Task ApplyDomainFilter()
+    private void ApplyDomainFilter()
     {
-        if (string.IsNullOrWhiteSpace(SelectedDomainFilter))
-        {
-            // Filter zurücksetzen
-        }
-        else
-        {
-            // Domain filtern
-        }
+        RenderCache.BuildVisibleCaches(
+            State.BrowserEntries,
+            State.BrowserCookies,
+            UserInputs,
+            State.Extensions,
+            State.StorageEntries,
+            SummarizedEntries,
+            Anomalies,
+            viewportWidth,
+            SelectedDomainFilter);
+
+        BuildArtifactTimeline();
 
         StateHasChanged();
-
-        return Task.CompletedTask;
-    }
-
-    private async Task OnDomainFilterChanged(ChangeEventArgs e)
-    {
-        SelectedDomainFilter = e.Value?.ToString();
-
-        await ApplyDomainFilter();
     }
 
     //------------------------------------------------------------
@@ -2190,7 +2207,7 @@
 
             
 
-            @foreach (var domainEntry in SummarizedEntries)
+            @foreach (var domainEntry in RenderCache.VisibleDomains)
             {
 
                 <div class="domain-container">
@@ -2264,7 +2281,7 @@
 
 
                         // SubEntries anzeigen
-                        @foreach (var sub in domainEntry.SubEntries)
+                        @foreach (var sub in RenderCache.VisibleHistory)
                         {
                             bool isSearch = sub.Url.Contains("google.") || sub.Url.Contains("bing.com") || sub.Url.Contains("duckduckgo.com");
 
