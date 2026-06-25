@@ -53,6 +53,9 @@
     private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
     private bool isZooming = false; // Flag to indicate if zooming is in progress
     private bool isResizing = false; // Flag to indicate if resizing is in progress
+    private bool _applyingFilter; // Filter Sperre
+    private string? _lastAutoFocusedFilter; // Hilfe um dauerschle Fokusierung auf ein Artefakt zu verhindern, wenn der Filter sich nicht ändert
+    private bool _initialFocusDone = false;
 
     private DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
     private ElementReference scrollDivRef;
@@ -90,7 +93,12 @@
 
             _selectedDomainFilter = value;
 
-            ApplyDomainFilter();
+            // Dadurch wird beim Wechsel auf eine neue Domäne
+            // wieder genau einmal automatisch fokussiert.
+            if (_selectedDomainFilter != _lastAutoFocusedFilter)
+                _lastAutoFocusedFilter = null;
+
+            _ = ApplyDomainFilter();
         }
     }
 
@@ -550,6 +558,26 @@
 
         ApplyDomainFilter();
 
+
+        // Fokus auf erstes Artefakt, wenn noch nicht geschehen und Artefakte vorhanden sind
+        if (!_initialFocusDone && State.BrowserEntries.Any() && TimelineArtifacts.Any())
+        {
+            _initialFocusDone = true;
+
+            _ = InvokeAsync(async () =>
+            {
+                await Task.Yield();
+
+                var firstHistory = TimelineArtifacts
+                    .FirstOrDefault(a => a.Type == ArtifactType.History);
+
+                if (firstHistory != null)
+                {
+                    await FocusArtifact(firstHistory);
+                }
+            });
+        }
+
     }
 
     private void BuildArtifactTimeline()
@@ -998,7 +1026,7 @@
     }
 
     //------------------------------------------------------------
-	// JavaScript Interop: Scrollen, Zoomen, Resizing
+    // JavaScript Interop: Scrollen, Zoomen, Resizing
     //------------------------------------------------------------
 
     [JSInvokable("OnResize")] // Elemente werden Visuell dem Fenster angepasst
@@ -1218,22 +1246,52 @@
     // FILTER
     //------------------------------------------------------------
 
-    private void ApplyDomainFilter()
+    private async Task ApplyDomainFilter()
     {
-        RenderCache.BuildVisibleCaches(
-            State.BrowserEntries,
-            State.BrowserCookies,
-            UserInputs,
-            State.Extensions,
-            State.StorageEntries,
-            SummarizedEntries,
-            Anomalies,
-            viewportWidth,
-            SelectedDomainFilter);
+        if (_applyingFilter)
+            return;
 
-        BuildArtifactTimeline();
+        _applyingFilter = true;
 
-        StateHasChanged();
+        try
+        {
+            RenderCache.BuildVisibleCaches(
+                State.BrowserEntries,
+                State.BrowserCookies,
+                UserInputs,
+                State.Extensions,
+                State.StorageEntries,
+                SummarizedEntries,
+                Anomalies,
+                viewportWidth,
+                SelectedDomainFilter);
+
+            BuildArtifactTimeline();
+
+            // Nur einmal automatisch fokussieren,
+            // solange sich der Filter nicht geändert hat.
+            if (!string.IsNullOrWhiteSpace(SelectedDomainFilter) &&
+                _lastAutoFocusedFilter != SelectedDomainFilter)
+            {
+                _lastAutoFocusedFilter = SelectedDomainFilter;
+
+                var firstArtifact = TimelineArtifacts.FirstOrDefault(a =>
+                    a.Data is BrowserHistoryEntry h &&
+                    h.Url.Contains(SelectedDomainFilter,
+                        StringComparison.OrdinalIgnoreCase));
+
+                if (firstArtifact != null)
+                {
+                    await FocusArtifact(firstArtifact);
+                }
+            }
+
+            StateHasChanged();
+        }
+        finally
+        {
+            _applyingFilter = false;
+        }
     }
 
     //------------------------------------------------------------
