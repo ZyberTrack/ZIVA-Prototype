@@ -7,6 +7,7 @@
 @using ZIVA_Prototype.Services.Timeline;
 @using ZIVA_Prototype.Services;
 @using System.Text.Json;
+@using Microsoft.AspNetCore.Components.Web
 @inject TimelineStateService State // Verwaltet States mehrerer Importierter Datenbanken
 @inject HistoryImportService Importer   
 @inject PersistStateService PersistService // falls benötigt
@@ -56,6 +57,12 @@
     private bool _applyingFilter; // Filter Sperre
     private string? _lastAutoFocusedFilter; // Hilfe um dauerschle Fokusierung auf ein Artefakt zu verhindern, wenn der Filter sich nicht ändert
     private bool _initialFocusDone = false;
+
+    // Context Menu
+    private bool ShowContextMenu;
+    private double ContextMenuX;
+    private double ContextMenuY;
+    private object? ContextArtifact;
 
     private DateTime baseTime = DateTime.Now; // Später durch Importdaten ersetzbar
     private ElementReference scrollDivRef;
@@ -1294,6 +1301,75 @@
         }
     }
 
+    private void ClearDomainFilter()
+    {
+        SelectedDomainFilter = "";
+
+        ShowContextMenu = false;
+    }
+
+    //------------------------------------------------------------
+    // Kontext Menu
+    //------------------------------------------------------------
+
+    private void OpenContextMenu(MouseEventArgs e, object? artifact = null)
+    {
+        ContextArtifact = artifact;
+
+        ContextMenuX = e.ClientX;
+        ContextMenuY = e.ClientY;
+
+        ShowContextMenu = true;
+
+        StateHasChanged();
+    }
+
+    private void CloseContextMenu()
+    {
+        ShowContextMenu = false;
+    }
+
+    private string? GetDomainOfArtifact(object artifact)
+    {
+        return artifact switch
+        {
+            DomainEntry d => d.Domain,
+
+            BrowserHistoryEntry h =>
+                SummarizedEntries
+                    .FirstOrDefault(d => d.SubEntries.Contains(h))
+                    ?.Domain,
+
+            BrowserCookieEntry c =>
+                c.Relations.FirstOrDefault()?.Domain?.Domain,
+
+            UserInputEntry i =>
+                i.Relations.FirstOrDefault()?.Domain?.Domain,
+
+            BrowserExtensionEntry e =>
+                e.Relations.FirstOrDefault()?.Domain?.Domain,
+
+            StorageEntry s =>
+                s.Relations.FirstOrDefault()?.Domain?.Domain,
+
+            _ => null
+        };
+    }
+
+    private void FilterByArtifactDomain()
+    {
+        var domain = GetDomainOfArtifact(ContextArtifact);
+
+        if (domain == null)
+            return;
+
+        SelectedDomainFilter = domain;
+
+        ShowContextMenu = false;
+
+        StateHasChanged();
+    }
+
     //------------------------------------------------------------
 	// Verschiedene Hilfsmethoden
     //------------------------------------------------------------
@@ -1771,7 +1847,7 @@
 }
 
 <!-- RAZOR MARKUP -->
-<div class="timeline-wrapper @(isNavOpen ? "shifted" : "full")">
+<div class="timeline-wrapper @(isNavOpen ? "shifted" : "full")" @onclick="CloseContextMenu">
 
     @if (showDebug)
     {
@@ -1796,7 +1872,9 @@
                         {
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(e)"
-                                @onclick="() => FocusHistoryFromTable(e)">
+                                @onclick="() => FocusHistoryFromTable(e)"
+                                @oncontextmenu="args => OpenContextMenu(args, e)"
+                                @oncontextmenu:preventDefault="true">
                                 @if (e.HighestAnomalySeverity > 0)
                                 {
                                     <div style="
@@ -1994,7 +2072,9 @@
                         {
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(d)"
-                                @onclick="() => ExpandAndFocus(d)">
+                                @onclick="() => ExpandAndFocus(d)"
+                                @oncontextmenu="args => OpenContextMenu(args, d)"
+                                @oncontextmenu:preventDefault="true">
                                 @if (d.HighestAnomalySeverity > 0)
                                 {
                                     <div style="
@@ -2138,7 +2218,7 @@
     </div>
 
 
-    <div class="timeline-container">
+    <div class="timeline-container" @oncontextmenu="args => OpenContextMenu(args)" @oncontextmenu:preventDefault="true">
 
         <div class="timeline-search">
 
@@ -2299,7 +2379,10 @@
                             left: calc(@($"{domainEntry.Position}px - 10px"));
                             color:@domainEntry.RenderColor;
                             @GetMarkerFocusStyle(domainEntry)"
-                             @onclick="() => ExpandAndFocus(domainEntry)">
+                             @onclick="() => ExpandAndFocus(domainEntry)"
+                             @oncontextmenu="args => OpenContextMenu(args, domainEntry)"
+                             @oncontextmenu:preventDefault="true"
+                             @oncontextmenu:stopPropagation="true">
 
                             <div class="domaine-tooltip" style="background-color:color:@domainEntry.RenderColor;">
                                 <div><strong>Zeitstempel: @domainEntry.VisitTime</strong></div>
@@ -2378,7 +2461,10 @@
                                 color:@ColorService.GetColor(sub.Url);
                             cursor:pointer;
                             z-index:21;"
-                             @onclick="() => SelectSubEntry(domainEntry, sub)">
+                             @onclick="() => SelectSubEntry(domainEntry, sub)"
+                                 @oncontextmenu="args => OpenContextMenu(args, sub)"
+                                 @oncontextmenu:preventDefault="true"
+                                 @oncontextmenu:stopPropagation="true">
 
                                 @if (isSearch)
                                 {
@@ -2736,6 +2822,33 @@
         </div>
 
     </div>
+
+    @if (ShowContextMenu)
+    {
+        <div class="context-menu"
+             style="
+            left:@($"{ContextMenuX}px");
+            top:@($"{ContextMenuY}px");"
+             @onclick:stopPropagation="true">
+
+            @if (ContextArtifact != null)
+            {
+                <div class="context-item"
+                     @onclick="FilterByArtifactDomain">
+                    🔍 Nach dieser Domäne filtern
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(SelectedDomainFilter))
+            {
+                <div class="context-item"
+                     @onclick="ClearDomainFilter">
+                    ❌ Filter aufheben
+                </div>
+            }
+
+        </div>
+    }
 </div>
 
 <div class="ui-overlay-root">
