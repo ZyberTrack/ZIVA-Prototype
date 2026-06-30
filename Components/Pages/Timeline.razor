@@ -50,6 +50,7 @@
     private StorageEntry? selectedStorage;
     private TimelineArtifact? focusedArtifact;
     private AnomalyEntry? selectedAnomaly;
+    private TimelineArtifact? visualFocusedArtifact;
 
     private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
     private bool isZooming = false; // Flag to indicate if zooming is in progress
@@ -263,46 +264,89 @@
 
     async Task SelectInput(UserInputEntry item)
     {
-        ResetSelection();
-
-        selectedInput = item;
 
         SyncFocusedArtifact(item);
+
+        if (focusedArtifact != null)
+            visualFocusedArtifact = focusedArtifact;
 
         await CenterOnTime(item.Time);
     }
 
     async Task SelectStorage(StorageEntry s)
     {
-        ResetSelection();
-
-        selectedStorage = s;
 
         SyncFocusedArtifact(s);
+
+        if (focusedArtifact != null)
+            visualFocusedArtifact = focusedArtifact;
 
         await CenterOnTime(s.Time);
     }
 
     async Task SelectExtension(BrowserExtensionEntry ext)
     {
-        ResetSelection();
-
-        selectedExtension = ext;
 
         SyncFocusedArtifact(ext);
+
+        if (focusedArtifact != null)
+            visualFocusedArtifact = focusedArtifact;
 
         await CenterOnTime(ext.InstallTime);
     }
 
     async Task SelectCookie(BrowserCookieEntry cookie)
     {
-        ResetSelection();
-
-        selectedCookie = cookie;
 
         SyncFocusedArtifact(cookie);
 
+        if (focusedArtifact != null)
+            visualFocusedArtifact = focusedArtifact;
+
         await CenterOnTime(cookie.Created);
+    }
+
+
+    async Task SelectSubEntry(
+    DomainEntry domainEntry,
+    BrowserHistoryEntry sub)
+    {
+        SyncFocusedArtifact(sub);
+
+        visualFocusedArtifact = focusedArtifact;
+
+        await CenterOnTime(sub.VisitTime);
+    }
+
+    async Task FocusAnomaly(AnomalyEntry anomaly)
+    {
+
+        SyncFocusedArtifact(anomaly);
+
+        if (focusedArtifact != null)
+            visualFocusedArtifact = focusedArtifact;
+
+        visualFocusedArtifact = focusedArtifact;
+
+        DateTime focusTime;
+
+        if (anomaly.FirstSeen == anomaly.LastSeen)
+        {
+            focusTime = anomaly.FirstSeen;
+        }
+        else
+        {
+            long ticks =
+                (anomaly.FirstSeen.Ticks + anomaly.LastSeen.Ticks) / 2;
+
+            focusTime = new DateTime(ticks);
+        }
+
+        await CenterOnTime(focusTime);
+
+        Refresh();
+
+        StateHasChanged();
     }
 
     void CloseAll()
@@ -314,21 +358,12 @@
         selectedSubEntry = null;
         selectedStorage = null;
         selectedAnomaly = null;
+        visualFocusedArtifact = null;
     }
 
-    async Task SelectSubEntry(
-    DomainEntry domainEntry,
-    BrowserHistoryEntry sub)
+    private void ClearVisualFocus()
     {
-        ResetSelection();
-
-        selectedDomain = domainEntry;
-        selectedSubEntry = sub;
-
-        SyncFocusedArtifact(sub);
-        SyncFocusedArtifact(domainEntry);
-
-        await CenterOnTime(sub.VisitTime);
+        visualFocusedArtifact = null;
     }
 
     void ResetSelection()
@@ -1176,9 +1211,8 @@
 
     async Task ExpandAndFocus(DomainEntry domainEntry)
     {
-        ResetSelection();
-
-        selectedDomain = domainEntry;
+        if (focusedArtifact != null)
+            visualFocusedArtifact = focusedArtifact;
 
         domainEntry.IsExpanded = true;
         expandedStates[domainEntry.Domain] = true;
@@ -1319,6 +1353,17 @@
         ContextMenuX = e.ClientX;
         ContextMenuY = e.ClientY;
 
+        if (artifact != null)
+        {
+            SyncFocusedArtifact(artifact);
+            visualFocusedArtifact = focusedArtifact;
+        }
+        else
+        {
+            // Rechtsklick auf freie Timeline
+            visualFocusedArtifact = null;
+        }
+
         ShowContextMenu = true;
 
         StateHasChanged();
@@ -1354,6 +1399,49 @@
 
             _ => null
         };
+    }
+
+    private void OpenArtifactDetails()
+    {
+        if (ContextArtifact == null)
+            return;
+
+        ResetSelection();
+
+        switch (ContextArtifact)
+        {
+            case BrowserHistoryEntry h:
+                selectedSubEntry = h;
+                break;
+
+            case DomainEntry d:
+                selectedDomain = d;
+                break;
+
+            case BrowserCookieEntry c:
+                selectedCookie = c;
+                break;
+
+            case UserInputEntry i:
+                selectedInput = i;
+                break;
+
+            case BrowserExtensionEntry e:
+                selectedExtension = e;
+                break;
+
+            case StorageEntry s:
+                selectedStorage = s;
+                break;
+
+            case AnomalyEntry a:
+                selectedAnomaly = a;
+                break;
+        }
+
+        ShowContextMenu = false;
+
+        StateHasChanged();
     }
 
     private void FilterByArtifactDomain()
@@ -1447,6 +1535,7 @@
     {
         // NUR Fokus setzen
         focusedArtifact = artifact;
+        visualFocusedArtifact = artifact;
 
         // Panels schließen
         ResetSelection();
@@ -1498,34 +1587,7 @@
         StateHasChanged();
     }
 
-    async Task FocusAnomaly(AnomalyEntry anomaly)
-    {
-        ResetSelection();
-
-        selectedAnomaly = anomaly;
-
-        SyncFocusedArtifact(anomaly);
-
-        DateTime focusTime;
-
-        if (anomaly.FirstSeen == anomaly.LastSeen)
-        {
-            focusTime = anomaly.FirstSeen;
-        }
-        else
-        {
-            long ticks =
-                (anomaly.FirstSeen.Ticks + anomaly.LastSeen.Ticks) / 2;
-
-            focusTime = new DateTime(ticks);
-        }
-
-        await CenterOnTime(focusTime);
-
-        Refresh();
-
-        StateHasChanged();
-    }
+    
 
     async Task FocusHistoryFromTable(BrowserHistoryEntry entry)
     {
@@ -1544,6 +1606,8 @@
 
             SyncFocusedArtifact(entry);
 
+            visualFocusedArtifact = focusedArtifact;
+
             await CenterOnTime(entry.VisitTime);
 
             Refresh();
@@ -1554,7 +1618,7 @@
 
     bool IsFocused(object obj)
     {
-        return focusedArtifact?.Data == obj;
+        return visualFocusedArtifact?.Data == obj;
     }
 
     string GetSeverityBackground(int severity)
@@ -1913,7 +1977,9 @@
                         {
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(e)"
-                                @onclick="() => SelectCookie(e)">
+                                @onclick="() => SelectCookie(e)"
+                                @oncontextmenu="args => OpenContextMenu(args, e)"
+                                @oncontextmenu:preventDefault="true">
                                 @if (e.HighestAnomalySeverity > 0)
                                 {
                                     <div style="
@@ -1949,7 +2015,9 @@
                         {
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(e)"
-                                @onclick="() => SelectInput(e)">
+                                @onclick="() => SelectInput(e)"
+                                @oncontextmenu="args => OpenContextMenu(args, e)"
+                                @oncontextmenu:preventDefault="true">
                                 @if (e.HighestAnomalySeverity > 0)
                                 {
                                     <div style="
@@ -1991,7 +2059,9 @@
                         {
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(e)"
-                                @onclick="() => SelectExtension(e)">
+                                @onclick="() => SelectExtension(e)"
+                                @oncontextmenu="args => OpenContextMenu(args, e)"
+                                @oncontextmenu:preventDefault="true">
                                 @if (e.HighestAnomalySeverity > 0)
                                 {
                                     <div style="
@@ -2028,7 +2098,9 @@
                         {
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(s)"
-                                @onclick="() => SelectStorage(s)">
+                                @onclick="() => SelectStorage(s)"
+                                @oncontextmenu="args => OpenContextMenu(args, s)"
+                                @oncontextmenu:preventDefault="true">
                                 @if (s.HighestAnomalySeverity > 0)
                                 {
                                     <div style="
@@ -2118,7 +2190,9 @@
                         {
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(a)"
-                                @onclick="() => FocusAnomaly(a)">
+                                @onclick="() => FocusAnomaly(a)"
+                                @oncontextmenu="args => OpenContextMenu(args, a)"
+                                @oncontextmenu:preventDefault="true">
                                 @if (a.Severity > 0)
                                 {
                                     <div style="
@@ -2218,7 +2292,7 @@
     </div>
 
 
-    <div class="timeline-container" @oncontextmenu="args => OpenContextMenu(args)" @oncontextmenu:preventDefault="true">
+    <div class="timeline-container" @oncontextmenu="args => OpenContextMenu(args)" @oncontextmenu:preventDefault="true" @onclick="ClearVisualFocus">
 
         <div class="timeline-search">
 
@@ -2561,7 +2635,11 @@
                          data-valueEncr="@cookie.EncryptedValue"
                          data-value="@cookie.Value"
                          data-time="@cookie.Created"
-                         @onclick="() => SelectCookie(cookie)">
+                     @onclick="() => SelectCookie(cookie)"
+                     @onclick:stopPropagation="true"
+                     @oncontextmenu="args => OpenContextMenu(args, cookie)"
+                     @oncontextmenu:preventDefault="true"
+                     @oncontextmenu:stopPropagation="true">
                     </div>
             }
 
@@ -2584,7 +2662,11 @@
                      data-value="@item.Value"
                      data-time="@item.Time"
                      data-type="@item.Type"
-                     @onclick="() => SelectInput(item)">
+                     @onclick="() => SelectInput(item)"
+                     @onclick:stopPropagation="true"
+                     @oncontextmenu="args => OpenContextMenu(args, item)"
+                     @oncontextmenu:preventDefault="true"
+                     @oncontextmenu:stopPropagation="true">
                 </div>
         }
 
@@ -2600,7 +2682,11 @@
                      data-score="@ext.RiskScore"
                      data-findings="@GetTopFindings(ext)"
                      data-time="@ext.InstallTime"
-                     @onclick="() => SelectExtension(ext)">
+                     @onclick="() => SelectExtension(ext)"
+                     @onclick:stopPropagation="true"
+                     @oncontextmenu="args => OpenContextMenu(args, ext)"
+                     @oncontextmenu:preventDefault="true"
+                     @oncontextmenu:stopPropagation="true">
                 </div>
         }
 
@@ -2613,7 +2699,11 @@
                      data-key="@s.Key"
                      data-origin="@s.Origin"
                      data-value="@s.Value"
-                     @onclick="() => SelectStorage(s)">
+                     @onclick="() => SelectStorage(s)"
+                     @onclick:stopPropagation="true"
+                     @oncontextmenu="args => OpenContextMenu(args, s)"
+                     @oncontextmenu:preventDefault="true"
+                     @oncontextmenu:stopPropagation="true">
                 </div>
         }
 
@@ -2834,8 +2924,17 @@
             @if (ContextArtifact != null)
             {
                 <div class="context-item"
+                     @onclick="OpenArtifactDetails">
+
+                    📄 Mehr Details
+
+                </div>
+
+                <div class="context-item"
                      @onclick="FilterByArtifactDomain">
+
                     🔍 Nach dieser Domäne filtern
+
                 </div>
             }
 
