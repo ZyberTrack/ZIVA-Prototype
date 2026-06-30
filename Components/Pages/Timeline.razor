@@ -2873,7 +2873,11 @@
                      data-description="@anomaly.Description"
                      data-severity="@anomaly.Severity"
                      data-count="@anomaly.Count"
-                     @onclick="() => FocusAnomaly(anomaly)">
+                     @onclick="() => FocusAnomaly(anomaly)"
+                     @onclick:stopPropagation="true"
+                     @oncontextmenu="args => OpenContextMenu(args, anomaly)"
+                     @oncontextmenu:preventDefault="true"
+                     @oncontextmenu:stopPropagation="true">
 
 
                     <div style="
@@ -2915,6 +2919,10 @@
 
     @if (ShowContextMenu)
     {
+        var domain = ContextArtifact != null
+            ? GetDomainOfArtifact(ContextArtifact)
+            : null;
+
         <div class="context-menu"
              style="
             left:@($"{ContextMenuX}px");
@@ -2930,19 +2938,24 @@
 
                 </div>
 
-                <div class="context-item"
-                     @onclick="FilterByArtifactDomain">
+                @if (!string.IsNullOrWhiteSpace(domain))
+                {
+                    <div class="context-item"
+                         @onclick="FilterByArtifactDomain">
 
-                    🔍 Nach dieser Domäne filtern
+                        🔍 Nach dieser Domäne filtern
 
-                </div>
+                    </div>
+                }
             }
 
             @if (!string.IsNullOrWhiteSpace(SelectedDomainFilter))
             {
                 <div class="context-item"
                      @onclick="ClearDomainFilter">
+
                     ❌ Filter aufheben
+
                 </div>
             }
 
