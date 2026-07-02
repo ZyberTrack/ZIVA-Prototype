@@ -22,7 +22,7 @@
 
     // TO DO: ================================================================= //
     // 
-    //  - REFACTORING!!!!!
+    //  - Anomalie Fokusierung: Wenn Anomalie fokussiert, Visuelle Focussierung verbugt!
     // 
     //
     //
@@ -49,6 +49,8 @@
     private TimelineArtifact? focusedArtifact;
     private AnomalyEntry? selectedAnomaly;
     private TimelineArtifact? visualFocusedArtifact;
+
+    private Guid? visualFocusedAnomalyId;
 
     private bool isProgrammaticScroll = false; // scroll lock, damit nicht bei jedem Scrollen die Position neu berechnet wird
     private bool isZooming = false; // Flag to indicate if zooming is in progress
@@ -319,13 +321,12 @@
 
     async Task FocusAnomaly(AnomalyEntry anomaly)
     {
-
         SyncFocusedArtifact(anomaly);
 
         if (focusedArtifact != null)
             visualFocusedArtifact = focusedArtifact;
 
-        visualFocusedArtifact = focusedArtifact;
+        visualFocusedAnomalyId = anomaly.Id;
 
         DateTime focusTime;
 
@@ -348,6 +349,14 @@
         StateHasChanged();
     }
 
+    bool IsFocused(object obj)
+    {
+        if (obj is AnomalyEntry anomaly)
+            return visualFocusedAnomalyId == anomaly.Id;
+
+        return visualFocusedArtifact?.Data == obj;
+    }
+
     void CloseAll()
     {
         selectedExtension = null;
@@ -358,11 +367,13 @@
         selectedStorage = null;
         selectedAnomaly = null;
         visualFocusedArtifact = null;
+        visualFocusedAnomalyId = null;
     }
 
     private void ClearVisualFocus()
     {
         visualFocusedArtifact = null;
+        visualFocusedAnomalyId = null;
     }
 
     void ResetSelection()
@@ -396,11 +407,12 @@
 
     private string GetFocusedArtifactLabel()
     {
+        var artifact = GetVisualFocusedArtifact();
 
-        if (focusedArtifact == null)
+        if (artifact == null)
             return "";
 
-        return focusedArtifact.Data switch
+        return artifact.Data switch
         {
             BrowserHistoryEntry h => TrimLabel(h.Url),
             BrowserCookieEntry c => TrimLabel(c.Name),
@@ -414,14 +426,16 @@
 
     private int GetFocusedArtifactPosition()
     {
-        if (focusedArtifact == null)
+        var artifact = GetVisualFocusedArtifact();
+
+        if (artifact == null)
             return 0;
 
-        return focusedArtifact.Data switch
+        return artifact.Data switch
         {
             BrowserHistoryEntry h => h.Position,
             BrowserCookieEntry c => c.Position,
-            UserInputEntry i => i.Position, // Wird nicht angerzeigt???
+            UserInputEntry i => i.Position,
             BrowserExtensionEntry e => e.Position,
             StorageEntry s => s.Position,
             AnomalyEntry a => a.Position,
@@ -431,23 +445,19 @@
 
     private string GetFocusedArtifactYPixel()
     {
-        if (focusedArtifact == null)
+        var artifact = GetVisualFocusedArtifact();
+
+        if (artifact == null)
             return "20%";
 
-        return focusedArtifact.Data switch
+        return artifact.Data switch
         {
             BrowserHistoryEntry => "33%",
-
             BrowserCookieEntry => "43%",
-
             UserInputEntry => "50%",
-
             StorageEntry => "57%",
-
             BrowserExtensionEntry => "64%",
-
             AnomalyEntry => "78%",
-
             _ => "20%"
         };
     }
@@ -1275,6 +1285,20 @@
 	// Verschiedene Hilfsmethoden
     //------------------------------------------------------------
 
+    private TimelineArtifact? GetVisualFocusedArtifact()
+    {
+        // Anomalie?
+        if (visualFocusedAnomalyId.HasValue)
+        {
+            return TimelineArtifacts.FirstOrDefault(a =>
+                a.Data is AnomalyEntry anomaly &&
+                anomaly.Id == visualFocusedAnomalyId);
+        }
+
+        // alle anderen Artefakte wie bisher
+        return visualFocusedArtifact;
+    }
+
     private DomainEntry? GetRenderedDomain(DomainEntry? domain)
     {
         if (domain == null)
@@ -1429,10 +1453,7 @@
         }
     }
 
-    bool IsFocused(object obj)
-    {
-        return visualFocusedArtifact?.Data == obj;
-    }
+    
 
     string GetSeverityBackground(int severity)
     {
@@ -1569,23 +1590,6 @@
             transform 0.12s ease,
             filter 0.12s ease;
     ";
-    }
-
-    // Überladung für History-Einträge, um die ID zu vergleichen
-    string GetMarkerFocusStyle(BrowserHistoryEntry sub)
-    {
-        if (!IsFocused(sub))
-            return "";
-
-        return @"
-        transform:scale(1.4);
-        transform-origin:center;
-        filter:
-            brightness(1.25)
-            drop-shadow(0 0 6px rgba(255,255,255,0.45));
-        transition:
-            transform .12s ease,
-            filter .12s ease;";
     }
 
     string GetFocusedStyle(object artifact)
@@ -2218,7 +2222,7 @@
             }
 
             <!-- Überschrift über focused artefact -->
-            @if (visualFocusedArtifact != null)
+            @if(GetVisualFocusedArtifact() != null)
             {
                 <div class="focused-artifact-label"
                      style="
@@ -2230,7 +2234,7 @@
                 </div>
             }
 
-            @if (visualFocusedArtifact != null && visualFocusedArtifact.Data is not BrowserHistoryEntry && visualFocusedArtifact.Data is not DomainEntry)
+            @if (GetVisualFocusedArtifact() != null && visualFocusedArtifact.Data is not BrowserHistoryEntry && visualFocusedArtifact.Data is not DomainEntry)
             {
                 <svg style="
                     position:absolute;
