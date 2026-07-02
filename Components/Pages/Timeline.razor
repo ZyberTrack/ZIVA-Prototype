@@ -31,6 +31,8 @@
     [CascadingParameter]
     public bool isNavOpen { get; set; }  // Um sidebar auszublenden
 
+    const int MaxSegment = 1000000;
+
     List<AnomalyEntry> Anomalies = new(); // Liste mit erkannten Anomalien
     List<string> BlacklistDomains = new(); // Liste mit zwielichtigen Domains
     List<string> SuspiciousDomains = new(); // Liste mit verdächtigen Domains
@@ -547,6 +549,18 @@
             x => x.Time,
             (x, pos) => x.Position = pos
         );
+
+        foreach (var domain in DomainEntries)
+        {
+            if (!domain.SubEntries.Any())
+                continue;
+
+            domain.ClusterStartPosition =
+                domain.SubEntries.First().Position;
+
+            domain.ClusterEndPosition =
+                domain.SubEntries.Last().Position;
+        }
 
         RelationService.BuildRelations(
             DomainEntries,
@@ -2218,7 +2232,6 @@
             @{
                 int baseTop = 33; // Basislinie für normale Domains in %
                 int heavyClusterSpacingPx = 20; // Abstand jeder neuen Heavy Cluster-Linie nach oben
-                int heavyClusterIndex = 1; // Zähler für versetzte Heavy Cluster-Linien
             }
 
             <!-- Überschrift über focused artefact -->
@@ -2256,13 +2269,36 @@
                 </svg>
             }
 
-            
+            @foreach (var domainEntry in DomainEntries.Where(d => d.IsHeavyCluster))
+            {
+                string topStyle = $"calc({baseTop}% - 18px - {domainEntry.HeavyClusterIndex * heavyClusterSpacingPx}px)";
+
+                double offsetPx = 25 + heavyClusterSpacingPx * (domainEntry.HeavyClusterIndex - 1);
+
+                double offsetPercent = (offsetPx / containerHeight) * 100.0;
+
+                domainEntry.RenderYPercent = Math.Round(baseTop - offsetPercent);
+
+                for (int x = domainEntry.ClusterStartPosition; x < domainEntry.ClusterEndPosition; x += MaxSegment)
+                {
+                    int segmentWidth = Math.Min(MaxSegment, domainEntry.ClusterEndPosition - x);
+
+                    <div class="heavy-cluster-line"
+                         style="
+                        position:absolute;
+                        top:@($"calc({baseTop}% - 7px - {domainEntry.HeavyClusterIndex * heavyClusterSpacingPx}px)");
+                        left:@($"{x}px");
+                        width:@($"{segmentWidth}px");
+                        height:2px;
+                        background-color:@domainEntry.RenderColor;
+                        z-index:20;">
+                    </div>
+                }
+            }
 
             @foreach (var domainEntry in RenderCache.VisibleDomains)
             {
-
                 <div class="domain-container">
-                    
 
                     @{
                         bool isHeavy = domainEntry.IsHeavyCluster;
@@ -2274,34 +2310,16 @@
 
                         if (isHeavy)
                         {
-                            topStyle = $"calc({baseTop}% - 18px - {heavyClusterIndex * heavyClusterSpacingPx}px)";
+                            topStyle = $"calc({baseTop}% - 18px - {domainEntry.HeavyClusterIndex * heavyClusterSpacingPx}px)";
 
-                            double offsetPx = 25 + heavyClusterSpacingPx * (heavyClusterIndex - 1);
-                            double offsetPercent = (offsetPx / containerHeight) * 100.0;
+                            double offsetPx =
+                                25 + heavyClusterSpacingPx * (domainEntry.HeavyClusterIndex - 1);
 
-                            domainEntry.RenderYPercent = Math.Round(baseTop - offsetPercent);
+                            double offsetPercent =
+                                (offsetPx / containerHeight) * 100.0;
 
-                            heavyClusterIndex++;
-
-                            var visibleSubs = domainEntry.SubEntries
-                                .Where(RenderCache.VisibleHistory.Contains)
-                                .ToList();
-
-                            if (visibleSubs.Any())
-                            {
-                                double firstPos = visibleSubs.First().Position;
-                                double lastPos = visibleSubs.Last().Position;
-
-                                <div class="heavy-cluster-line"
-                                     style="position:absolute;
-                                    top:@($"calc({baseTop}% + 12px - {heavyClusterIndex * heavyClusterSpacingPx}px)");
-                                    left:@($"{firstPos}px");
-                                    width:@($"{lastPos - firstPos}px");
-                                    height:2px;
-                                    background-color:@domainEntry.RenderColor;
-                                    z-index:20;">
-                                </div>
-                            }
+                            domainEntry.RenderYPercent =
+                                Math.Round(baseTop - offsetPercent);
                         }
 
                         // SubEntries anzeigen
