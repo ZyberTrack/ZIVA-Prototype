@@ -437,7 +437,7 @@
     color: white;
     border-radius: 4px;
     font-size: var(--tooltip-font-size);
-    z-index: 999;
+    z-index: 999999999;
     white-space: nowrap;
     box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 }
@@ -452,7 +452,7 @@
     color: white;
     border-radius: 4px;
     font-size: var(--tooltip-font-size);
-    z-index: 999;
+    z-index: 999999999;
     white-space: nowrap;
     box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 }
@@ -492,7 +492,7 @@
         padding: 4px 8px;
         border-radius: 4px;
         font-size: var(--tooltip-font-size);
-        z-index: 999;
+        z-index: 999999999;
     }
 
 
@@ -520,7 +520,7 @@
         padding: 4px 8px;
         border-radius: 4px;
         font-size: var(--tooltip-font-size);
-        z-index: 999;
+        z-index: 999999999;
     }
 
 .storage-marker {
@@ -563,7 +563,7 @@
         padding: 6px 10px;
         border-radius: 4px;
         font-size: var(--tooltip-font-size);
-        z-index: 999;
+        z-index: 999999999;
         word-break: break-all;
     }
 
@@ -596,7 +596,7 @@
         padding: 4px 8px;
         border-radius: 4px;
         font-size: var(--tooltip-font-size);
-        z-index: 999;
+        z-index: 999999999;
     }
 
 .artifact-line {
@@ -627,7 +627,7 @@
         padding: 6px 8px;
         border-radius: 4px;
         font-size: var(--tooltip-font-size);
-        z-index: 999;
+        z-index: 999999999;
         pointer-events: none;
     }
 
@@ -706,7 +706,7 @@
     width: 100%;
     height: 8px;
     cursor: ns-resize;
-    z-index: 999999;
+    z-index: 99999;
     background: rgba(255,255,255,0.03);
     transition: background 0.12s ease;
 }

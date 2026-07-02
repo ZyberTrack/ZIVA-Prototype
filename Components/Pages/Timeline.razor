@@ -34,14 +34,12 @@
     List<AnomalyEntry> Anomalies = new(); // Liste mit erkannten Anomalien
     List<string> BlacklistDomains = new(); // Liste mit zwielichtigen Domains
     List<string> SuspiciousDomains = new(); // Liste mit verdächtigen Domains
-    private List<DomainEntry> SummarizedEntries { get; set; } = new();
+    private List<DomainEntry> DomainEntries = new();
     private List<TimestampEntry> visibleEntries = new();
     private List<UserInputEntry> UserInputs = new(); // kombinierte Liste der Keywords und Autofill Einträge
     private Dictionary<string, bool> expandedStates = new();
 
-    private BrowserHistoryEntry? selectedEntry; // Aktuell ausgewählte Browser History Artefakt Entry
     private BrowserCookieEntry? selectedCookie; // Aktuell ausgewählte Browser Cookies Artefakt Entry selectedAutofill
-    private WebDataAutofillEntry? selectedAutofill;
     private DotNetObjectReference<Timeline>? selfRef;
     private UserInputEntry? selectedInput;
     private BrowserExtensionEntry? selectedExtension;
@@ -160,6 +158,7 @@
         ZoomLevels = zoomLevels
     };
 
+    /*
     private void ToggleAllDomains()
     {
         allExpanded = !allExpanded;
@@ -170,7 +169,7 @@
 
             expandedStates[entry.Domain] = allExpanded;
         }
-    }
+    }*/
 
     private void ToggleDebug()
     {
@@ -313,7 +312,7 @@
     {
         SyncFocusedArtifact(sub);
 
-        visualFocusedArtifact = focusedArtifact;
+        visualFocusedArtifact = focusedArtifact; 
 
         await CenterOnTime(sub.VisitTime);
     }
@@ -397,23 +396,18 @@
 
     private string GetFocusedArtifactLabel()
     {
+
         if (focusedArtifact == null)
             return "";
 
         return focusedArtifact.Data switch
         {
             BrowserHistoryEntry h => TrimLabel(h.Url),
-
             BrowserCookieEntry c => TrimLabel(c.Name),
-
             UserInputEntry i => TrimLabel(i.Value),
-
             BrowserExtensionEntry e => TrimLabel(e.Name),
-
             StorageEntry s => TrimLabel(s.Value),
-
             AnomalyEntry a => TrimLabel(a.Type.ToString()),
-
             _ => ""
         };
     }
@@ -477,12 +471,9 @@
 
     private void Refresh()
     {
-        SummarizedEntries = SummarizeEntries(
-        State.BrowserEntries,
-        zoomLevels[currentZoomIndex].seconds
-        );
+        DomainEntries = BuildDomainEntries(State.BrowserEntries);
 
-        foreach (var entry in SummarizedEntries)
+        foreach (var entry in DomainEntries)
         {
             // Farbe nur einmal berechnen
             entry.RenderColor = ColorService.GetColor(entry.Url);
@@ -530,7 +521,7 @@
         );
 
         RecalculatePositions(
-            SummarizedEntries,
+            DomainEntries,
             x => x.VisitTime,
             (x, pos) => x.Position = pos
         );
@@ -548,7 +539,7 @@
         );
 
         RelationService.BuildRelations(
-            SummarizedEntries,
+            DomainEntries,
             State.BrowserCookies,
             UserInputs,
             State.Extensions,
@@ -556,7 +547,7 @@
         );
 
         Anomalies = AnomalyService.Detect(
-            SummarizedEntries,
+            DomainEntries,
             State.BrowserCookies,
             State.AutofillEntries,
             UserInputs,
@@ -578,19 +569,19 @@
             UserInputs,
             State.Extensions,
             State.StorageEntries,
-            SummarizedEntries,
+            DomainEntries,
             Anomalies,
             viewportWidth,
             SelectedDomainFilter
         );
 
-        AvailableDomains = SummarizedEntries
+        AvailableDomains = DomainEntries
         .Select(d => d.Domain)
         .Distinct()
         .OrderBy(d => d)
         .ToList();
 
-        VisibleDomains = SummarizedEntries;
+        VisibleDomains = DomainEntries;
         VisibleHistory = State.BrowserEntries;
         VisibleCookies = State.BrowserCookies;
         VisibleInputs = UserInputs;
@@ -822,249 +813,71 @@
         };
     }
 
-
-    private async Task LoadFromDatabase()
-    {
-        var filePath = Path.Combine(FileSystem.AppDataDirectory, "history.sqlite");
-
-        // sicherstellen, dass die Datei existiert
-        if (File.Exists(filePath))
-        {
-            var entries = await Importer.LoadFromHistoryDatabaseAsync(filePath);
-            State.AddBrowserEntries(entries);
-        }
-        else
-        {
-            Console.WriteLine("Datei nicht gefunden: " + filePath);
-        }
-
-        // Initiale Breite der beweglichen Ebene setzen
-        if (State.BrowserEntries is { Count: > 0 })
-        {
-            // Basiszeit auf den frühesten Zeitpunkt setzen
-            baseTime = State.BrowserEntries.Min(e => e.VisitTime);
-
-            // Viewport-Breite zuerst sicherstellen!
-            await UpdateViewportSizeAsync();
-
-            // Erstes Element ermitteln
-            var first = State.BrowserEntries.First();
-
-            // Zentriere den ersten Eintrag auf dem Bildschirm
-            var unitDistance = TimelineScaleService.GetUnitDistance(baseTime, first.VisitTime, CurrentTimeUnit);
-            var scrollTo = InitialOffsetPx + unitDistance * spacing;
-            scrollIndex = scrollTo - viewportWidth / 2;
-
-            SummarizedEntries = SummarizeEntries(State.BrowserEntries, maxSecondsBetween: zoomLevels[currentZoomIndex].seconds); //Domänen Zusammenfassung erstellen
-
-            // Jetzt scrollen
-            isProgrammaticScroll = true;
-            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
-            await Task.Delay(50); // Browser braucht kurz Zeit
-            isProgrammaticScroll = false;
-
-            visibleEntries.Clear();
-            Refresh();
-            await InvokeAsync(StateHasChanged);
-        }
-    }
-
-
-    private async Task LoadCookieDatabase()
-    {
-        var filePath = Path.Combine(FileSystem.AppDataDirectory, "cookies.sqlite");
-
-        // sicherstellen, dass die Datei existiert
-        if (File.Exists(filePath))
-        {
-            var cookieService = new CookieImportService();
-            var cookies = await cookieService.LoadFromCookieDatabaseAsync(filePath);
-            State.SetBrowserCookies(cookies);
-        }
-        else
-        {
-            Console.WriteLine("Cookie-Datei nicht gefunden: " + filePath);
-        }
-
-        // Initiale Breite der Timeline setzen
-        if (State.BrowserCookies is { Count: > 0 })
-        {
-            // Basiszeit: frühester "LastAccessed" (macht für Cookies am meisten Sinn)
-            baseTime = State.BrowserCookies
-                .Where(c => c.Created > DateTime.MinValue)
-                .Min(c => c.Created);
-
-            // Viewport-Breite aktualisieren
-            await UpdateViewportSizeAsync();
-
-            // Erstes Cookie — das neuste, entsprechend deiner ORDER BY last_access_utc DESC
-            var first = State.BrowserCookies.First();
-
-            // Zeitliche Distanz
-            var unitDistance = TimelineScaleService.GetUnitDistance(baseTime, first.Created, CurrentTimeUnit);
-
-            // Position berechnen
-            var scrollTo = InitialOffsetPx + unitDistance * spacing;
-            scrollIndex = scrollTo - viewportWidth / 2;
-
-            // Scrollen
-            isProgrammaticScroll = true;
-            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
-            await Task.Delay(50);
-            isProgrammaticScroll = false;
-
-            visibleEntries.Clear();
-            Refresh();
-            await InvokeAsync(StateHasChanged);
-        }
-    }
-
-
-    private async Task LoadAutofillDatabase()
-    {
-        var filePath = Path.Combine(FileSystem.AppDataDirectory, "webdata_autofill.sqlite");
-
-        if (File.Exists(filePath))
-        {
-            var autofillService = new WebDataAutofillImportService();
-            var entries = await autofillService.LoadAutofillAsync(filePath);
-            State.SetAutofillEntries(entries);
-        }
-        else
-        {
-            Console.WriteLine("Autofill-Datei nicht gefunden: " + filePath);
-        }
-
-        // Timeline initialisieren
-        if (State.AutofillEntries is { Count: > 0 })
-        {
-            // Basiszeit: erstes erzeugtes Datenfeld
-            baseTime = State.AutofillEntries
-                .Where(a => a.DateCreated > DateTime.MinValue)
-                .Min(a => a.DateCreated);
-
-            // Viewport ermitteln
-            await UpdateViewportSizeAsync();
-
-            // Erstes Element der Liste (ordnungsgemäß nach letzter Nutzung sortiert)
-            var first = State.AutofillEntries.First();
-
-            // Zeitliche Distanz berechnen
-            var unitDistance = TimelineScaleService.GetUnitDistance(baseTime, first.DateCreated, CurrentTimeUnit);
-
-            // Position bestimmen
-            var scrollTo = InitialOffsetPx + unitDistance * spacing;
-            scrollIndex = scrollTo - viewportWidth / 2;
-
-            // Scrollen
-            isProgrammaticScroll = true;
-            await JS.InvokeVoidAsync("scrollHelpers.scrollTo", scrollDivRef, scrollIndex, 0);
-            await Task.Delay(50);
-            isProgrammaticScroll = false;
-
-            // Sichtbare Einträge neu berechnen
-            visibleEntries.Clear();
-            Refresh();
-            await InvokeAsync(StateHasChanged);
-        }
-    }
-
-
     //------------------------------------------------------------
     // Domänen Zusammenfassungen
     //------------------------------------------------------------
 
-    private List<DomainEntry> SummarizeEntries(List<BrowserHistoryEntry> entries, int maxSecondsBetween = 10)
+    private List<DomainEntry> BuildDomainEntries(List<BrowserHistoryEntry> entries)
     {
-        var summarized = new List<DomainEntry>();
-        DomainEntry? current = null;
+        var result = new List<DomainEntry>();
 
-        // 1) VORVERARBEITUNG: Domain-Hit-Count
+        // Domains nach Anzahl zählen
         var domainCounts = entries
             .GroupBy(e => new Uri(e.Url).Host.ToLower())
             .ToDictionary(g => g.Key, g => g.Count());
 
-        // 2) Heavy-Cluster: alle Domains mit >10 Visits
-        var heavyDomains = domainCounts
-            .Where(kvp => kvp.Value > 10)
-            .Select(kvp => kvp.Key)
-            .ToList();
+        // Heavy Cluster bestimmen
+        var heavyClusterIndices = new Dictionary<string, int>();
+        int clusterCounter = 1;
 
-        // Mapping: domain -> cluster index
-        Dictionary<string, int> heavyClusterIndices = new();
-        int clusterCounter = 1; // 1 = erste Linie über dem normalen Strahl
-
-        foreach (var d in heavyDomains)
-            heavyClusterIndices[d] = clusterCounter++;
-
-        // ---- ORIGINAL Logik bleibt bestehen ----
-        foreach (var entry in entries.OrderBy(e => e.VisitTime))
+        foreach (var domain in domainCounts
+            .Where(x => x.Value >= 10)
+            .OrderBy(x => x.Key))
         {
-            string domain = new Uri(entry.Url).Host.ToLower();
-
-            bool isHeavy = heavyClusterIndices.ContainsKey(domain);
-
-            if (isHeavy)
-            {
-                // Ein Heavy-Cluster erzeugt KEINE normalen „Domain-Wechsel“-Gruppen.
-                // Sondern alles wird EINEM gemeinsamen Cluster zugeordnet.
-
-                // Prüfen, ob URL eine bekannte Suchmaschine ist
-                bool isSearch = searchEngines.Any(se => entry.Url.Contains(se)) &&
-                                (entry.Url.Contains("/search") || entry.Url.Contains("q=") || entry.Url.Contains("?q="));
-
-                summarized.Add(new DomainEntry
-                {
-                    Domain = domain,
-                    Url = entry.Url,
-                    VisitTime = entry.VisitTime,
-                    IsDirect = entry.ReferrerUrl == null,
-                    IsSearch = isSearch,
-
-                    IsHeavyCluster = true,
-                    HeavyClusterIndex = heavyClusterIndices[domain],
-                });
-
-                // Füge jeden Eintrag als SubEntry hinzu
-                var cluster = summarized.First(e => e.Domain == domain && e.IsHeavyCluster);
-                cluster.SubEntries.Add(entry);
-
-                continue;
-            }
-
-            // ---- Normale Zusammenfassung ----
-            if (current == null ||
-                current.Domain != domain ||
-                (entry.VisitTime - current.VisitTime).TotalSeconds > maxSecondsBetween)
-            {
-
-                // Prüfen, ob URL eine bekannte Suchmaschine ist
-                bool isSearch = searchEngines.Any(se => entry.Url.Contains(se)) &&
-                                (entry.Url.Contains("/search") || entry.Url.Contains("q=") || entry.Url.Contains("?q="));
-
-                current = new DomainEntry
-                {
-                    Domain = domain,
-                    Url = entry.Url,
-                    VisitTime = entry.VisitTime,
-                    IsDirect = entry.ReferrerUrl == null,
-                    IsSearch = isSearch,
-                };
-
-                // **Ersten Eintrag direkt als SubEntry hinzufügen**
-                current.SubEntries.Add(entry);
-
-                summarized.Add(current);
-            }
-            else
-            {
-                current.SubEntries.Add(entry);
-                if (entry.ReferrerUrl != null)
-                    current.IsDirect = false;
-            }
+            heavyClusterIndices[domain.Key] = clusterCounter++;
         }
 
-        return summarized;
+        // Jede Domain genau EINMAL anlegen
+        foreach (var group in entries
+            .GroupBy(e => new Uri(e.Url).Host.ToLower())
+            .OrderBy(g => g.Min(x => x.VisitTime)))
+        {
+            var first = group.First();
+
+            bool isSearch =
+                searchEngines.Any(se => first.Url.Contains(se)) &&
+                (first.Url.Contains("/search") ||
+                 first.Url.Contains("q=") ||
+                 first.Url.Contains("?q="));
+
+            var domainEntry = new DomainEntry
+            {
+                Domain = group.Key,
+                Url = first.Url,
+                VisitTime = first.VisitTime,
+
+                // sobald irgendein Eintrag einen Referrer besitzt,
+                // handelt es sich nicht mehr um einen direkten Aufruf
+                IsDirect = group.All(x => x.ReferrerUrl == null),
+
+                IsSearch = isSearch,
+
+                IsHeavyCluster = heavyClusterIndices.ContainsKey(group.Key),
+
+                HeavyClusterIndex =
+                    heavyClusterIndices.TryGetValue(group.Key, out var idx)
+                        ? idx
+                        : 0,
+
+                SubEntries = group
+                    .OrderBy(x => x.VisitTime)
+                    .ToList()
+            };
+
+            result.Add(domainEntry);
+        }
+
+        return result;
     }
 
     //------------------------------------------------------------
@@ -1302,7 +1115,7 @@
                 UserInputs,
                 State.Extensions,
                 State.StorageEntries,
-                SummarizedEntries,
+                DomainEntries,
                 Anomalies,
                 viewportWidth,
                 SelectedDomainFilter);
@@ -1381,7 +1194,7 @@
             DomainEntry d => d.Domain,
 
             BrowserHistoryEntry h =>
-                SummarizedEntries
+                DomainEntries
                     .FirstOrDefault(d => d.SubEntries.Contains(h))
                     ?.Domain,
 
@@ -1546,7 +1359,7 @@
                 {
                     var entry = (BrowserHistoryEntry)artifact.Data;
 
-                    var domain = SummarizedEntries.FirstOrDefault(d =>
+                    var domain = DomainEntries.FirstOrDefault(d =>
                         d.SubEntries.Any(s => s == entry));
 
                     if (domain != null)
@@ -1593,7 +1406,7 @@
     {
         ResetSelection();
 
-        var domain = SummarizedEntries.FirstOrDefault(d =>
+        var domain = DomainEntries.FirstOrDefault(d =>
             d.SubEntries.Any(s => s == entry));
 
         if (domain != null)
@@ -1758,6 +1571,23 @@
     ";
     }
 
+    // Überladung für History-Einträge, um die ID zu vergleichen
+    string GetMarkerFocusStyle(BrowserHistoryEntry sub)
+    {
+        if (!IsFocused(sub))
+            return "";
+
+        return @"
+        transform:scale(1.4);
+        transform-origin:center;
+        filter:
+            brightness(1.25)
+            drop-shadow(0 0 6px rgba(255,255,255,0.45));
+        transition:
+            transform .12s ease,
+            filter .12s ease;";
+    }
+
     string GetFocusedStyle(object artifact)
     {
         if (!IsFocused(artifact))
@@ -1803,7 +1633,7 @@
 
         foreach (var h in anomaly.LinkedHistory)
         {
-            var summary = SummarizedEntries.FirstOrDefault(
+            var summary = DomainEntries.FirstOrDefault(
                 d => d.SubEntries.Contains(h));
 
             if (summary == null)
@@ -2137,10 +1967,10 @@
                 </div>
 
                 <div class="artifact-column">
-                    <strong>Domains (@SummarizedEntries.Count)</strong>
+                    <strong>Domains (@DomainEntries.Count)</strong>
 
                     <ul>
-                        @foreach (var d in SummarizedEntries)
+                        @foreach (var d in DomainEntries)
                         {
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(d)"
@@ -2279,11 +2109,6 @@
             TOOLS
         </div>
 
-        <button class="tool-btn expand-btn"
-                @onclick="ToggleAllDomains">
-            @(allExpanded ? "Summarize All" : "Expand All")
-        </button>
-
         <button class="tool-btn debug-btn"
                 @onclick="ToggleDebug">
             @(showDebug ? "Artefact Table Off" : "Artefact Table On")
@@ -2393,7 +2218,7 @@
             }
 
             <!-- Überschrift über focused artefact -->
-            @if (focusedArtifact != null)
+            @if (visualFocusedArtifact != null)
             {
                 <div class="focused-artifact-label"
                      style="
@@ -2405,7 +2230,7 @@
                 </div>
             }
 
-            @if (focusedArtifact != null && focusedArtifact.Data is not BrowserHistoryEntry && focusedArtifact.Data is not DomainEntry)
+            @if (visualFocusedArtifact != null && visualFocusedArtifact.Data is not BrowserHistoryEntry && visualFocusedArtifact.Data is not DomainEntry)
             {
                 <svg style="
                     position:absolute;
@@ -2435,53 +2260,21 @@
                 <div class="domain-container">
                     
 
-                    @if (!domainEntry.IsExpanded && !domainEntry.IsHeavyCluster)
-                    {
+                    @{
+                        bool isHeavy = domainEntry.IsHeavyCluster;
 
-                        //<div class="domain-label"
-                        //     style="left:@($"{domainEntry.Position}px"); top: calc(33% - 35px);">
-                        //   @domainEntry.Domain
-                        //</div>
-
-                        // Normale Domain Marker
-                        string domainClass = domainEntry.IsSearch ? "domain-marker square" :
-                        domainEntry.IsDirect ? "domain-marker hollow" :
-                        "domain-marker filled";
-
-                        <div class="@domainClass"
-                             style="
-                            left: calc(@($"{domainEntry.Position}px - 10px"));
-                            color:@domainEntry.RenderColor;
-                            @GetMarkerFocusStyle(domainEntry)"
-                             @onclick="() => ExpandAndFocus(domainEntry)"
-                             @oncontextmenu="args => OpenContextMenu(args, domainEntry)"
-                             @oncontextmenu:preventDefault="true"
-                             @oncontextmenu:stopPropagation="true">
-
-                            <div class="domaine-tooltip" style="background-color:color:@domainEntry.RenderColor;">
-                                <div><strong>Zeitstempel: @domainEntry.VisitTime</strong></div>
-                                <div>Domäne: @domainEntry.Domain</div>
-                            </div>
-                        </div>
-                    }
-                    else if (domainEntry.SubEntries.Any())
-                    {
-                        bool isHeavy = domainEntry.SubEntries.Count >= 10;
-
-                        // Normale Linie
                         string topStyle = $"calc({baseTop}% - 12px)";
                         string topStyleSquare = $"calc({baseTop}% + 5px)";
 
-                        // Standard-Y für Relationen
                         domainEntry.RenderYPercent = baseTop;
 
                         if (isHeavy)
                         {
                             topStyle = $"calc({baseTop}% - 18px - {heavyClusterIndex * heavyClusterSpacingPx}px)";
 
-                            // zusätzlich speichern
                             double offsetPx = 25 + heavyClusterSpacingPx * (heavyClusterIndex - 1);
                             double offsetPercent = (offsetPx / containerHeight) * 100.0;
+
                             domainEntry.RenderYPercent = Math.Round(baseTop - offsetPercent);
 
                             heavyClusterIndex++;
@@ -2495,36 +2288,20 @@
                                 double firstPos = visibleSubs.First().Position;
                                 double lastPos = visibleSubs.Last().Position;
 
-                            <div class="heavy-cluster-line"
-                                 style="position:absolute;
-                            top:@($"calc({baseTop}% + 12px - {heavyClusterIndex * heavyClusterSpacingPx}px)");
-                            left:@($"{firstPos}px");
-                            width:@($"{lastPos - firstPos}px");
-                            height:2px;
-                            background-color:@domainEntry.RenderColor;
-                            z-index:20;">
-                            </div>
-
+                                <div class="heavy-cluster-line"
+                                     style="position:absolute;
+                                    top:@($"calc({baseTop}% + 12px - {heavyClusterIndex * heavyClusterSpacingPx}px)");
+                                    left:@($"{firstPos}px");
+                                    width:@($"{lastPos - firstPos}px");
+                                    height:2px;
+                                    background-color:@domainEntry.RenderColor;
+                                    z-index:20;">
+                                </div>
                             }
                         }
 
-                        /*
-                        string GetDomainFromUrl(string url)
-                        {
-                            try
-                            {
-                                var uri = new Uri(url);
-                                return uri.Host;
-                            }
-                            catch
-                            {
-                                return url;
-                            }
-                        }*/
-
-
                         // SubEntries anzeigen
-                        @foreach (var sub in domainEntry.SubEntries.Where(RenderCache.VisibleHistory.Contains))
+                        foreach (var sub in domainEntry.SubEntries.Where(RenderCache.VisibleHistory.Contains))
                         {
                             bool isSearch = sub.Url.Contains("google.") || sub.Url.Contains("bing.com") || sub.Url.Contains("duckduckgo.com");
 
@@ -2536,6 +2313,7 @@
                             cursor:pointer;
                             z-index:21;"
                              @onclick="() => SelectSubEntry(domainEntry, sub)"
+                                 @onclick:stopPropagation="true"
                                  @oncontextmenu="args => OpenContextMenu(args, sub)"
                                  @oncontextmenu:preventDefault="true"
                                  @oncontextmenu:stopPropagation="true">
