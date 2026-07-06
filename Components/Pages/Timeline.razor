@@ -1324,7 +1324,7 @@
         if (domain == null)
             return null;
 
-        return RenderCache.VisibleDomains.FirstOrDefault(d =>
+        return DomainEntries.FirstOrDefault(d =>
             d.Domain == domain.Domain);
     }
 
@@ -2728,9 +2728,9 @@
                 }
 
 
-                @foreach (var domain in RenderCache.VisibleDomains)
+                @foreach (var domain in DomainEntries)
                 {
-                    foreach (var history in domain.SubEntries.Where(RenderCache.VisibleHistory.Contains))
+                    foreach (var history in domain.SubEntries)
                     {
                         foreach (var relation in history.Relations)
                         {
@@ -2738,6 +2738,16 @@
                                 continue;
 
                             if (relation.History == null)
+                                continue;
+
+                            // Nur zeichnen wenn mindestens eine Seite sichtbar ist
+                            bool sourceVisible =
+                                RenderCache.VisibleHistory.Contains(relation.History);
+
+                            bool targetVisible =
+                                RenderCache.VisibleHistory.Contains(history);
+
+                            if (!sourceVisible && !targetVisible)
                                 continue;
 
                             var sourceDomain = GetRenderedDomain(relation.Domain);

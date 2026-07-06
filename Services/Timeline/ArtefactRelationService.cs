@@ -414,12 +414,6 @@ namespace ZIVA_Prototype.Services.Timeline
                             .TrimStart('.')
                             .ToLower();
 
-                    if (sourceDomain ==
-                        targetDomain.Domain
-                            .TrimStart('.')
-                            .ToLower())
-                        continue;
-
                     BrowserHistoryEntry? sourceHistory = null;
                     DomainEntry? sourceDomainEntry = null;
 
