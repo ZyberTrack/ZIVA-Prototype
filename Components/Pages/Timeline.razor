@@ -60,6 +60,7 @@
     private bool _applyingFilter; // Filter Sperre
     private string? _lastAutoFocusedFilter; // Hilfe um dauerschle Fokusierung auf ein Artefakt zu verhindern, wenn der Filter sich nicht ändert
     private bool _initialFocusDone = false;
+    private bool showLegend = true;
 
     // Context Menu
     private bool ShowContextMenu;
@@ -110,6 +111,11 @@
 
             _ = ApplyDomainFilter();
         }
+    }
+
+    private void ToggleLegend()
+    {
+        showLegend = !showLegend;
     }
 
     private List<DomainEntry> VisibleDomains = new();
@@ -2083,6 +2089,7 @@
             <div class="timeline-label @(isNavOpen ? "sidebar-open" : "sidebar-closed")">
             Verlauf-Zeitachse
             </div>
+
             <div class="timeline-history-label">History</div>
             <div class="timeline-top-legend "></div>
             <div class="timeline-cookies-label">Cookies & Session</div>
@@ -2129,13 +2136,60 @@
 
         <button class="tool-btn debug-btn"
                 @onclick="ToggleDebug">
-            @(showDebug ? "Artefact Table Off" : "Artefact Table On")
+            @(showDebug ? "Artefakt Tabelle aus" : "Artefakt Tabelle An")
+        </button>
+
+        <button class="tool-btn"
+                @onclick="ToggleLegend">
+            @(showLegend ? "Legende Aus" : "Legende An")
         </button>
 
     </div>
 
 
     <div class="timeline-container" @oncontextmenu="args => OpenContextMenu(args)" @oncontextmenu:preventDefault="true" @onclick="ClearVisualFocus">
+
+        @if (showLegend)
+        {
+            <div class="timeline-legend">
+
+                <div class="legend-title">
+                    Legende
+                </div>
+
+                <div class="legend-item">
+                    <div class="legend-square"></div>
+                    <span><strong>Suchanfrage</strong></span>
+                </div>
+
+                <div class="legend-item">
+                    <svg class="legend-marker"
+                         width="16"
+                         height="22"
+                         viewBox="0 0 16 22">
+                        <polygon points="0,0 16,0 8,22"
+                                 fill="currentColor" />
+                    </svg>
+
+                    <span><strong>Subdomain</strong>: Verwiesener Aufruf</span>
+                </div>
+
+                <div class="legend-item">
+                    <svg class="legend-marker"
+                         width="16"
+                         height="22"
+                         viewBox="0 0 16 22">
+                        <polygon points="0,0 16,0 8,22"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="2" />
+                    </svg>
+
+                    <span><strong>Subdomain</strong>: Direkter Aufruf</span>
+                </div>
+
+            </div>
+        }
 
         <div class="timeline-search">
 
