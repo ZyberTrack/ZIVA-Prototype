@@ -1526,61 +1526,42 @@
         return matches.Max(a => a.Severity);
     }
 
-    private string GetArtifactStyle(
-    object artifact)
+    private string GetArtifactStyle(object artifact)
     {
-        int severity = 0;
+        string borderColor = "rgba(255,255,255,0.25)";
 
         switch (artifact)
         {
-            case BrowserCookieEntry c:
-                severity =
-                    c.HighestAnomalySeverity;
+            case AnalysisEntry analysis:
+                borderColor = ColorService.GetAnalysisColor(analysis);
                 break;
 
-            case BrowserExtensionEntry e:
-                severity =
-                    e.HighestAnomalySeverity;
+            case BrowserCookieEntry c when c.HighestAnomalySeverity > 0:
+                borderColor = "#C62828";
                 break;
 
-            case UserInputEntry i:
-                severity =
-                    i.HighestAnomalySeverity;
+            case BrowserExtensionEntry e when e.HighestAnomalySeverity > 0:
+                borderColor = "#C62828";
                 break;
 
-            case StorageEntry s:
-                severity =
-                    s.HighestAnomalySeverity;
+            case UserInputEntry i when i.HighestAnomalySeverity > 0:
+                borderColor = "#C62828";
                 break;
 
-            case DomainEntry d:
-                severity =
-                    d.HighestAnomalySeverity;
+            case StorageEntry s when s.HighestAnomalySeverity > 0:
+                borderColor = "#C62828";
                 break;
 
-            case BrowserHistoryEntry h:
-                severity =
-                    h.HighestAnomalySeverity;
+            case DomainEntry d when d.HighestAnomalySeverity > 0:
+                borderColor = "#C62828";
                 break;
 
-            case AnalysisEntry a:
-                severity =
-                    a.Severity;
+            case BrowserHistoryEntry h when h.HighestAnomalySeverity > 0:
+                borderColor = "#C62828";
                 break;
         }
 
-        string borderColor = severity switch
-        {
-            5 => "#ff2b2b",
-            4 => "#ff7a2b",
-            3 => "#ffb52b",
-            2 => "#ffe12b",
-            1 => "#6cff6c",
-            _ => "rgba(255,255,255,0.25)"
-        };
-
-        return
-            $"border-left:3px solid {borderColor};";
+        return $"border-left:3px solid {borderColor};";
     }
 
     
@@ -2066,7 +2047,7 @@
                                     </div>
                                 }
                                 <span style="
-                                    color:@GetSeverityColor(a.Severity);
+                                    color:@ColorService.GetAnalysisColor(a);
                                     font-weight:700;
                                     font-size:14px;">
                                     @a.Type

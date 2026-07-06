@@ -336,51 +336,125 @@ namespace ZIVA_Prototype.Services.Timeline
         // =====================================================
 
         private void BuildStorageRelations(
-            List<DomainEntry> domains,
-            List<StorageEntry> storage)
+    List<DomainEntry> domains,
+    List<StorageEntry> storage)
         {
             foreach (var s in storage)
             {
                 if (string.IsNullOrWhiteSpace(s.Origin))
                     continue;
 
+                Uri? uri;
+
+                try
+                {
+                    uri = new Uri(s.Origin);
+                }
+                catch
+                {
+                    continue;
+                }
+
+                string host =
+                    uri.Host
+                       .TrimStart('.')
+                       .ToLower();
+
+                // -------------------------------
+                // Domain bestimmen
+                // -------------------------------
+
                 var matchingDomain =
                     domains
                     .Where(d =>
-                        s.Origin.Contains(d.Domain))
-                    .OrderBy(d =>
-                        Math.Abs(
-                            (s.Time - d.VisitTime)
-                            .TotalSeconds))
+                        d.Domain
+                         .TrimStart('.')
+                         .ToLower() == host)
                     .FirstOrDefault();
 
                 if (matchingDomain == null)
                     continue;
 
+                // -------------------------------
+                // Passendste History bestimmen
+                // -------------------------------
+
+                BrowserHistoryEntry? matchingHistory = null;
+
+                int bestScore = -1;
+
+                foreach (var history in matchingDomain.SubEntries)
+                {
+                    if (history.VisitTime > s.Time)
+                        continue;
+
+                    int score = 0;
+
+                    // gleicher Host
+                    if (Uri.TryCreate(history.Url, UriKind.Absolute, out var historyUri))
+                    {
+                        if (historyUri.Host.Equals(
+                                host,
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            score += 100;
+
+                            // gleicher URL-Prefix?
+                            if (history.Url.StartsWith(
+                                    s.Origin,
+                                    StringComparison.OrdinalIgnoreCase))
+                            {
+                                score += s.Origin.Length;
+                            }
+                        }
+                    }
+
+                    // zeitliche Nähe (max. 60 Punkte)
+                    score += Math.Max(
+                        0,
+                        60 - (int)(s.Time - history.VisitTime).TotalMinutes);
+
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        matchingHistory = history;
+                    }
+                }
+
+                // -------------------------------
+                // Relation erzeugen
+                // -------------------------------
+
                 var relation =
                     new ArtifactRelationEntry
                     {
-                        Type =
-                            ArtifactRelationType
-                                .StorageToHistory,
+                        Type = ArtifactRelationType.StorageToHistory,
 
                         Storage = s,
 
                         Domain = matchingDomain,
 
+                        History = matchingHistory,
+
                         Time = s.Time,
 
-                        Confidence = 85,
+                        Confidence =
+                            matchingHistory != null
+                                ? 95
+                                : 80,
 
                         Reason =
-                            "Storage origin matches history domain"
+                            matchingHistory != null
+                            ? "Storage belongs to most recent visit of origin."
+                            : "Storage origin matches visited domain."
                     };
 
-                if (matchingDomain.VisitTime > s.Time)
-                    continue;
-
                 s.Relations.Add(relation);
+
                 matchingDomain.Relations.Add(relation);
+
+                if (matchingHistory != null)
+                    matchingHistory.Relations.Add(relation);
             }
         }
 
