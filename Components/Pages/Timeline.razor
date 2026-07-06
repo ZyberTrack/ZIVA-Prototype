@@ -11,7 +11,7 @@
 @inject TimelineStateService State // Verwaltet States mehrerer Importierter Datenbanken
 @inject HistoryImportService Importer   
 @inject PersistStateService PersistService // falls benötigt
-@inject TimelineAnomalyService AnomalyService
+@inject TimelineAnalysisService AnalysisService
 @inject TimelineColorService ColorService
 @inject TimelineRenderCacheService RenderCache
 @inject ArtifactRelationService RelationService
@@ -33,7 +33,7 @@
 
     const int MaxSegment = 1000000;
 
-    List<AnomalyEntry> Anomalies = new(); // Liste mit erkannten Anomalien
+    List<AnalysisEntry> AnalysisEntries = new(); // Liste mit erkannten Anomalien
     List<string> BlacklistDomains = new(); // Liste mit zwielichtigen Domains
     List<string> SuspiciousDomains = new(); // Liste mit verdächtigen Domains
     private List<DomainEntry> DomainEntries = new();
@@ -49,7 +49,7 @@
     private BrowserHistoryEntry? selectedSubEntry;
     private StorageEntry? selectedStorage;
     private TimelineArtifact? focusedArtifact;
-    private AnomalyEntry? selectedAnomaly;
+    private AnalysisEntry? selectedAnalysis;
     private TimelineArtifact? visualFocusedArtifact;
 
     private Guid? visualFocusedAnomalyId;
@@ -124,7 +124,7 @@
     private List<UserInputEntry> VisibleInputs = new();
     private List<BrowserExtensionEntry> VisibleExtensions = new();
     private List<StorageEntry> VisibleStorage = new();
-    private List<AnomalyEntry> VisibleAnomalies = new();
+    private List<AnalysisEntry> VisibleAnomalies = new();
 
 
     //Suche
@@ -327,7 +327,7 @@
         await CenterOnTime(sub.VisitTime);
     }
 
-    async Task FocusAnomaly(AnomalyEntry anomaly)
+    async Task FocusAnomaly(AnalysisEntry anomaly)
     {
         SyncFocusedArtifact(anomaly);
 
@@ -359,7 +359,7 @@
 
     bool IsFocused(object obj)
     {
-        if (obj is AnomalyEntry anomaly)
+        if (obj is AnalysisEntry anomaly)
             return visualFocusedAnomalyId == anomaly.Id;
 
         return visualFocusedArtifact?.Data == obj;
@@ -373,7 +373,7 @@
         selectedDomain = null;
         selectedSubEntry = null;
         selectedStorage = null;
-        selectedAnomaly = null;
+        selectedAnalysis = null;
         visualFocusedArtifact = null;
         visualFocusedAnomalyId = null;
     }
@@ -427,7 +427,7 @@
             UserInputEntry i => TrimLabel(i.Value),
             BrowserExtensionEntry e => TrimLabel(e.Name),
             StorageEntry s => TrimLabel(s.Value),
-            AnomalyEntry a => TrimLabel(a.Type.ToString()),
+            AnalysisEntry a => TrimLabel(a.Type.ToString()),
             _ => ""
         };
     }
@@ -446,7 +446,7 @@
             UserInputEntry i => i.Position,
             BrowserExtensionEntry e => e.Position,
             StorageEntry s => s.Position,
-            AnomalyEntry a => a.Position,
+            AnalysisEntry a => a.Position,
             _ => 0
         };
     }
@@ -465,7 +465,7 @@
             UserInputEntry => "50%",
             StorageEntry => "57%",
             BrowserExtensionEntry => "64%",
-            AnomalyEntry => "78%",
+            AnalysisEntry => "78%",
             _ => "20%"
         };
     }
@@ -576,12 +576,13 @@
             State.StorageEntries
         );
 
-        Anomalies = AnomalyService.Detect(
+        AnalysisEntries = AnalysisService.Detect(
             DomainEntries,
             State.BrowserCookies,
             State.AutofillEntries,
             UserInputs,
             State.Extensions,
+            State.StorageEntries,
             BlacklistDomains,
             SuspiciousDomains
         );
@@ -600,7 +601,7 @@
             State.Extensions,
             State.StorageEntries,
             DomainEntries,
-            Anomalies,
+            AnalysisEntries,
             viewportWidth,
             SelectedDomainFilter
         );
@@ -617,7 +618,7 @@
         VisibleInputs = UserInputs;
         VisibleExtensions = State.Extensions;
         VisibleStorage = State.StorageEntries;
-        VisibleAnomalies = Anomalies;
+        VisibleAnomalies = AnalysisEntries;
 
         ApplyDomainFilter();
 
@@ -693,7 +694,7 @@
         );
 
         TimelineArtifacts.AddRange(
-            Anomalies.Select(a => new TimelineArtifact
+            AnalysisEntries.Select(a => new TimelineArtifact
             {
                 Time = a.FirstSeen,
                 Data = a,
@@ -793,7 +794,7 @@
 
     void RecalculateAnomalyPositions()
     {
-        foreach (var a in Anomalies)
+        foreach (var a in AnalysisEntries)
         {
             DateTime positionTime;
 
@@ -1146,7 +1147,7 @@
                 State.Extensions,
                 State.StorageEntries,
                 DomainEntries,
-                Anomalies,
+                AnalysisEntries,
                 viewportWidth,
                 SelectedDomainFilter);
 
@@ -1277,8 +1278,8 @@
                 selectedStorage = s;
                 break;
 
-            case AnomalyEntry a:
-                selectedAnomaly = a;
+            case AnalysisEntry a:
+                selectedAnalysis = a;
                 break;
         }
 
@@ -1311,7 +1312,7 @@
         if (visualFocusedAnomalyId.HasValue)
         {
             return TimelineArtifacts.FirstOrDefault(a =>
-                a.Data is AnomalyEntry anomaly &&
+                a.Data is AnalysisEntry anomaly &&
                 anomaly.Id == visualFocusedAnomalyId);
         }
 
@@ -1489,7 +1490,7 @@
 
     int? GetArtifactSeverity(object artifact)
     {
-        var matches = Anomalies.Where(a =>
+        var matches = AnalysisEntries.Where(a =>
         {
             return artifact switch
             {
@@ -1512,7 +1513,7 @@
                     a.TargetType == AnomalyTargetType.Domain &&
                     a.LinkedDomain == d,
 
-                AnomalyEntry an =>
+                AnalysisEntry an =>
                     an == a,
 
                 _ => false
@@ -1562,7 +1563,7 @@
                     h.HighestAnomalySeverity;
                 break;
 
-            case AnomalyEntry a:
+            case AnalysisEntry a:
                 severity =
                     a.Severity;
                 break;
@@ -1647,7 +1648,7 @@
 
 
     IEnumerable<(double x, double yPercent)> GetAnomalyTargetPoints(
-    AnomalyEntry anomaly)
+    AnalysisEntry anomaly)
     {
         // -------------------------------------------------
         // HISTORY / DOMAIN TARGETS
@@ -1719,7 +1720,7 @@
         }
     }
 
-    bool IsAnomalyConnectionVisible(AnomalyEntry anomaly)
+    bool IsAnomalyConnectionVisible(AnalysisEntry anomaly)
     {
         double viewportStart = 0;
         double viewportEnd = viewportWidth;
@@ -2037,10 +2038,10 @@
                 </div>
 
                 <div class="artifact-column">
-                    <strong>Anomalies (@Anomalies.Count)</strong>
+                    <strong>Analyse Zeitachse (@AnalysisEntries.Count)</strong>
 
                     <ul>
-                        @foreach (var a in Anomalies)
+                        @foreach (var a in AnalysisEntries)
                         {
                             <li class="artifact-clickable artifact-anomaly"
                                 style="@GetArtifactStyle(a)"
@@ -2774,7 +2775,7 @@
 
             @foreach (var anomaly in RenderCache.VisibleAnomalies)
             {
-                var color = GetSeverityColor(anomaly.Severity);
+                var color = ColorService.GetAnalysisColor(anomaly);
 
                 <div class="anomaly-marker"
                      style="position:absolute;
@@ -2813,7 +2814,7 @@
 
                 @foreach (var anomaly in RenderCache.VisibleAnomalies.Where(IsAnomalyConnectionVisible))
                 {
-                    var color = GetSeverityColor(anomaly.Severity);
+                    var color = ColorService.GetAnalysisColor(anomaly);
 
                     foreach (var point in GetAnomalyTargetPoints(anomaly))
                     {
@@ -2885,48 +2886,48 @@
     @if (selectedExtension != null)
     {
         <ExtensionDetails Data="selectedExtension"
-                          Anomalies="Anomalies"
+                          Anomalies="AnalysisEntries"
                           OnFocusAnomaly="FocusAnomaly"
                           OnClose="CloseAll" />
     }
     else if (selectedCookie != null)
     {
         <CookieDetails Data="selectedCookie"
-                       Anomalies="Anomalies"
+                       Anomalies="AnalysisEntries"
                        OnFocusAnomaly="FocusAnomaly"
                        OnClose="CloseAll" />
     }
     else if (selectedInput != null)
     {
         <AutofillDetails Data="selectedInput"
-                         Anomalies="Anomalies"
+                         Anomalies="AnalysisEntries"
                          OnFocusAnomaly="FocusAnomaly"
                          OnClose="CloseAll" />
     }
     else if (selectedSubEntry != null)
     {
         <SubEntryDetails Data="selectedSubEntry"
-                         Anomalies="Anomalies"
+                         Anomalies="AnalysisEntries"
                          OnFocusAnomaly="FocusAnomaly"
                          OnClose="CloseAll" />
     }
     else if (selectedDomain != null)
     {
         <DomainDetails Data="selectedDomain"
-                       Anomalies="Anomalies"
+                       Anomalies="AnalysisEntries"
                        OnFocusAnomaly="FocusAnomaly"
                        OnClose="CloseAll" />
     }
     else if (selectedStorage != null)
     {
         <StorageDetails Data="selectedStorage"
-                        Anomalies="Anomalies"
+                        Anomalies="AnalysisEntries"
                         OnFocusAnomaly="FocusAnomaly"
                         OnClose="CloseAll" />
     }
-    else if (selectedAnomaly != null)
+    else if (selectedAnalysis != null)
     {
-        <AnomalyDetails Data="selectedAnomaly"
+        <AnomalyDetails Data="selectedAnalysis"
                         OnClose="CloseAll" />
     }
 

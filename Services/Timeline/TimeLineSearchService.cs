@@ -26,7 +26,7 @@ namespace ZIVA_Prototype.Services.Timeline
                     UserInputEntry i => i.Value,
                     BrowserExtensionEntry e => e.Name,
                     StorageEntry s => $"{s.Key} {s.Value}",
-                    AnomalyEntry a => a.Description,
+                    AnalysisEntry a => a.Description,
                     _ => ""
                 };
 

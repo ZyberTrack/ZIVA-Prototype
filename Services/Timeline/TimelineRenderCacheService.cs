@@ -20,7 +20,7 @@ namespace ZIVA_Prototype.Services.Timeline
 
         public List<BrowserHistoryEntry> VisibleHistory { get; private set; } = new();
 
-        public List<AnomalyEntry> VisibleAnomalies { get; private set; } = new();
+        public List<AnalysisEntry> VisibleAnomalies { get; private set; } = new();
 
 
         public void BuildVisibleCaches(
@@ -30,7 +30,7 @@ namespace ZIVA_Prototype.Services.Timeline
             List<BrowserExtensionEntry> extensions,
             List<StorageEntry> storage,
             List<DomainEntry> domains,
-            List<AnomalyEntry> anomalies,
+            List<AnalysisEntry> anomalies,
             int viewportWidth,
             string? activeDomain = null)
         {

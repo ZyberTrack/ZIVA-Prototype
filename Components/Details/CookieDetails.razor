@@ -97,18 +97,18 @@
     public EventCallback OnClose { get; set; }
 
     [Parameter]
-    public List<AnomalyEntry> Anomalies { get; set; } = new();
+    public List<AnalysisEntry> Anomalies { get; set; } = new();
 
     [Parameter]
-    public EventCallback<AnomalyEntry> OnFocusAnomaly { get; set; }
+    public EventCallback<AnalysisEntry> OnFocusAnomaly { get; set; }
 
-    private List<AnomalyEntry> RelatedAnomalies =>
+    private List<AnalysisEntry> RelatedAnomalies =>
         Anomalies
             .Where(a => a.LinkedCookies.Contains(Data))
             .OrderByDescending(a => a.Severity)
             .ToList();
 
-    private string GetAnomalyStyle(AnomalyEntry anomaly)
+    private string GetAnomalyStyle(AnalysisEntry anomaly)
     {
         return anomaly.Severity switch
         {

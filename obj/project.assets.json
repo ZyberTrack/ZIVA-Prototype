@@ -183,7 +183,7 @@
           "buildMultiTargeting/Microsoft.AspNetCore.Components.WebView.props": {}
         }
       },
-      "Microsoft.AspNetCore.Components.WebView.Maui/10.0.71": {
+      "Microsoft.AspNetCore.Components.WebView.Maui/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.AspNetCore.Authorization": "10.0.0",
@@ -863,33 +863,33 @@
           }
         }
       },
-      "Microsoft.Maui.Controls/10.0.71": {
+      "Microsoft.Maui.Controls/10.0.80": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Build.Tasks": "10.0.71",
-          "Microsoft.Maui.Controls.Core": "10.0.71",
-          "Microsoft.Maui.Controls.Xaml": "10.0.71",
-          "Microsoft.Maui.Resizetizer": "10.0.71"
+          "Microsoft.Maui.Controls.Build.Tasks": "10.0.80",
+          "Microsoft.Maui.Controls.Core": "10.0.80",
+          "Microsoft.Maui.Controls.Xaml": "10.0.80",
+          "Microsoft.Maui.Resizetizer": "10.0.80"
         }
       },
-      "Microsoft.Maui.Controls.Build.Tasks/10.0.71": {
+      "Microsoft.Maui.Controls.Build.Tasks/10.0.80": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Core": "10.0.71",
-          "Microsoft.Maui.Controls.Xaml": "10.0.71"
+          "Microsoft.Maui.Controls.Core": "10.0.80",
+          "Microsoft.Maui.Controls.Xaml": "10.0.80"
         },
         "build": {
           "buildTransitive/net6.0-windows10.0.17763.0/Microsoft.Maui.Controls.Build.Tasks.props": {},
           "buildTransitive/net6.0-windows10.0.17763.0/Microsoft.Maui.Controls.Build.Tasks.targets": {}
         }
       },
-      "Microsoft.Maui.Controls.Compatibility/10.0.71": {
+      "Microsoft.Maui.Controls.Compatibility/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.71",
-          "Microsoft.Maui.Controls.Xaml": "10.0.71"
+          "Microsoft.Maui.Controls.Core": "10.0.80",
+          "Microsoft.Maui.Controls.Xaml": "10.0.80"
         },
         "compile": {
           "lib/net10.0-windows10.0.19041/Microsoft.Maui.Controls.Compatibility.dll": {
@@ -902,14 +902,14 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Core/10.0.71": {
+      "Microsoft.Maui.Controls.Core/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.DependencyInjection": "10.0.0",
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Core": "10.0.71"
+          "Microsoft.Maui.Core": "10.0.80"
         },
         "compile": {
           "lib/net10.0-windows10.0.19041/Microsoft.Maui.Controls.dll": {
@@ -1026,12 +1026,12 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Xaml/10.0.71": {
+      "Microsoft.Maui.Controls.Xaml/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.71",
-          "Microsoft.Maui.Core": "10.0.71"
+          "Microsoft.Maui.Controls.Core": "10.0.80",
+          "Microsoft.Maui.Core": "10.0.80"
         },
         "compile": {
           "lib/net10.0-windows10.0.19041/Microsoft.Maui.Controls.Xaml.dll": {
@@ -1044,7 +1044,7 @@
           }
         }
       },
-      "Microsoft.Maui.Core/10.0.71": {
+      "Microsoft.Maui.Core/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
@@ -1053,9 +1053,9 @@
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
           "Microsoft.Graphics.Win2D": "1.3.2",
-          "Microsoft.Maui.Essentials": "10.0.71",
-          "Microsoft.Maui.Graphics": "10.0.71",
-          "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop": "10.0.71",
+          "Microsoft.Maui.Essentials": "10.0.80",
+          "Microsoft.Maui.Graphics": "10.0.80",
+          "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop": "10.0.80",
           "Microsoft.Web.WebView2": "1.0.3179.45",
           "Microsoft.Windows.SDK.BuildTools": "10.0.26100.4654",
           "Microsoft.WindowsAppSDK": "1.8.251106002"
@@ -1075,10 +1075,10 @@
           "buildTransitive/net10.0-windows10.0.17763.0/Microsoft.Maui.Core.targets": {}
         }
       },
-      "Microsoft.Maui.Essentials/10.0.71": {
+      "Microsoft.Maui.Essentials/10.0.80": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Graphics": "10.0.71",
+          "Microsoft.Maui.Graphics": "10.0.80",
           "Microsoft.Web.WebView2": "1.0.3179.45",
           "Microsoft.WindowsAppSDK": "1.8.251106002"
         },
@@ -1093,7 +1093,7 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics/10.0.71": {
+      "Microsoft.Maui.Graphics/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.Graphics.Win2D": "1.3.2",
@@ -1111,11 +1111,11 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop/10.0.71": {
+      "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.Graphics.Win2D": "1.3.2",
-          "Microsoft.Maui.Graphics": "10.0.71",
+          "Microsoft.Maui.Graphics": "10.0.80",
           "Microsoft.WindowsAppSDK": "1.8.251106002"
         },
         "compile": {
@@ -1129,7 +1129,7 @@
           }
         }
       },
-      "Microsoft.Maui.Resizetizer/10.0.71": {
+      "Microsoft.Maui.Resizetizer/10.0.80": {
         "type": "package",
         "build": {
           "buildTransitive/Microsoft.Maui.Resizetizer.props": {},
@@ -1822,7 +1822,7 @@
           "buildMultiTargeting/Microsoft.AspNetCore.Components.WebView.props": {}
         }
       },
-      "Microsoft.AspNetCore.Components.WebView.Maui/10.0.71": {
+      "Microsoft.AspNetCore.Components.WebView.Maui/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.AspNetCore.Authorization": "10.0.0",
@@ -2491,33 +2491,33 @@
           }
         }
       },
-      "Microsoft.Maui.Controls/10.0.71": {
+      "Microsoft.Maui.Controls/10.0.80": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Build.Tasks": "10.0.71",
-          "Microsoft.Maui.Controls.Core": "10.0.71",
-          "Microsoft.Maui.Controls.Xaml": "10.0.71",
-          "Microsoft.Maui.Resizetizer": "10.0.71"
+          "Microsoft.Maui.Controls.Build.Tasks": "10.0.80",
+          "Microsoft.Maui.Controls.Core": "10.0.80",
+          "Microsoft.Maui.Controls.Xaml": "10.0.80",
+          "Microsoft.Maui.Resizetizer": "10.0.80"
         }
       },
-      "Microsoft.Maui.Controls.Build.Tasks/10.0.71": {
+      "Microsoft.Maui.Controls.Build.Tasks/10.0.80": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Core": "10.0.71",
-          "Microsoft.Maui.Controls.Xaml": "10.0.71"
+          "Microsoft.Maui.Controls.Core": "10.0.80",
+          "Microsoft.Maui.Controls.Xaml": "10.0.80"
         },
         "build": {
           "buildTransitive/net6.0-windows10.0.17763.0/Microsoft.Maui.Controls.Build.Tasks.props": {},
           "buildTransitive/net6.0-windows10.0.17763.0/Microsoft.Maui.Controls.Build.Tasks.targets": {}
         }
       },
-      "Microsoft.Maui.Controls.Compatibility/10.0.71": {
+      "Microsoft.Maui.Controls.Compatibility/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.71",
-          "Microsoft.Maui.Controls.Xaml": "10.0.71"
+          "Microsoft.Maui.Controls.Core": "10.0.80",
+          "Microsoft.Maui.Controls.Xaml": "10.0.80"
         },
         "compile": {
           "lib/net10.0-windows10.0.19041/Microsoft.Maui.Controls.Compatibility.dll": {
@@ -2530,14 +2530,14 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Core/10.0.71": {
+      "Microsoft.Maui.Controls.Core/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.DependencyInjection": "10.0.0",
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Core": "10.0.71"
+          "Microsoft.Maui.Core": "10.0.80"
         },
         "compile": {
           "lib/net10.0-windows10.0.19041/Microsoft.Maui.Controls.dll": {
@@ -2654,12 +2654,12 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Xaml/10.0.71": {
+      "Microsoft.Maui.Controls.Xaml/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.71",
-          "Microsoft.Maui.Core": "10.0.71"
+          "Microsoft.Maui.Controls.Core": "10.0.80",
+          "Microsoft.Maui.Core": "10.0.80"
         },
         "compile": {
           "lib/net10.0-windows10.0.19041/Microsoft.Maui.Controls.Xaml.dll": {
@@ -2672,7 +2672,7 @@
           }
         }
       },
-      "Microsoft.Maui.Core/10.0.71": {
+      "Microsoft.Maui.Core/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
@@ -2681,9 +2681,9 @@
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
           "Microsoft.Graphics.Win2D": "1.3.2",
-          "Microsoft.Maui.Essentials": "10.0.71",
-          "Microsoft.Maui.Graphics": "10.0.71",
-          "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop": "10.0.71",
+          "Microsoft.Maui.Essentials": "10.0.80",
+          "Microsoft.Maui.Graphics": "10.0.80",
+          "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop": "10.0.80",
           "Microsoft.Web.WebView2": "1.0.3179.45",
           "Microsoft.Windows.SDK.BuildTools": "10.0.26100.4654",
           "Microsoft.WindowsAppSDK": "1.8.251106002"
@@ -2703,10 +2703,10 @@
           "buildTransitive/net10.0-windows10.0.17763.0/Microsoft.Maui.Core.targets": {}
         }
       },
-      "Microsoft.Maui.Essentials/10.0.71": {
+      "Microsoft.Maui.Essentials/10.0.80": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Graphics": "10.0.71",
+          "Microsoft.Maui.Graphics": "10.0.80",
           "Microsoft.Web.WebView2": "1.0.3179.45",
           "Microsoft.WindowsAppSDK": "1.8.251106002"
         },
@@ -2721,7 +2721,7 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics/10.0.71": {
+      "Microsoft.Maui.Graphics/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.Graphics.Win2D": "1.3.2",
@@ -2739,11 +2739,11 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop/10.0.71": {
+      "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop/10.0.80": {
         "type": "package",
         "dependencies": {
           "Microsoft.Graphics.Win2D": "1.3.2",
-          "Microsoft.Maui.Graphics": "10.0.71",
+          "Microsoft.Maui.Graphics": "10.0.80",
           "Microsoft.WindowsAppSDK": "1.8.251106002"
         },
         "compile": {
@@ -2757,7 +2757,7 @@
           }
         }
       },
-      "Microsoft.Maui.Resizetizer/10.0.71": {
+      "Microsoft.Maui.Resizetizer/10.0.80": {
         "type": "package",
         "build": {
           "buildTransitive/Microsoft.Maui.Resizetizer.props": {},
@@ -3338,10 +3338,10 @@
         "staticwebassets/blazor.webview.js"
       ]
     },
-    "Microsoft.AspNetCore.Components.WebView.Maui/10.0.71": {
-      "sha512": "Lg7LLdfYb2jTM8nA8badO7wuSVQYwrMMKniw1Ijhqnd5zGYjc+uCSra7rBtzgroNW/jDeXBTNv7uOSeKogF9QQ==",
+    "Microsoft.AspNetCore.Components.WebView.Maui/10.0.80": {
+      "sha512": "XEz/OJAtjaoyBVZIHim7sbQ20Khs/nwOAFTW9J9eB63Gax2rsoXCnFd6wHR1evKTVFKNxS+pqGgcPBh1fyXYpw==",
       "type": "package",
-      "path": "microsoft.aspnetcore.components.webview.maui/10.0.71",
+      "path": "microsoft.aspnetcore.components.webview.maui/10.0.80",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3371,7 +3371,7 @@
         "lib/net10.0/Microsoft.AspNetCore.Components.WebView.Maui.dll",
         "lib/net10.0/Microsoft.AspNetCore.Components.WebView.Maui.pdb",
         "lib/net10.0/Microsoft.AspNetCore.Components.WebView.Maui.xml",
-        "microsoft.aspnetcore.components.webview.maui.10.0.71.nupkg.sha512",
+        "microsoft.aspnetcore.components.webview.maui.10.0.80.nupkg.sha512",
         "microsoft.aspnetcore.components.webview.maui.nuspec"
       ]
     },
@@ -4910,10 +4910,10 @@
         "microsoft.jsinterop.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls/10.0.71": {
-      "sha512": "v3ROePZoZ5wHENreE8Q62Ffi0GzkHz6aGNAzRaNqHr5ksbV1mJJBCgnWY6U1m5Sb/LxDZDuPYq02XurJGCgHpQ==",
+    "Microsoft.Maui.Controls/10.0.80": {
+      "sha512": "PfORFuF/tYb9HVWrLyEIHb2pYdGh94fbsFTZgwf3bI6mKMi8x0+7bQbJKcj02H5TGmpFmifiN22psDtS+Tba4A==",
       "type": "package",
-      "path": "microsoft.maui.controls/10.0.71",
+      "path": "microsoft.maui.controls/10.0.80",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4921,14 +4921,14 @@
         "LICENSE.TXT",
         "README.md",
         "THIRD-PARTY-NOTICES.TXT",
-        "microsoft.maui.controls.10.0.71.nupkg.sha512",
+        "microsoft.maui.controls.10.0.80.nupkg.sha512",
         "microsoft.maui.controls.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls.Build.Tasks/10.0.71": {
-      "sha512": "xOAj3Mo24fbk1Z/rDXFiIdEfW7aC5RxvID0rPOG87PLCDuRbhJnDJHeayHNb6owcP591hf+qWbSjccBzCnQXAg==",
+    "Microsoft.Maui.Controls.Build.Tasks/10.0.80": {
+      "sha512": "z58N9cT0miBhuDQiP4zEURYmk8/jHDoaE1Fn4OxAZdB0HhPzTWBIx1xsW8fCiuOROjIRYMwnP/slmIENn2tvQg==",
       "type": "package",
-      "path": "microsoft.maui.controls.build.tasks/10.0.71",
+      "path": "microsoft.maui.controls.build.tasks/10.0.80",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5010,14 +5010,14 @@
         "buildTransitive/netstandard2.0/zh-HK/Microsoft.Maui.Controls.Build.Tasks.resources.dll",
         "buildTransitive/netstandard2.0/zh-Hans/Microsoft.Maui.Controls.Build.Tasks.resources.dll",
         "buildTransitive/netstandard2.0/zh-Hant/Microsoft.Maui.Controls.Build.Tasks.resources.dll",
-        "microsoft.maui.controls.build.tasks.10.0.71.nupkg.sha512",
+        "microsoft.maui.controls.build.tasks.10.0.80.nupkg.sha512",
         "microsoft.maui.controls.build.tasks.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls.Compatibility/10.0.71": {
-      "sha512": "a84tv68KfD93IVKp78dSQ5rcVySLsJmKcHVxjN2JmWEiI12CS25MxdU3OoNdHmLeOkf0sKdAiccB6hBEVV2LkA==",
+    "Microsoft.Maui.Controls.Compatibility/10.0.80": {
+      "sha512": "Es/axWqPDinmrdl4f3gQtpoXJw+UeuR23Fm8Io5LcLkthVfo/HW4KpkazIR1MnsOi/qj7UhxQKmSIvUDEndgFg==",
       "type": "package",
-      "path": "microsoft.maui.controls.compatibility/10.0.71",
+      "path": "microsoft.maui.controls.compatibility/10.0.80",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5052,14 +5052,14 @@
         "lib/netstandard2.1/Microsoft.Maui.Controls.Compatibility.dll",
         "lib/netstandard2.1/Microsoft.Maui.Controls.Compatibility.pdb",
         "lib/netstandard2.1/Microsoft.Maui.Controls.Compatibility.xml",
-        "microsoft.maui.controls.compatibility.10.0.71.nupkg.sha512",
+        "microsoft.maui.controls.compatibility.10.0.80.nupkg.sha512",
         "microsoft.maui.controls.compatibility.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls.Core/10.0.71": {
-      "sha512": "QXGAZtz1dj06yIVMslxNi/zg9K8lCmjnOB0PGk84ViBh0IKcAF3n+1Sa87xniLDVre1QdkOSU2fx+f6a8+eTIw==",
+    "Microsoft.Maui.Controls.Core/10.0.80": {
+      "sha512": "siuKho4hlIquirjzJqsZ7BchCnw7gpK2ix0NsrJaXVwCfApY8BYPSMBnTN01bnXpuIfUCmq40/B3m7ITuSNT6w==",
       "type": "package",
-      "path": "microsoft.maui.controls.core/10.0.71",
+      "path": "microsoft.maui.controls.core/10.0.80",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5382,14 +5382,14 @@
         "lib/netstandard2.1/zh-HK/Microsoft.Maui.Controls.resources.dll",
         "lib/netstandard2.1/zh-Hans/Microsoft.Maui.Controls.resources.dll",
         "lib/netstandard2.1/zh-Hant/Microsoft.Maui.Controls.resources.dll",
-        "microsoft.maui.controls.core.10.0.71.nupkg.sha512",
+        "microsoft.maui.controls.core.10.0.80.nupkg.sha512",
         "microsoft.maui.controls.core.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls.Xaml/10.0.71": {
-      "sha512": "F7WEDfdVNpUX2m7Ro+6hxetI2JftFqk94RIf8ATePRHjerJ6Yvy4Ewsi16WvOfBPmBgsjA60lrw/d+h+LmhwMg==",
+    "Microsoft.Maui.Controls.Xaml/10.0.80": {
+      "sha512": "KgpojYKhLTG35Angr4U8G/v2lwMVw6gKehienkeF1+LaUjf01A+bDBfZHvDTpl2NJhPXfojLHqMG1zKsVDXhwQ==",
       "type": "package",
-      "path": "microsoft.maui.controls.xaml/10.0.71",
+      "path": "microsoft.maui.controls.xaml/10.0.80",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5439,14 +5439,14 @@
         "lib/netstandard2.1/Microsoft.Maui.Controls.Xaml.dll",
         "lib/netstandard2.1/Microsoft.Maui.Controls.Xaml.pdb",
         "lib/netstandard2.1/Microsoft.Maui.Controls.Xaml.xml",
-        "microsoft.maui.controls.xaml.10.0.71.nupkg.sha512",
+        "microsoft.maui.controls.xaml.10.0.80.nupkg.sha512",
         "microsoft.maui.controls.xaml.nuspec"
       ]
     },
-    "Microsoft.Maui.Core/10.0.71": {
-      "sha512": "5/2y/Cg1EN536fHkIF3pQ0C4TYv1oSsxQ4hYou0IVol3fs1IkaArCQd9QhdrFHjOjioAskBC8ilk+o/Id3615w==",
+    "Microsoft.Maui.Core/10.0.80": {
+      "sha512": "t3jazbSSNoS+OXv1CzNJUwDs7LbSXf9z0ydxvmZPUWw7JQJ+WIbFSNO1GCVQsc4ufpbn2A0pYH740GlQsfDFlA==",
       "type": "package",
-      "path": "microsoft.maui.core/10.0.71",
+      "path": "microsoft.maui.core/10.0.80",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5492,14 +5492,14 @@
         "lib/netstandard2.1/Microsoft.Maui.dll",
         "lib/netstandard2.1/Microsoft.Maui.pdb",
         "lib/netstandard2.1/Microsoft.Maui.xml",
-        "microsoft.maui.core.10.0.71.nupkg.sha512",
+        "microsoft.maui.core.10.0.80.nupkg.sha512",
         "microsoft.maui.core.nuspec"
       ]
     },
-    "Microsoft.Maui.Essentials/10.0.71": {
-      "sha512": "R6RjSLyuIy3wZx/fNWHZGet0OXNyk3pH01EEqCfmdvUQPimSR8ELKqli7NEi41HvPul2IiNNLJaXUVxRn/LRgw==",
+    "Microsoft.Maui.Essentials/10.0.80": {
+      "sha512": "TPEmubDTO15KRJdlJLSjR8zVVepk6tKiNBXmqpZebez9mvJyi4lmsWwuboFKM56COuGAlY+eVUFDesQlz66Eyw==",
       "type": "package",
-      "path": "microsoft.maui.essentials/10.0.71",
+      "path": "microsoft.maui.essentials/10.0.80",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5534,14 +5534,14 @@
         "lib/netstandard2.1/Microsoft.Maui.Essentials.dll",
         "lib/netstandard2.1/Microsoft.Maui.Essentials.pdb",
         "lib/netstandard2.1/Microsoft.Maui.Essentials.xml",
-        "microsoft.maui.essentials.10.0.71.nupkg.sha512",
+        "microsoft.maui.essentials.10.0.80.nupkg.sha512",
         "microsoft.maui.essentials.nuspec"
       ]
     },
-    "Microsoft.Maui.Graphics/10.0.71": {
-      "sha512": "aFEMJ4zEpKx68fo+7S+UjhAZ9PAps3/rXVAVdTwjayk7yk2fxnMyWlRnjdvN1B3Wt+LA/WTjVXBfPAwqBcxdrg==",
+    "Microsoft.Maui.Graphics/10.0.80": {
+      "sha512": "rB3Tjv/z/uJ4zZLu8HJMNo+YqpAzPlxQ+2HCkjmGbORPAPYcWF2dLP+MsCmYS/HXpFE+8kEt/Md4Oc0MbhYtzQ==",
       "type": "package",
-      "path": "microsoft.maui.graphics/10.0.71",
+      "path": "microsoft.maui.graphics/10.0.80",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5578,14 +5578,14 @@
         "lib/netstandard2.1/Microsoft.Maui.Graphics.dll",
         "lib/netstandard2.1/Microsoft.Maui.Graphics.pdb",
         "lib/netstandard2.1/Microsoft.Maui.Graphics.xml",
-        "microsoft.maui.graphics.10.0.71.nupkg.sha512",
+        "microsoft.maui.graphics.10.0.80.nupkg.sha512",
         "microsoft.maui.graphics.nuspec"
       ]
     },
-    "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop/10.0.71": {
-      "sha512": "tng5JSQ3ysm3Yvr8MLI+Bf1hQg7msZe7up7veqiX4KdhiMyU3zzCpT2Yk974T26czanLIVDAn7fWrkvWOgzUyw==",
+    "Microsoft.Maui.Graphics.Win2D.WinUI.Desktop/10.0.80": {
+      "sha512": "PHnQ0xXihM4NnAPhuOZabctFA/EkzlGhFyQh4ZYrLrvGCrjIa9MC1d9AzLB18A5s4I0uU7ki8xK5rIiv4E19bA==",
       "type": "package",
-      "path": "microsoft.maui.graphics.win2d.winui.desktop/10.0.71",
+      "path": "microsoft.maui.graphics.win2d.winui.desktop/10.0.80",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5599,14 +5599,14 @@
         "lib/net10.0-windows10.0.20348/Microsoft.Maui.Graphics.Win2D.WinUI.Desktop.dll",
         "lib/net10.0-windows10.0.20348/Microsoft.Maui.Graphics.Win2D.WinUI.Desktop.pdb",
         "lib/net10.0-windows10.0.20348/Microsoft.Maui.Graphics.Win2D.WinUI.Desktop.pri",
-        "microsoft.maui.graphics.win2d.winui.desktop.10.0.71.nupkg.sha512",
+        "microsoft.maui.graphics.win2d.winui.desktop.10.0.80.nupkg.sha512",
         "microsoft.maui.graphics.win2d.winui.desktop.nuspec"
       ]
     },
-    "Microsoft.Maui.Resizetizer/10.0.71": {
-      "sha512": "CG4P5XF197pvvuiq9P6ZnOytlqjoZ0dv7nFpoVJw8tO+8UQ7OmdDyAEXll+e42TlJ55Pa1YeNRtQOxsMkmQ0QA==",
+    "Microsoft.Maui.Resizetizer/10.0.80": {
+      "sha512": "xuCCEsef8iVKF7nXUFD7OlRnAvx3SY/TzJ48J/1twu+0IGMh3e7xc2GM72xYBPwCXrTLL3+GvAd4SK0O4Lmq+Q==",
       "type": "package",
-      "path": "microsoft.maui.resizetizer/10.0.71",
+      "path": "microsoft.maui.resizetizer/10.0.80",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -5655,7 +5655,7 @@
         "buildTransitive/x64/libSkiaSharp.so",
         "buildTransitive/x86/libHarfBuzzSharp.dll",
         "buildTransitive/x86/libSkiaSharp.dll",
-        "microsoft.maui.resizetizer.10.0.71.nupkg.sha512",
+        "microsoft.maui.resizetizer.10.0.80.nupkg.sha512",
         "microsoft.maui.resizetizer.nuspec"
       ]
     },
@@ -8169,5 +8169,18 @@
         "#import": []
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Das Paket \"SQLitePCLRaw.lib.e_sqlite3\" 2.1.11 weist eine bekannte hoch Schweregrad-Sicherheitsanfälligkeit auf, https://github.com/advisories/GHSA-2m69-gcr7-jv3q.",
+      "libraryId": "SQLitePCLRaw.lib.e_sqlite3",
+      "targetGraphs": [
+        "net10.0-windows10.0.19041.0",
+        "net10.0-windows10.0.19041.0/win-x64"
+      ]
+    }
+  ]
 }

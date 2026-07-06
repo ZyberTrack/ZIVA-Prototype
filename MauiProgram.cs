@@ -48,7 +48,7 @@ namespace ZIVA_Prototype
             // ⬇ Timeline / State
             builder.Services.AddSingleton<TimelineStateService>();
             builder.Services.AddSingleton<PersistStateService>();
-            builder.Services.AddSingleton<TimelineAnomalyService>();
+            builder.Services.AddSingleton<TimelineAnalysisService>();
             builder.Services.AddSingleton<TimelineColorService>();
             builder.Services.AddSingleton<TimelineRenderCacheService>();
             builder.Services.AddSingleton<ArtifactRelationService>();

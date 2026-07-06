@@ -89,20 +89,20 @@
     public EventCallback OnClose { get; set; }
 
     [Parameter]
-    public List<AnomalyEntry> Anomalies { get; set; } = new();
+    public List<AnalysisEntry> AnalysisEntries { get; set; } = new();
 
     [Parameter]
-    public EventCallback<AnomalyEntry> OnFocusAnomaly { get; set; }
+    public EventCallback<AnalysisEntry> OnFocusAnomaly { get; set; }
 
-    private List<AnomalyEntry> RelatedAnomalies =>
-        Anomalies
+    private List<AnalysisEntry> RelatedAnomalies =>
+        AnalysisEntries
             .Where(a => a.LinkedInputs.Contains(Data))
             .OrderByDescending(a => a.Severity)
             .ToList();
 
-    private string GetAnomalyStyle(AnomalyEntry anomaly)
+    private string GetAnomalyStyle(AnalysisEntry AnalysisEntries)
     {
-        return anomaly.Severity switch
+        return AnalysisEntries.Severity switch
         {
             5 => "border-left:4px solid #ff2b2b;",
             4 => "border-left:4px solid #ff7a2b;",

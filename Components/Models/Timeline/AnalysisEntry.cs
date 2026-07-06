@@ -1,6 +1,6 @@
 ﻿namespace ZIVA_Prototype.Components.Models.Timeline
 {
-    public class AnomalyEntry
+    public class AnalysisEntry
     {
         // ----------------------------------------------------
         // CORE
@@ -8,7 +8,9 @@
 
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        public AnomalyType Type { get; set; }
+        public AnalysisType Type { get; set; }
+
+        public AnalysisCategory Category { get; set; }
 
         public string Title { get; set; } = "";
 
@@ -164,29 +166,56 @@
     }
 
 
-    public enum AnomalyType
+    public enum AnalysisType
     {
         Unknown,
+
+        // ---------------- Information ----------------
+
+        SensitiveStorageContent,
+        SensitiveCookieContent,
+        SensitiveUserInput,
+        SensitiveHistory,
+        AuthenticationData,
+
+        JwtToken,
+        ApiKey,
+        OAuthToken,
+        SessionToken,
+        AuthorizationHeader,
+
+        // ---------------- Warning ----------------
+
+        PlaintextPassword,
+        LocalStorageCredential,
+        ExposedSecret,
+        PersistentSession,
+        
+
+        // ---------------- Anomaly ----------------
 
         BlacklistedDomain,
         SuspiciousRedirect,
         ExcessiveRequests,
         DeletedHistoryIndicator,
-
         SuspiciousCookie,
         SuspiciousExtension,
         TrackingBehavior,
         CredentialExposure,
         PersistenceMechanism,
-
         SuspiciousSearch,
         SuspiciousStorage,
-
         TimeManipulation,
         BurstActivity,
         SessionHijackIndicator,
-
         CorrelatedThreat,
         ManualInvestigatorFlag
+    }
+
+    public enum AnalysisCategory
+    {
+        Information,
+        Warning,
+        Anomaly
     }
 }

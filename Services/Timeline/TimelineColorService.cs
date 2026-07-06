@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using ZIVA_Prototype.Components.Models.Enums;
+using ZIVA_Prototype.Components.Models.Timeline;
 
 namespace ZIVA_Prototype.Services.Timeline
 {
@@ -119,6 +120,23 @@ namespace ZIVA_Prototype.Services.Timeline
                 _ =>
                     "#9e9e9e" // fallback grau
             };
+        }
+
+        public string GetAnalysisColor(AnalysisCategory category)
+        {
+            return category switch
+            {
+                AnalysisCategory.Information => "#1E88E5", // Blau
+                AnalysisCategory.Warning => "#F9A825",     // Gelb
+                AnalysisCategory.Anomaly => "#C62828",     // Rot
+
+                _ => "#757575"
+            };
+        }
+
+        public string GetAnalysisColor(AnalysisEntry analysis)
+        {
+            return GetAnalysisColor(analysis.Category);
         }
     }
 }

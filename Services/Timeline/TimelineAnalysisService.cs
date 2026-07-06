@@ -8,23 +8,24 @@ using ZIVA_Prototype.Components.Models.Timeline;
 
 namespace ZIVA_Prototype.Services.Timeline
 {
-    public class TimelineAnomalyService
+    public class TimelineAnalysisService
     {
-        public List<AnomalyEntry> Detect(
-        List<DomainEntry> summarizedEntries,
-        List<BrowserCookieEntry> cookies,
-        List<WebDataAutofillEntry> autofillEntries,
-        List<UserInputEntry> userInputs,
-        List<BrowserExtensionEntry> extensions,
-            List<string> blacklistDomains,
-            List<string> suspiciousDomains)
+        public List<AnalysisEntry> Detect(
+    List<DomainEntry> summarizedEntries,
+    List<BrowserCookieEntry> cookies,
+    List<WebDataAutofillEntry> autofillEntries,
+    List<UserInputEntry> userInputs,
+    List<BrowserExtensionEntry> extensions,
+    List<StorageEntry> storageEntries,
+    List<string> blacklistDomains,
+    List<string> suspiciousDomains)
         {
-            var anomalies = new List<AnomalyEntry>();
+            var anomalies = new List<AnalysisEntry>();
 
             if (!summarizedEntries.Any())
                 return anomalies;
 
-            var anomalyIndex = new Dictionary<string, AnomalyEntry>();
+            var anomalyIndex = new Dictionary<string, AnalysisEntry>();
 
             var orphanArtifacts = new List<OrphanArtifact>();
 
@@ -36,10 +37,10 @@ namespace ZIVA_Prototype.Services.Timeline
             {
                 anomalyIndex[
                     $"history:{domain.VisitTime.Ticks}"] =
-                        new AnomalyEntry
+                        new AnalysisEntry
                         {
                             Type =
-                                AnomalyType.Unknown,
+                                AnalysisType.Unknown,
 
                             FirstSeen =
                                 domain.VisitTime,
@@ -79,6 +80,12 @@ namespace ZIVA_Prototype.Services.Timeline
                 orphanArtifacts,
                 summarizedEntries);
 
+            DetectSensitiveStorage(
+                anomalyIndex,
+                storageEntries,
+                summarizedEntries
+            );
+
             foreach (var domain in summarizedEntries)
             {
                 var artifactTimes = domain.SubEntries.Any()
@@ -91,7 +98,7 @@ namespace ZIVA_Prototype.Services.Timeline
                 {
                     var anomaly = AddOrUpdateAnomaly(
                         anomalyIndex,
-                        AnomalyType.BlacklistedDomain,
+                        AnalysisType.BlacklistedDomain,
                         domain,
                         artifactTimes,
                         severity: 5,
@@ -110,7 +117,7 @@ namespace ZIVA_Prototype.Services.Timeline
                 {
                     var anomaly = AddOrUpdateAnomaly(
                         anomalyIndex,
-                        AnomalyType.SuspiciousRedirect,
+                        AnalysisType.SuspiciousRedirect,
                         domain,
                         artifactTimes,
                         severity: 3,
@@ -124,7 +131,7 @@ namespace ZIVA_Prototype.Services.Timeline
                 }
             }
 
-            anomalies.AddRange(anomalyIndex.Values.Where(x => x.Type != AnomalyType.Unknown));
+            anomalies.AddRange(anomalyIndex.Values.Where(x => x.Type != AnalysisType.Unknown));
 
             ApplyCorrelationSeverityBoost(anomalies);
 
@@ -134,23 +141,247 @@ namespace ZIVA_Prototype.Services.Timeline
         }
 
         string GetAnomalyKey(
-        AnomalyType type,
+        AnalysisType type,
         DomainEntry domain,
         DateTime time,
         string? artifactId = null)
         {
             return type switch
             {
-                AnomalyType.DeletedHistoryIndicator => $"{type}:active", // Damit nicht jedes Mal eine neue Anomalie erstellt wird.
+                AnalysisType.DeletedHistoryIndicator => $"{type}:active", // Damit nicht jedes Mal eine neue Anomalie erstellt wird.
 
                 _ =>
                     $"{type}:{domain.Domain.ToLower()}"
             };
         }
 
+        private AnalysisCategory GetCategory(AnalysisType type)
+        {
+            return type switch
+            {
+                // -----------------------------
+                // INFORMATION
+                // -----------------------------
+                AnalysisType.JwtToken => AnalysisCategory.Information,
+                AnalysisType.ApiKey => AnalysisCategory.Information,
+
+                // -----------------------------
+                // WARNINGS
+                // -----------------------------
+                AnalysisType.AuthenticationData => AnalysisCategory.Warning,
+                AnalysisType.SensitiveStorageContent => AnalysisCategory.Warning,
+
+                // Falls vorhanden:
+                AnalysisType.PlaintextPassword => AnalysisCategory.Warning,
+                AnalysisType.SessionToken => AnalysisCategory.Warning,
+                AnalysisType.OAuthToken => AnalysisCategory.Warning,
+
+                // -----------------------------
+                // ANOMALIES
+                // -----------------------------
+                AnalysisType.BlacklistedDomain => AnalysisCategory.Anomaly,
+                AnalysisType.SuspiciousRedirect => AnalysisCategory.Anomaly,
+                AnalysisType.DeletedHistoryIndicator => AnalysisCategory.Anomaly,
+                AnalysisType.SuspiciousExtension => AnalysisCategory.Anomaly,
+                AnalysisType.TimeManipulation => AnalysisCategory.Anomaly,
+                AnalysisType.BurstActivity => AnalysisCategory.Anomaly,
+                AnalysisType.SessionHijackIndicator => AnalysisCategory.Anomaly,
+                AnalysisType.CorrelatedThreat => AnalysisCategory.Anomaly,
+
+                _ => AnalysisCategory.Information
+            };
+        }
+
+        // =====================================================
+        // Sensitive Data Detection
+        // =====================================================
+
+
+        private void DetectSensitiveStorage(
+     Dictionary<string, AnalysisEntry> analysisIndex,
+     List<StorageEntry> storageEntries,
+     List<DomainEntry> domains)
+        {
+            foreach (var storage in storageEntries)
+            {
+                // Zugehörige Domain bestimmen
+                DomainEntry? domain =
+                    storage.Relations
+                        .Select(r => r.Domain)
+                        .FirstOrDefault();
+
+                // Fallback über Origin
+                if (domain == null &&
+                    Uri.TryCreate(storage.Origin, UriKind.Absolute, out var uri))
+                {
+                    domain = domains.FirstOrDefault(d =>
+                        string.Equals(
+                            d.Domain,
+                            uri.Host,
+                            StringComparison.OrdinalIgnoreCase));
+                }
+
+                // ---------------- Sensitive Flag ----------------
+
+                if (storage.IsSensitive)
+                {
+                    CreateStorageAnalysis(
+                        analysisIndex,
+                        storage,
+                        domain,
+                        AnalysisCategory.Warning,
+                        AnalysisType.SensitiveStorageContent,
+                        "Sensitive Storage Content",
+                        "Storage entry is marked as sensitive.",
+                        3);
+                }
+
+                // ---------------- Authentication ----------------
+
+                if (ContainsAuthenticationData(storage))
+                {
+                    CreateStorageAnalysis(
+                        analysisIndex,
+                        storage,
+                        domain,
+                        AnalysisCategory.Warning,
+                        AnalysisType.AuthenticationData,
+                        "Authentication Data",
+                        "Authentication related data detected.",
+                        4);
+                }
+
+                // ---------------- JWT ----------------
+
+                if (LooksLikeJwt(storage.Value))
+                {
+                    CreateStorageAnalysis(
+                        analysisIndex,
+                        storage,
+                        domain,
+                        AnalysisCategory.Information,
+                        AnalysisType.JwtToken,
+                        "JWT Token",
+                        "JWT token detected.",
+                        2);
+                }
+
+                // ---------------- API Key ----------------
+
+                if (LooksLikeApiKey(storage.Value))
+                {
+                    CreateStorageAnalysis(
+                        analysisIndex,
+                        storage,
+                        domain,
+                        AnalysisCategory.Information,
+                        AnalysisType.ApiKey,
+                        "API Key",
+                        "Potential API key detected.",
+                        2);
+                }
+            }
+        }
+
+        private AnalysisEntry CreateStorageAnalysis(
+    Dictionary<string, AnalysisEntry> analysisIndex,
+    StorageEntry storage,
+    DomainEntry? domain,
+    AnalysisCategory category,
+    AnalysisType type,
+    string title,
+    string description,
+    int severity)
+        {
+            string key =
+                $"storage:{type}:{storage.Key}:{storage.Time.Ticks}";
+
+            if (analysisIndex.TryGetValue(key, out var existing))
+                return existing;
+
+            var analysis = new AnalysisEntry
+            {
+                Category = category,
+                Type = type,
+
+                Title = title,
+                Description = description,
+
+                Severity = severity,
+                Confidence = 90,
+
+                FirstSeen = storage.Time,
+                LastSeen = storage.Time,
+
+                TargetType = AnomalyTargetType.Storage,
+                TargetPosition = storage.Position,
+                TargetYPercent = 57,
+
+                LinkedDomain = domain,
+
+                LinkedStorage =
+                {
+                    storage
+                },
+
+                Url = domain?.Url ?? storage.Origin,
+                Domain = domain?.Domain ?? storage.Origin
+            };
+
+            analysis.Evidence.Add($"Key: {storage.Key}");
+
+            analysisIndex[key] = analysis;
+
+            return analysis;
+        }
+
+        private bool ContainsAuthenticationData(StorageEntry storage)
+        {
+            string text =
+                $"{storage.Key} {storage.Value}".ToLower();
+
+            string[] words =
+            {
+        "authorization",
+        "bearer",
+        "access_token",
+        "refresh_token",
+        "id_token",
+        "jwt",
+        "session",
+        "cookie",
+        "auth",
+        "oauth",
+        "token"
+    };
+
+            return words.Any(text.Contains);
+        }
+
+        private bool LooksLikeJwt(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            return System.Text.RegularExpressions.Regex.IsMatch(
+                value,
+                @"^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$");
+        }
+
+        private bool LooksLikeApiKey(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            return value.Length > 30 &&
+                   value.Any(char.IsUpper) &&
+                   value.Any(char.IsLower) &&
+                   value.Any(char.IsDigit);
+        }
+
         private void DetectSuspiciousExtensions(
     List<OrphanArtifact> orphanArtifacts,
-    Dictionary<string, AnomalyEntry> anomalyIndex,
+    Dictionary<string, AnalysisEntry> anomalyIndex,
     List<BrowserExtensionEntry> extensions,
     List<DomainEntry> summarizedEntries)
         {
@@ -253,10 +484,12 @@ namespace ZIVA_Prototype.Services.Timeline
                 // =====================================================
 
                 var anomaly =
-                    new AnomalyEntry
+                    new AnalysisEntry
                     {
+                        Category = GetCategory(AnalysisType.SuspiciousExtension),
+
                         Type =
-                            AnomalyType.SuspiciousExtension,
+                            AnalysisType.SuspiciousExtension,
 
                         Title =
                             string.IsNullOrWhiteSpace(ext.Name)
@@ -375,9 +608,9 @@ namespace ZIVA_Prototype.Services.Timeline
             }
         }
 
-        AnomalyEntry AddOrUpdateAnomaly(
-        Dictionary<string, AnomalyEntry> index,
-        AnomalyType type,
+        AnalysisEntry AddOrUpdateAnomaly(
+        Dictionary<string, AnalysisEntry> index,
+        AnalysisType type,
         DomainEntry domain,
         IEnumerable<DateTime> artifactTimes,
         int severity,
@@ -399,8 +632,10 @@ namespace ZIVA_Prototype.Services.Timeline
                 return existing;
             }
 
-            var created = new AnomalyEntry
+            var created = new AnalysisEntry
             {
+                Category = GetCategory(type),
+
                 FirstSeen = first,
                 LastSeen = last,
 
@@ -418,13 +653,13 @@ namespace ZIVA_Prototype.Services.Timeline
                 Domain = domain.Domain,
 
                 IsBlacklistMatch =
-        type == AnomalyType.BlacklistedDomain,
+        type == AnalysisType.BlacklistedDomain,
 
                 IsSuspiciousRedirect =
-        type == AnomalyType.SuspiciousRedirect,
+        type == AnalysisType.SuspiciousRedirect,
 
                 IsDeletedHistoryIndicator =
-        type == AnomalyType.DeletedHistoryIndicator
+        type == AnalysisType.DeletedHistoryIndicator
             };
 
             index[key] = created;
@@ -536,7 +771,7 @@ namespace ZIVA_Prototype.Services.Timeline
         }
 
         private void BuildDeletedHistoryPhases(
-    Dictionary<string, AnomalyEntry> anomalyIndex,
+    Dictionary<string, AnalysisEntry> anomalyIndex,
     List<OrphanArtifact> orphanArtifacts,
     List<DomainEntry> summarizedEntries)
         {
@@ -596,7 +831,7 @@ namespace ZIVA_Prototype.Services.Timeline
         }
 
         private void CreateDeletedHistoryPhase(
-    Dictionary<string, AnomalyEntry> anomalyIndex,
+    Dictionary<string, AnalysisEntry> anomalyIndex,
     List<OrphanArtifact> artifacts,
     int phaseIndex)
         {
@@ -610,10 +845,12 @@ namespace ZIVA_Prototype.Services.Timeline
                 artifacts.Max(x => x.Time);
 
             var anomaly =
-                new AnomalyEntry
+                new AnalysisEntry
                 {
+                    Category = GetCategory(AnalysisType.DeletedHistoryIndicator),
+
                     Type =
-                        AnomalyType.DeletedHistoryIndicator,
+                        AnalysisType.DeletedHistoryIndicator,
 
                     Title =
                         $"Deleted History Phase #{phaseIndex + 1}",
@@ -679,7 +916,7 @@ namespace ZIVA_Prototype.Services.Timeline
         }
 
         private void ApplyCorrelationSeverityBoost(
-    List<AnomalyEntry> anomalies)
+    List<AnalysisEntry> anomalies)
         {
             // =====================================================
             // ORIGINAL SEVERITIES
@@ -787,7 +1024,7 @@ namespace ZIVA_Prototype.Services.Timeline
         }
 
         private void ApplyArtifactSeverityBadges(
-    List<AnomalyEntry> anomalies)
+    List<AnalysisEntry> anomalies)
         {
             foreach (var anomaly in anomalies)
             {
