@@ -24,6 +24,8 @@
 
         FaviconToHistory,
 
+        HistoryReferrer,
+
 
         // =====================================================
         // CORRELATION

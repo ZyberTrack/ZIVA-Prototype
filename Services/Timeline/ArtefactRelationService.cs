@@ -15,11 +15,11 @@ namespace ZIVA_Prototype.Services.Timeline
         // =====================================================
 
         public void BuildRelations(
-            List<DomainEntry> domains,
-            List<BrowserCookieEntry> cookies,
-            List<UserInputEntry> inputs,
-            List<BrowserExtensionEntry> extensions,
-            List<StorageEntry> storage)
+    List<DomainEntry> domains,
+    List<BrowserCookieEntry> cookies,
+    List<UserInputEntry> inputs,
+    List<BrowserExtensionEntry> extensions,
+    List<StorageEntry> storage)
         {
             ClearRelations(
                 domains,
@@ -43,6 +43,9 @@ namespace ZIVA_Prototype.Services.Timeline
             BuildStorageRelations(
                 domains,
                 storage);
+
+            BuildHistoryRelations(
+                domains);
         }
 
         // =====================================================
@@ -57,7 +60,12 @@ namespace ZIVA_Prototype.Services.Timeline
             List<StorageEntry> storage)
         {
             foreach (var d in domains)
+            {
                 d.Relations.Clear();
+
+                foreach (var h in d.SubEntries)
+                    h.Relations.Clear();
+            }
 
             foreach (var c in cookies)
                 c.Relations.Clear();
@@ -375,5 +383,93 @@ namespace ZIVA_Prototype.Services.Timeline
                 matchingDomain.Relations.Add(relation);
             }
         }
+
+        // =====================================================
+        // HISTORY REFERRER
+        // =====================================================
+
+        private void BuildHistoryRelations(
+            List<DomainEntry> domains)
+        {
+            foreach (var targetDomain in domains)
+            {
+                foreach (var history in targetDomain.SubEntries)
+                {
+                    if (string.IsNullOrWhiteSpace(history.ReferrerUrl))
+                        continue;
+
+                    Uri? refUri;
+
+                    try
+                    {
+                        refUri = new Uri(history.ReferrerUrl);
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+
+                    string sourceDomain =
+                        refUri.Host
+                            .TrimStart('.')
+                            .ToLower();
+
+                    if (sourceDomain ==
+                        targetDomain.Domain
+                            .TrimStart('.')
+                            .ToLower())
+                        continue;
+
+                    BrowserHistoryEntry? sourceHistory = null;
+                    DomainEntry? sourceDomainEntry = null;
+
+                    foreach (var domain in domains)
+                    {
+                        sourceHistory = domain.SubEntries.FirstOrDefault(h =>
+                            string.Equals(
+                                h.Url,
+                                history.ReferrerUrl,
+                                StringComparison.OrdinalIgnoreCase));
+
+                        if (sourceHistory != null)
+                        {
+                            sourceDomainEntry = domain;
+                            break;
+                        }
+                    }
+
+                    if (sourceHistory == null || sourceDomainEntry == null)
+                        continue;
+
+                    var relation =
+                            new ArtifactRelationEntry
+                            {
+                                Type =
+                                    ArtifactRelationType
+                                        .HistoryReferrer,
+
+                                Domain =
+                                    sourceDomainEntry,
+
+                                History =
+                                    sourceHistory,
+
+                                Time =
+                                    history.VisitTime,
+
+                                Confidence =
+                                    95,
+
+                                Reason =
+                                    "Visited via external referrer"
+                            };
+
+                    history.Relations.Add(relation);
+                    //sourceHistory.Relations.Add(relation);
+                    //sourceDomainEntry.Relations.Add(relation);
+                }
+            }
+        }
+
     }
 }
