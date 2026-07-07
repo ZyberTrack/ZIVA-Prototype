@@ -1216,11 +1216,17 @@
         }
     }
 
-    private void ClearDomainFilter()
+    private async Task ClearAllFilters()
     {
         SelectedDomainFilter = "";
 
+        ShowInformation = false;
+        ShowWarnings = false;
+        ShowAnomalies = false;
+
         ShowContextMenu = false;
+
+        await ApplyDomainFilter();
     }
 
     //------------------------------------------------------------
@@ -1280,6 +1286,37 @@
 
             _ => null
         };
+    }
+
+    private async Task FilterByAnalysisCategory()
+    {
+        if (ContextArtifact is not AnalysisEntry analysis)
+            return;
+
+        // Alle Filter zurücksetzen
+        ShowInformation = false;
+        ShowWarnings = false;
+        ShowAnomalies = false;
+
+        // Gewünschte Kategorie aktivieren
+        switch (analysis.Category)
+        {
+            case AnalysisCategory.Information:
+                ShowInformation = true;
+                break;
+
+            case AnalysisCategory.Warning:
+                ShowWarnings = true;
+                break;
+
+            case AnalysisCategory.Anomaly:
+                ShowAnomalies = true;
+                break;
+        }
+
+        ShowContextMenu = false;
+
+        await ApplyDomainFilter();
     }
 
     private void OpenArtifactDetails()
@@ -2224,7 +2261,7 @@
             <div class="search-toolbar">
 
                 <input type="text"
-                       placeholder="Search..."
+                       placeholder="Suche..."
                        @bind="SearchText"
                        @bind:event="oninput" />
 
@@ -2238,7 +2275,7 @@
 
                 <div class="search-counter">
                     @(SearchResults.Count == 0
-                        ? "No results"
+                        ? "-"
                         : $"{CurrentSearchIndex + 1}/{SearchResults.Count}")
                 </div>
 
@@ -2247,7 +2284,7 @@
             <div class="timeline-domain-filter">
 
                 <select @bind="SelectedDomainFilter">
-                    <option value="">Filter: All Domains</option>
+                    <option value="">Filter: Alle Domänen</option>
 
                     @foreach (var domain in AvailableDomains)
                     {
@@ -2270,14 +2307,14 @@
                     <input type="checkbox"
                            @bind="ShowWarnings"
                            @bind:after="ApplyDomainFilter" />
-                    Warnings
+                    Warnungen
                 </label>
 
                 <label>
                     <input type="checkbox"
                            @bind="ShowAnomalies"
                            @bind:after="ApplyDomainFilter" />
-                    Anomalies
+                    Anomalien
                 </label>
 
             </div>
@@ -2932,10 +2969,17 @@
                 }
             }
 
-            @if (!string.IsNullOrWhiteSpace(SelectedDomainFilter))
+            @if (ContextArtifact is AnalysisEntry)
+            {
+                <div class="context-item" @onclick="FilterByAnalysisCategory">
+                    🔍 Nach Analysekategorie filtern
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(SelectedDomainFilter) || AnalysisFilterActive)
             {
                 <div class="context-item"
-                     @onclick="ClearDomainFilter">
+                     @onclick="ClearAllFilters">
 
                     ❌ Filter aufheben
 
