@@ -62,6 +62,27 @@
     private bool _initialFocusDone = false;
     private bool showLegend = true;
 
+    // Filter nach Analyse Kategorien
+    private bool ShowInformation = false;
+    private bool ShowWarnings = false;
+    private bool ShowAnomalies = false;
+
+    private bool AnalysisFilterActive => ShowInformation || ShowWarnings || ShowAnomalies;
+
+    private bool MatchesAnalysisFilter(AnalysisEntry analysis)
+    {
+        if (!AnalysisFilterActive)
+            return true;
+
+        return analysis.Category switch
+        {
+            AnalysisCategory.Information => ShowInformation,
+            AnalysisCategory.Warning => ShowWarnings,
+            AnalysisCategory.Anomaly => ShowAnomalies,
+            _ => false
+        };
+    }
+
     // Context Menu
     private bool ShowContextMenu;
     private double ContextMenuX;
@@ -125,6 +146,7 @@
     private List<BrowserExtensionEntry> VisibleExtensions = new();
     private List<StorageEntry> VisibleStorage = new();
     private List<AnalysisEntry> VisibleAnomalies = new();
+    private List<AnalysisEntry> FilteredAnalysisEntries = new();
 
 
     //Suche
@@ -152,8 +174,8 @@
         }
     }
 
-    private bool allExpanded = true;
-    private bool showDebug = true;
+    private bool allExpanded = true; // wird nicht mehr verwendet
+    private bool showDebug = false;
 
     private double artifactTableHeight = 170;
 
@@ -589,7 +611,7 @@
 
         RecalculateAnomalyPositions();
 
-        BuildArtifactTimeline();
+        BuildArtifactTimeline(FilteredAnalysisEntries);
         UpdateVisibleTimestamps();
 
         InvokeAsync(StateHasChanged);
@@ -602,6 +624,7 @@
             State.StorageEntries,
             DomainEntries,
             AnalysisEntries,
+            AnalysisFilterActive,
             viewportWidth,
             SelectedDomainFilter
         );
@@ -644,7 +667,7 @@
 
     }
 
-    private void BuildArtifactTimeline()
+    private void BuildArtifactTimeline(IEnumerable<AnalysisEntry> visibleAnalysis)
     {
         TimelineArtifacts.Clear();
 
@@ -694,13 +717,12 @@
         );
 
         TimelineArtifacts.AddRange(
-            AnalysisEntries.Select(a => new TimelineArtifact
-            {
-                Time = a.FirstSeen,
-                Data = a,
-                Type = ArtifactType.Anomaly
-            })
-        );
+        visibleAnalysis.Select(a => new TimelineArtifact
+        {
+            Time = a.FirstSeen,
+            Data = a,
+            Type = ArtifactType.Anomaly
+        }));
 
         TimelineArtifacts = TimelineArtifacts
             .OrderBy(t => t.Time)
@@ -1138,6 +1160,18 @@
 
         _applyingFilter = true;
 
+        var visibleAnalysis = AnalysisEntries.AsEnumerable();
+
+        if (AnalysisFilterActive)
+        {
+            visibleAnalysis = visibleAnalysis.Where(a =>
+                   (ShowInformation && a.Category == AnalysisCategory.Information)
+                || (ShowWarnings && a.Category == AnalysisCategory.Warning)
+                || (ShowAnomalies && a.Category == AnalysisCategory.Anomaly));
+        }
+
+        var analysisList = visibleAnalysis.ToList();
+
         try
         {
             RenderCache.BuildVisibleCaches(
@@ -1147,11 +1181,14 @@
                 State.Extensions,
                 State.StorageEntries,
                 DomainEntries,
-                AnalysisEntries,
+                analysisList,
+                AnalysisFilterActive,
                 viewportWidth,
                 SelectedDomainFilter);
 
-            BuildArtifactTimeline();
+            FilteredAnalysisEntries = analysisList;
+
+            BuildArtifactTimeline(FilteredAnalysisEntries);
 
             // Nur einmal automatisch fokussieren,
             // solange sich der Filter nicht geändert hat.
@@ -2217,6 +2254,31 @@
                         <option value="@domain">@domain</option>
                     }
                 </select>
+
+            </div>
+
+            <div class="analysis-filter">
+
+                <label>
+                    <input type="checkbox"
+                           @bind="ShowInformation"
+                           @bind:after="ApplyDomainFilter" />
+                    Infos
+                </label>
+
+                <label>
+                    <input type="checkbox"
+                           @bind="ShowWarnings"
+                           @bind:after="ApplyDomainFilter" />
+                    Warnings
+                </label>
+
+                <label>
+                    <input type="checkbox"
+                           @bind="ShowAnomalies"
+                           @bind:after="ApplyDomainFilter" />
+                    Anomalies
+                </label>
 
             </div>
 

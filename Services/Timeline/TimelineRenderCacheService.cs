@@ -31,6 +31,7 @@ namespace ZIVA_Prototype.Services.Timeline
             List<StorageEntry> storage,
             List<DomainEntry> domains,
             List<AnalysisEntry> anomalies,
+            bool analysisFilterActive,
             int viewportWidth,
             string? activeDomain = null)
         {
@@ -92,6 +93,64 @@ namespace ZIVA_Prototype.Services.Timeline
                         .ToList();
                 }
             }
+
+            // --------------------------------------------------
+            // Analysefilter auf Artefakte anwenden
+            // --------------------------------------------------
+
+            if (analysisFilterActive)
+            {
+                var historySet = anomalies
+                    .SelectMany(a => a.LinkedHistory)
+                    .ToHashSet();
+
+                var cookieSet = anomalies
+                    .SelectMany(a => a.LinkedCookies)
+                    .ToHashSet();
+
+                var inputSet = anomalies
+                    .SelectMany(a => a.LinkedInputs)
+                    .ToHashSet();
+
+                var extensionSet = anomalies
+                    .SelectMany(a => a.LinkedExtensions)
+                    .ToHashSet();
+
+                var storageSet = anomalies
+                    .SelectMany(a => a.LinkedStorage)
+                    .ToHashSet();
+
+                var domainSet = anomalies
+                    .Where(a => a.LinkedDomain != null)
+                    .Select(a => a.LinkedDomain!)
+                    .ToHashSet();
+
+                history = history
+                    .Where(historySet.Contains)
+                    .ToList();
+
+                cookies = cookies
+                    .Where(cookieSet.Contains)
+                    .ToList();
+
+                inputs = inputs
+                    .Where(inputSet.Contains)
+                    .ToList();
+
+                extensions = extensions
+                    .Where(extensionSet.Contains)
+                    .ToList();
+
+                storage = storage
+                    .Where(storageSet.Contains)
+                    .ToList();
+
+                domains = domains
+                    .Where(domainSet.Contains)
+                    .ToList();
+            }
+
+            //--------------------------------------------------
 
             VisibleCookies = cookies
                 .Where(c => IsVisible(c.Position, viewportWidth))
