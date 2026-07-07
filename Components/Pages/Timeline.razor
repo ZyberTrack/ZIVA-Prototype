@@ -2085,7 +2085,14 @@
         </div>
         <div class="timeline-area-static timeline-area-bottom">
             <div class="timeline-label">Analyse-Zeitachse</div>
+
+            <div class="timeline-analysis-anomaly-label">Anomalies</div>
+            <div class="timeline-analysis-warning-label">Warnings</div>
+            <div class="timeline-analysis-info-label">Infos</div>
+
             <div class="timeline-bottom-legend"></div>
+            <div class="timeline-bottom-warning-legend"></div>
+            <div class="timeline-bottom-info-legend"></div>
         </div>
     </div>
 
@@ -2101,6 +2108,8 @@
 
         <div class="timeline-area-scroll timeline-area-bottom @(showDebug ? "artifact-open" : "")">
             <div class="timeline-bottom"></div>
+            <div class="timeline-bottom-warning"></div>
+            <div class="timeline-bottom-info"></div>
 
             
 
@@ -2751,65 +2760,78 @@
                         }
                     }
                 }
-
             </svg>
+            
 
-            @foreach (var anomaly in RenderCache.VisibleAnomalies)
+            @foreach (var analysis in RenderCache.VisibleAnomalies)
             {
-                var color = ColorService.GetAnalysisColor(anomaly);
+                var color = ColorService.GetAnalysisColor(analysis);
+
+                string top = analysis.Category switch
+                {
+                    AnalysisCategory.Anomaly => $"{AnomalyYPercent}%",
+                    AnalysisCategory.Warning => $"calc({AnomalyYPercent}% + 5%)",
+                    AnalysisCategory.Information => $"calc({AnomalyYPercent}% + 11%)",
+                    _ => $"{AnomalyYPercent}%"
+                };
 
                 <div class="anomaly-marker"
                      style="position:absolute;
-                    left:@($"{anomaly.Position - 6}px");
-                    top:@($"{AnomalyYPercent}%");
-                    transform: translateY(-50%);
+                    left:@($"{analysis.Position - 6}px");
+                    top:@top;
+                    transform:translateY(-50%);
                     color:@color;
                     z-index:30;"
-                     data-time="@anomaly.FirstSeen"
-                     data-lastseen="@anomaly.LastSeen"
-                     data-url="@anomaly.Url"
-                     data-type="@anomaly.Type"
-                     data-description="@anomaly.Description"
-                     data-severity="@anomaly.Severity"
-                     data-count="@anomaly.Count"
-                     @onclick="() => FocusAnomaly(anomaly)"
+                     data-time="@analysis.FirstSeen"
+                     data-lastseen="@analysis.LastSeen"
+                     data-url="@analysis.Url"
+                     data-type="@analysis.Type"
+                     data-description="@analysis.Description"
+                     data-severity="@analysis.Severity"
+                     data-count="@analysis.Count"
+                     @onclick="() => FocusAnomaly(analysis)"
                      @onclick:stopPropagation="true"
-                     @oncontextmenu="args => OpenContextMenu(args, anomaly)"
+                     @oncontextmenu="args => OpenContextMenu(args, analysis)"
                      @oncontextmenu:preventDefault="true"
                      @oncontextmenu:stopPropagation="true">
 
-
                     <div style="
-                        width:@($"{10 + anomaly.Severity * 2}px");
-                        height:@($"{10 + anomaly.Severity * 2}px");
+                        width:@($"{10 + analysis.Severity * 2}px");
+                        height:@($"{10 + analysis.Severity * 2}px");
                         border-radius:50%;
-                        background:currentColor;
-                        ">
+                        background:currentColor;">
                     </div>
 
                 </div>
             }
 
-
             <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:15;">
 
-                @foreach (var anomaly in RenderCache.VisibleAnomalies.Where(IsAnomalyConnectionVisible))
+
+            @foreach (var analysis in RenderCache.VisibleAnomalies.Where(IsAnomalyConnectionVisible))
+            {
+                var color = ColorService.GetAnalysisColor(analysis);
+
+                string targetY = analysis.Category switch
                 {
-                    var color = ColorService.GetAnalysisColor(anomaly);
+                    AnalysisCategory.Anomaly => $"{AnomalyYPercent}%",
+                    AnalysisCategory.Warning => $"{AnomalyYPercent + 5}%",
+                    AnalysisCategory.Information => $"{AnomalyYPercent + 11}%",
+                    _ => $"{AnomalyYPercent}%"
+                };
 
-                    foreach (var point in GetAnomalyTargetPoints(anomaly))
-                    {
-                        <line x1="@point.x"
-                              y1="@($"{point.yPercent}%")"
-                              x2="@anomaly.Position"
-                              y2="@($"{AnomalyYPercent}%")"
-                              stroke="@color"
-                              stroke-width="@(0.7 + anomaly.Severity)"
-                              opacity="0.45"
-                              stroke-linecap="round" />
-                    }
+                foreach (var point in GetAnomalyTargetPoints(analysis))
+                {
+                    <line x1="@point.x"
+                          y1="@($"{point.yPercent}%")"
+                          x2="@analysis.Position"
+                          y2="@targetY"
+                          stroke="@color"
+                          stroke-width="@(0.7 + analysis.Severity)"
+                          opacity="0.45"
+                          stroke-linecap="round" />
                 }
-
+            }
             </svg>
 
         </div>

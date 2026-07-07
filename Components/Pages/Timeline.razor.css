@@ -975,3 +975,77 @@
     background: transparent;
     flex-shrink: 0;
 }
+
+/* ---------------- Analyse Linien ---------------- */
+
+.timeline-bottom {
+    position: absolute;
+    top: 33%;
+    width: 100%;
+    height: 2px;
+    background: rgba(169,169,169,1);
+}
+
+.timeline-bottom-warning {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    height: 2px;
+    background: rgba(169,169,169,1);
+}
+
+.timeline-bottom-info {
+    position: absolute;
+    top: 67%;
+    width: 100%;
+    height: 2px;
+    background: rgba(169,169,169,1);
+}
+
+.timeline-bottom-legend {
+    position: absolute;
+    top: 33%;
+    width: 100%;
+    height: 2px;
+    background: rgba(169,169,169,1);
+}
+
+.timeline-bottom-warning-legend {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    height: 2px;
+    background: rgba(169,169,169,1);
+}
+
+.timeline-bottom-info-legend {
+    position: absolute;
+    top: 67%;
+    width: 100%;
+    height: 2px;
+    background: rgba(169,169,169,1);
+}
+
+.timeline-analysis-anomaly-label {
+    position: absolute;
+    top: calc(26% + 1px);
+    left: 10px;
+    font-size: 16px;
+    color: #474747;
+}
+
+.timeline-analysis-warning-label {
+    position: absolute;
+    top: calc(43% + 1px);
+    left: 10px;
+    font-size: 16px;
+    color: #474747;
+}
+
+.timeline-analysis-info-label {
+    position: absolute;
+    top: calc(60% + 1px);
+    left: 10px;
+    font-size: 16px;
+    color: #474747;
+}
