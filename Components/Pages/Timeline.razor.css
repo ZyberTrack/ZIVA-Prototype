@@ -481,7 +481,7 @@
 }
 
     .cookie-marker:hover::after {
-        content: "Time: " attr(data-time) "\A Name: " attr(data-host) "\A Value Encrypted: " attr(data-valueEncr) "\A Value: " attr(data-value);
+        content: "Name: " attr(data-name) "\A Kategorie: " attr(data-category)" \A Host: " attr(data-host) "\A Zeitstempel: " attr(data-time);
         white-space: pre; /* "\A" für Zeilenumbruch aktivieren */
         position: absolute;
         top: 28px;
@@ -509,7 +509,7 @@
 
     /* Tooltip */
     .userinput-marker:hover::after {
-        content: "Time: " attr(data-time) "\A Value: " attr(data-value) "\A Type: " attr(data-type);
+        content: "Typ: " attr(data-type) "\A Zeit: " attr(data-time) "\A Value: " attr(data-value);
         white-space: pre;
         position: absolute;
         top: 28px;
@@ -552,7 +552,7 @@
         }
 
     .storage-marker:hover::after {
-        content: "Key: " attr(data-key) "\A" "Origin: " attr(data-origin) "\A" "Value: " attr(data-value);
+        content: "Key: " attr(data-key) "\A" "Ursprung: " attr(data-origin) "\A" "Value: " attr(data-value);
         white-space: pre;
         position: absolute;
         top: 28px;
@@ -585,7 +585,7 @@
 }
 
     .extension-marker:hover::after {
-        content: "Extension: " attr(data-name) "\A" "Risk: " attr(data-risk) " (" attr(data-score) ")" "\A" "Findings: " attr(data-findings) "\A" "Installed: " attr(data-time);
+        content: "Erweiterung: " attr(data-name) "\A" "Risiko: " attr(data-risk) " (" attr(data-score) ")" "\A" "Funde: " attr(data-findings) "\A" "Installiert: " attr(data-time);
         white-space: pre;
         position: absolute;
         top: 28px;
@@ -616,7 +616,7 @@
 }
 
     .anomaly-marker:hover::after {
-        content: "Category: " attr(data-category) "\A" "Type: " attr(data-type) "\A" "Severity: " attr(data-severity) "\A" "Hits: " attr(data-count) "\A" "Description: " attr(data-description);
+        content: "Kategorie: " attr(data-category) "\A" "Typ: " attr(data-type) "\A" "Schweregrad: " attr(data-severity) "\A" "Treffer: " attr(data-count) "\A" "Beschreibung: " attr(data-description);
         white-space: pre;
         position: absolute;
         top: 28px;

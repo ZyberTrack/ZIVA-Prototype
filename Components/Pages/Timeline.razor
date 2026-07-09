@@ -2791,6 +2791,8 @@
                     --marker-color:@ColorService.GetCookieColor(cookie.Category);
                     color:@ColorService.GetCookieColor(cookie.Category);
                     @GetFocusedStyle(cookie)"
+                     data-name="@ShortUrl(cookie.Name)"
+                     data-category="@cookie.Category"
                          data-host="@ShortUrl(cookie.Host)"
                          data-valueEncr="@cookie.EncryptedValue"
                          data-value="@ShortUrl(cookie.Value)"
