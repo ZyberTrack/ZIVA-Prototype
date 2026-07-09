@@ -89,6 +89,7 @@
     // Navigation Path
     private NavigationPathResult? CurrentNavigationPath;
     private bool ShowNavigationPath = false;
+    private object? NavigationRootArtifact;
 
     // Context Menu
     private bool ShowContextMenu;
@@ -618,12 +619,9 @@
 
         RecalculateAnomalyPositions();
 
-        BuildArtifactTimeline(FilteredAnalysisEntries);
-        UpdateVisibleTimestamps();
-
         InvokeAsync(StateHasChanged);
 
-        RenderCache.BuildVisibleCaches(
+        /*RenderCache.BuildVisibleCaches(
             State.BrowserEntries,
             State.BrowserCookies,
             UserInputs,
@@ -634,7 +632,7 @@
             AnalysisFilterActive,
             viewportWidth,
             SelectedDomainFilter
-        );
+        );*/
 
         AvailableDomains = DomainEntries
         .Select(d => d.Domain)
@@ -651,6 +649,9 @@
         VisibleAnomalies = AnalysisEntries;
 
         ApplyDomainFilter();
+
+        //BuildArtifactTimeline(FilteredAnalysisEntries);
+        UpdateVisibleTimestamps();
 
 
         // Fokus auf erstes Artefakt, wenn noch nicht geschehen und Artefakte vorhanden sind
@@ -1193,11 +1194,6 @@
                 viewportWidth,
                 SelectedDomainFilter);
 
-            if (ShowNavigationPath && CurrentNavigationPath != null)
-            {
-                RenderCache.ApplyNavigationPath(CurrentNavigationPath);
-            }
-
             FilteredAnalysisEntries = analysisList;
 
             BuildArtifactTimeline(FilteredAnalysisEntries);
@@ -1219,6 +1215,21 @@
                     await FocusArtifact(firstArtifact);
                 }
             }
+            if (ShowNavigationPath && NavigationRootArtifact != null)
+            {
+                CurrentNavigationPath =
+                    NavigationService.BuildNavigationPath(
+                        NavigationRootArtifact,
+                        DomainEntries,
+                        State.BrowserCookies,
+                        UserInputs,
+                        State.Extensions,
+                        State.StorageEntries,
+                        AnalysisEntries);
+
+                RenderCache.ApplyNavigationPath(CurrentNavigationPath);
+            }
+
 
             StateHasChanged();
         }
@@ -1254,8 +1265,11 @@
         if (ContextArtifact == null)
             return;
 
+        // Merken, auf welches Artefakt der Navigationsfilter basiert
+        NavigationRootArtifact = ContextArtifact;
+
         CurrentNavigationPath = NavigationService.BuildNavigationPath(
-            ContextArtifact,
+            NavigationRootArtifact,
             DomainEntries,
             State.BrowserCookies,
             UserInputs,

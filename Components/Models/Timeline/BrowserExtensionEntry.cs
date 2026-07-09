@@ -7,6 +7,7 @@ namespace ZIVA_Prototype.Components.Models.Timeline
 {
     public class BrowserExtensionEntry
     {
+
         // 🔑 Identität
         public string Id { get; set; } = string.Empty;
         public string ArtifactId => $"EXT-{Id}";

@@ -5,6 +5,7 @@ namespace ZIVA_Prototype.Components.Models.Timeline
 
     public class DomainEntry
     {
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string Domain { get; set; } = "";
         public string Url { get; set; } = "";
         public DateTime VisitTime { get; set; }

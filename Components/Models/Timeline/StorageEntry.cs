@@ -5,6 +5,7 @@ namespace ZIVA_Prototype.Components.Models.Timeline
 {
     public class StorageEntry
     {
+        public Guid Id { get; set; } = Guid.NewGuid();
         public DateTime Time { get; set; }
 
         public string Profile { get; set; }

@@ -7,6 +7,7 @@ namespace ZIVA_Prototype.Components.Models.Timeline
 {
     public class FaviconEntry
     {
+        public Guid Id { get; set; } = Guid.NewGuid();
         public DateTime Time { get; set; }
 
         public string PageUrl { get; set; } = "";

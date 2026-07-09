@@ -6,6 +6,8 @@ namespace ZIVA_Prototype.Components.Models.Timeline
 {
     public class BrowserHistoryEntry
     {
+
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string Url { get; set; } = string.Empty;
         public DateTime VisitTime { get; set; }
         public string? Title { get; set; }

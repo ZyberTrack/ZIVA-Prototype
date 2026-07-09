@@ -5,6 +5,8 @@ namespace ZIVA_Prototype.Components.Models.Timeline
 {
     public class BrowserCookieEntry
     {
+
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string Host { get; set; } = "";
         public string Name { get; set; } = "";
         public string Value { get; set; } = ""; // nur unverschlüsselte Cookies

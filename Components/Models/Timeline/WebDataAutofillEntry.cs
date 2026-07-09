@@ -4,6 +4,7 @@ namespace ZIVA_Prototype.Components.Models.Timeline
 {
     public class WebDataAutofillEntry
     {
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = string.Empty;          // z. B. "email", "firstname"
         public string Value { get; set; } = string.Empty;         // z. B. "max.mustermann@gmail.com"
         public DateTime DateCreated { get; set; }

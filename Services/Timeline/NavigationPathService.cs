@@ -24,16 +24,21 @@ namespace ZIVA_Prototype.Services.Timeline
             if (startHistory == null)
                 return result;
 
-            // Ursprung -> aktuelles Artefakt
-            BuildBackward(
-                startHistory,
-                result);
+            var allHistory = domains
+                .SelectMany(d => d.SubEntries)
+                .Distinct()
+                .ToList();
 
-            // aktuelles Artefakt -> weitere Navigation
-            BuildForward(
+            TraverseBackward(
                 startHistory,
-                domains,
-                result);
+                result,
+                new HashSet<BrowserHistoryEntry>());
+
+            TraverseForward(
+                startHistory,
+                allHistory,
+                result,
+                new HashSet<BrowserHistoryEntry>());
 
             CollectDomains(
                 domains,
@@ -109,12 +114,15 @@ namespace ZIVA_Prototype.Services.Timeline
         // BACKWARD NAVIGATION
         // =====================================================
 
-        private void BuildBackward(
-            BrowserHistoryEntry history,
-            NavigationPathResult result)
+        private void TraverseBackward(
+    BrowserHistoryEntry history,
+    NavigationPathResult result,
+    HashSet<BrowserHistoryEntry> visited)
         {
-            if (!result.History.Add(history))
+            if (!visited.Add(history))
                 return;
+
+            result.History.Add(history);
 
             foreach (var relation in history.Relations)
             {
@@ -124,9 +132,10 @@ namespace ZIVA_Prototype.Services.Timeline
                 if (relation.History == null)
                     continue;
 
-                BuildBackward(
+                TraverseBackward(
                     relation.History,
-                    result);
+                    result,
+                    visited);
             }
         }
 
@@ -134,28 +143,32 @@ namespace ZIVA_Prototype.Services.Timeline
         // FORWARD NAVIGATION
         // =====================================================
 
-        private void BuildForward(
-            BrowserHistoryEntry history,
-            List<DomainEntry> domains,
-            NavigationPathResult result)
+        private void TraverseForward(
+    BrowserHistoryEntry history,
+    IEnumerable<BrowserHistoryEntry> allHistory,
+    NavigationPathResult result,
+    HashSet<BrowserHistoryEntry> visited)
         {
-            if (!result.History.Add(history))
+            if (!visited.Add(history))
                 return;
 
-            foreach (var candidate in domains.SelectMany(d => d.SubEntries))
+            result.History.Add(history);
+
+            foreach (var next in allHistory)
             {
                 bool followsCurrent =
-                    candidate.Relations.Any(r =>
+                    next.Relations.Any(r =>
                         r.Type == ArtifactRelationType.HistoryReferrer &&
                         r.History == history);
 
                 if (!followsCurrent)
                     continue;
 
-                BuildForward(
-                    candidate,
-                    domains,
-                    result);
+                TraverseForward(
+                    next,
+                    allHistory,
+                    result,
+                    visited);
             }
         }
 
