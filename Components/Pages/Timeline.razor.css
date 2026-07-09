@@ -906,6 +906,9 @@
 
 .timeline-domain-filter {
     margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 
     .timeline-domain-filter select {
@@ -919,13 +922,28 @@
         outline: none;
     }
 
-        .timeline-domain-filter select:hover {
-            border-color: #4aa3ff;
-        }
-
+        .timeline-domain-filter select:hover,
         .timeline-domain-filter select:focus {
             border-color: #4aa3ff;
         }
+
+.navigation-path-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #d5d5d5;
+    font-size: 13px;
+    white-space: nowrap;
+    user-select: none;
+    cursor: pointer;
+}
+
+    .navigation-path-toggle input[type="checkbox"] {
+        width: 15px;
+        height: 15px;
+        cursor: pointer;
+        accent-color: #4aa3ff;
+    }
 
 .context-menu {
     position: fixed;

@@ -62,6 +62,7 @@
     private string? _lastAutoFocusedFilter; // Hilfe um dauerschle Fokusierung auf ein Artefakt zu verhindern, wenn der Filter sich nicht ändert
     private bool _initialFocusDone = false;
     private bool showLegend = true;
+    bool IncludeNavigationPaths = false;
 
     // Filter nach Analyse Kategorien
     private bool ShowInformation = false;
@@ -1273,7 +1274,45 @@
                     await FocusArtifact(firstArtifact);
                 }
             }
-            if (ShowNavigationPath && NavigationRootArtifact != null)
+            //------------------------------------------------------
+            // NAVIGATION PATH FILTER
+            //------------------------------------------------------
+
+            var histories = RenderCache.VisibleHistory.ToList();
+
+            foreach (var history in histories)
+            {
+                var path =
+                    NavigationService.BuildNavigationPath(
+                        history,
+                        DomainEntries,
+                        State.BrowserCookies,
+                        UserInputs,
+                        State.Extensions,
+                        State.StorageEntries,
+                        AnalysisEntries);
+
+                RenderCache.AddNavigationPath(path);
+            }
+
+            if (IncludeNavigationPaths)
+            {
+                foreach (var history in RenderCache.VisibleHistory)
+                {
+                    var path =
+                        NavigationService.BuildNavigationPath(
+                            history,
+                            DomainEntries,
+                            State.BrowserCookies,
+                            UserInputs,
+                            State.Extensions,
+                            State.StorageEntries,
+                            AnalysisEntries);
+
+                    RenderCache.AddNavigationPath(path);
+                }
+            }
+            else if (ShowNavigationPath && NavigationRootArtifact != null)
             {
                 CurrentNavigationPath =
                     NavigationService.BuildNavigationPath(
@@ -1307,6 +1346,7 @@
 
         ShowNavigationPath = false;
         CurrentNavigationPath = null;
+        IncludeNavigationPaths = false;
 
         ShowContextMenu = false;
 
@@ -2414,6 +2454,14 @@
                         <option value="@domain">@domain</option>
                     }
                 </select>
+
+                <label class="navigation-path-toggle">
+                    <input type="checkbox"
+                       @bind="IncludeNavigationPaths"
+                       @bind:after="ApplyDomainFilter" />
+
+                    Inkl. Navigations Pfad
+                </label>
 
             </div>
 

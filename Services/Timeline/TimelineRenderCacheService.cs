@@ -185,6 +185,43 @@ namespace ZIVA_Prototype.Services.Timeline
                 .ToList();
         }
 
+        public void AddNavigationPath(NavigationPathResult path)
+        {
+            VisibleHistory = VisibleHistory
+                .Union(path.History)
+                .Distinct()
+                .ToList();
+
+            VisibleDomains = VisibleDomains
+                .Union(path.Domains)
+                .Distinct()
+                .ToList();
+
+            VisibleCookies = VisibleCookies
+                .Union(path.Cookies)
+                .Distinct()
+                .ToList();
+
+            VisibleInputs = VisibleInputs
+                .Union(path.Inputs)
+                .Distinct()
+                .ToList();
+
+            VisibleExtensions = VisibleExtensions
+                .Union(path.Extensions)
+                .Distinct()
+                .ToList();
+
+            VisibleStorage = VisibleStorage
+                .Union(path.Storage)
+                .Distinct()
+                .ToList();
+
+            VisibleAnomalies = VisibleAnomalies
+                .Union(path.Analysis)
+                .Distinct()
+                .ToList();
+        }
         public void ApplyNavigationPath(NavigationPathResult path)
         {
             VisibleHistory = VisibleHistory
