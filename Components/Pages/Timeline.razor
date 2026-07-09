@@ -1274,30 +1274,16 @@
                     await FocusArtifact(firstArtifact);
                 }
             }
+
             //------------------------------------------------------
             // NAVIGATION PATH FILTER
             //------------------------------------------------------
 
-            var histories = RenderCache.VisibleHistory.ToList();
-
-            foreach (var history in histories)
-            {
-                var path =
-                    NavigationService.BuildNavigationPath(
-                        history,
-                        DomainEntries,
-                        State.BrowserCookies,
-                        UserInputs,
-                        State.Extensions,
-                        State.StorageEntries,
-                        AnalysisEntries);
-
-                RenderCache.AddNavigationPath(path);
-            }
-
             if (IncludeNavigationPaths)
             {
-                foreach (var history in RenderCache.VisibleHistory)
+                var histories = RenderCache.VisibleHistory.ToList();
+
+                foreach (var history in histories)
                 {
                     var path =
                         NavigationService.BuildNavigationPath(
@@ -1326,7 +1312,6 @@
 
                 RenderCache.ApplyNavigationPath(CurrentNavigationPath);
             }
-
 
             StateHasChanged();
         }
@@ -1515,18 +1500,23 @@
         StateHasChanged();
     }
 
-    private void FilterByArtifactDomain()
+    private async Task FilterByArtifactDomain()
     {
         var domain = GetDomainOfArtifact(ContextArtifact);
 
         if (domain == null)
             return;
 
+        // Domainfilter = kein Navigationsmodus
+        ShowNavigationPath = false;
+        CurrentNavigationPath = null;
+        NavigationRootArtifact = null;
+
         SelectedDomainFilter = domain;
 
         ShowContextMenu = false;
 
-        StateHasChanged();
+        await ApplyDomainFilter();
     }
 
     //------------------------------------------------------------
