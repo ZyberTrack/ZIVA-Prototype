@@ -698,38 +698,66 @@ namespace ZIVA_Prototype.Services.Timeline
 
 
         private void DetectOrphanCookies(
-     List<OrphanArtifact> orphanArtifacts,
-     List<DomainEntry> summarizedEntries,
-     List<BrowserCookieEntry> cookies,
-     int toleranceSeconds = 60)
+    List<OrphanArtifact> orphanArtifacts,
+    List<DomainEntry> summarizedEntries,
+    List<BrowserCookieEntry> cookies,
+    int toleranceSeconds = 60)
         {
             if (cookies == null)
                 return;
 
             foreach (var cookie in cookies)
             {
-                // IGNORE BACKGROUND
-                if (cookie.Category ==
-                    CookieCategory.BrowserBackground)
+                // =====================================================
+                // Browserinterne Cookies ignorieren
+                // =====================================================
+
+                if (cookie.Category == CookieCategory.BrowserBackground)
+                    continue;
+
+                // =====================================================
+                // Cookie-Relation suchen
+                // =====================================================
+
+                var relation =
+                    cookie.Relations
+                        .FirstOrDefault(r =>
+                            r.Type == ArtifactRelationType.CookieToHistory);
+
+                // =====================================================
+                // Keine Relation vorhanden
+                // -> möglicher Hinweis auf gelöschten Verlauf
+                // =====================================================
+
+                if (relation == null || relation.History == null)
                 {
+                    orphanArtifacts.Add(
+                        new OrphanArtifact
+                        {
+                            Time = cookie.Created,
+                            Cookie = cookie
+                        });
+
                     continue;
                 }
 
-                bool hasRelation =
-                    cookie.Relations.Any(r =>
-                        r.Type ==
-                        ArtifactRelationType
-                            .CookieToHistory);
+                // =====================================================
+                // Plausibilitätsprüfung
+                // Ein Cookie sollte normalerweise nicht vor dem
+                // ersten dokumentierten Seitenbesuch entstehen.
+                // Kleine Zeitabweichungen werden toleriert.
+                // =====================================================
 
-                if (hasRelation)
-                    continue;
-
-                orphanArtifacts.Add(
-                    new OrphanArtifact
-                    {
-                        Time = cookie.Created,
-                        Cookie = cookie
-                    });
+                if (relation.History.VisitTime >
+                    cookie.Created.AddSeconds(toleranceSeconds))
+                {
+                    orphanArtifacts.Add(
+                        new OrphanArtifact
+                        {
+                            Time = cookie.Created,
+                            Cookie = cookie
+                        });
+                }
             }
         }
 
