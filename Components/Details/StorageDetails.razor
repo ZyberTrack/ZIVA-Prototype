@@ -26,7 +26,12 @@
     <div class="entry-content">
 
         <div class="entry-row">
-            <strong>Type</strong><br />
+            <strong>Profile</strong><br />
+            @Data.Profile
+        </div>
+
+        <div class="entry-row">
+            <strong>Storage Type</strong><br />
             @Data.Type
         </div>
 
@@ -50,7 +55,9 @@
 
         <div class="entry-row">
             <strong>Key</strong><br />
-            @Data.Key
+            <div class="storage-value">
+                @Data.Key
+            </div>
         </div>
 
         <div class="entry-row">
@@ -61,17 +68,40 @@
             </div>
         </div>
 
-        @if (Data.IsSensitive)
-        {
-            <div class="entry-row risk-warning">
-                ⚠ Sensitive / Token-like Content
-            </div>
-        }
+        <div class="entry-row">
+            <strong>Binary Content</strong><br />
+            @(Data.IsBinary ? "Yes" : "No")
+        </div>
 
-        @if (Data.IsBinary)
+        <div class="entry-row">
+            <strong>Sensitive Content</strong><br />
+            @(Data.IsSensitive ? "Yes" : "No")
+        </div>
+
+        <div class="entry-row">
+            <strong>Relations</strong><br />
+            @Data.Relations.Count
+        </div>
+
+        @if (Data.Relations.Any(r => r.History != null))
         {
-            <div class="entry-row binary-warning">
-                Binary / Encoded Content detected
+            <div class="entry-row">
+                <strong>Originating History Entries</strong><br />
+
+                @foreach (var relation in Data.Relations
+                    .Where(r => r.History != null)
+                    .DistinctBy(r => r.History!.Id))
+                {
+                    <div style="margin-bottom:10px">
+
+                        <strong>@relation.History!.VisitTime</strong>
+
+                        <br />
+
+                        @relation.History.Url
+
+                    </div>
+                }
             </div>
         }
 
