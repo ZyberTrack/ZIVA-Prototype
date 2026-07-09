@@ -85,8 +85,8 @@ namespace ZIVA_Prototype.Services.Timeline
         // =====================================================
 
         private void BuildCookieRelations(
-            List<DomainEntry> domains,
-            List<BrowserCookieEntry> cookies)
+     List<DomainEntry> domains,
+     List<BrowserCookieEntry> cookies)
         {
             foreach (var cookie in cookies)
             {
@@ -98,6 +98,10 @@ namespace ZIVA_Prototype.Services.Timeline
                         .TrimStart('.')
                         .ToLower();
 
+                // ---------------------------------------
+                // Domain bestimmen
+                // ---------------------------------------
+
                 var matchingDomain =
                     domains
                     .Where(d =>
@@ -107,55 +111,86 @@ namespace ZIVA_Prototype.Services.Timeline
                              .TrimStart('.')
                              .ToLower();
 
-                        return
-                            domain.Contains(cookieDomain)
-                            ||
-                            cookieDomain.Contains(domain);
+                        return domain == cookieDomain
+                            || domain.EndsWith("." + cookieDomain)
+                            || cookieDomain.EndsWith("." + domain);
                     })
-                    .OrderBy(d =>
-                        Math.Abs(
-                            (cookie.Created - d.VisitTime)
-                            .TotalSeconds))
                     .FirstOrDefault();
 
                 if (matchingDomain == null)
                     continue;
 
-                // 10 Minuten Window
-                if (Math.Abs(
-                    (cookie.Created -
-                     matchingDomain.VisitTime)
-                    .TotalMinutes) > 10)
-                    continue;
+                // ---------------------------------------
+                // Passendste History bestimmen
+                // ---------------------------------------
+
+                BrowserHistoryEntry? matchingHistory = null;
+
+                int bestScore = -1;
+
+                foreach (var history in matchingDomain.SubEntries)
+                {
+                    if (history.VisitTime > cookie.Created)
+                        continue;
+
+                    int score = 0;
+
+                    if (Uri.TryCreate(history.Url, UriKind.Absolute, out var uri))
+                    {
+                        if (uri.Host.Equals(
+                                cookieDomain,
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            score += 100;
+                        }
+                    }
+
+                    // Zeitliche Nähe (max. 60 Punkte)
+                    score += Math.Max(
+                        0,
+                        60 - (int)(cookie.Created - history.VisitTime).TotalMinutes);
+
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        matchingHistory = history;
+                    }
+                }
+
+                // ---------------------------------------
+                // Relation erzeugen
+                // ---------------------------------------
 
                 var relation =
                     new ArtifactRelationEntry
                     {
-                        Type =
-                            ArtifactRelationType
-                                .CookieToHistory,
+                        Type = ArtifactRelationType.CookieToHistory,
 
-                        Cookie =
-                            cookie,
+                        Cookie = cookie,
 
-                        Domain =
-                            matchingDomain,
+                        Domain = matchingDomain,
 
-                        Time =
-                            cookie.Created,
+                        History = matchingHistory,
+
+                        Time = cookie.Created,
 
                         Confidence =
-                            90,
+                            matchingHistory != null
+                                ? 95
+                                : 80,
 
                         Reason =
-                            "Cookie domain matches history domain"
+                            matchingHistory != null
+                                ? "Cookie belongs to closest visited page."
+                                : "Cookie belongs to visited domain."
                     };
 
-                if (matchingDomain.VisitTime > cookie.Created)
-                    continue;
-
                 cookie.Relations.Add(relation);
+
                 matchingDomain.Relations.Add(relation);
+
+                if (matchingHistory != null)
+                    matchingHistory.Relations.Add(relation);
             }
         }
 
@@ -164,8 +199,8 @@ namespace ZIVA_Prototype.Services.Timeline
         // =====================================================
 
         private void BuildInputRelations(
-            List<DomainEntry> domains,
-            List<UserInputEntry> inputs)
+    List<DomainEntry> domains,
+    List<UserInputEntry> inputs)
         {
             foreach (var input in inputs)
             {
@@ -175,7 +210,7 @@ namespace ZIVA_Prototype.Services.Timeline
                 DomainEntry? matchingDomain = null;
 
                 // =====================================================
-                // FAVICON MATCHING
+                // DOMAIN FINDEN
                 // =====================================================
 
                 if (input.Type == UserInputType.Favicon)
@@ -187,47 +222,71 @@ namespace ZIVA_Prototype.Services.Timeline
 
                     matchingDomain =
                         domains
-                        .Where(d =>
-                            !string.IsNullOrWhiteSpace(d.Url))
+                        .Where(d => !string.IsNullOrWhiteSpace(d.Url))
                         .Where(d =>
                             d.Url.ToLower().Contains(faviconUrl)
-                            ||
-                            faviconUrl.Contains(
-                                d.Domain.ToLower()))
-                        .OrderBy(d =>
-                            Math.Abs(
-                                (input.Time - d.VisitTime)
-                                .TotalSeconds))
+                            || faviconUrl.Contains(d.Domain.ToLower()))
                         .FirstOrDefault();
 
-                    // fallback auf Zeit
                     matchingDomain ??=
                         domains
                         .OrderBy(d =>
-                            Math.Abs(
-                                (input.Time - d.VisitTime)
-                                .TotalSeconds))
+                            Math.Abs((input.Time - d.VisitTime).TotalSeconds))
                         .FirstOrDefault(d =>
-                            Math.Abs(
-                                (input.Time - d.VisitTime)
-                                .TotalMinutes) <= 5);
+                            Math.Abs((input.Time - d.VisitTime).TotalMinutes) <= 5);
                 }
                 else
                 {
                     matchingDomain =
                         domains
                         .OrderBy(d =>
-                            Math.Abs(
-                                (input.Time - d.VisitTime)
-                                .TotalSeconds))
+                            Math.Abs((input.Time - d.VisitTime).TotalSeconds))
                         .FirstOrDefault(d =>
-                            Math.Abs(
-                                (input.Time - d.VisitTime)
-                                .TotalMinutes) <= 5);
+                            Math.Abs((input.Time - d.VisitTime).TotalMinutes) <= 5);
                 }
 
                 if (matchingDomain == null)
                     continue;
+
+                // =====================================================
+                // PASSENDSTEN HISTORY-EINTRAG FINDEN
+                // =====================================================
+
+                BrowserHistoryEntry? matchingHistory = null;
+
+                int bestScore = -1;
+
+                foreach (var history in matchingDomain.SubEntries)
+                {
+                    if (history.VisitTime > input.Time)
+                        continue;
+
+                    int score = 0;
+
+                    score += Math.Max(
+                        0,
+                        60 - (int)(input.Time - history.VisitTime).TotalMinutes);
+
+                    if (input.Type == UserInputType.Favicon &&
+                        Uri.TryCreate(history.Url, UriKind.Absolute, out var uri))
+                    {
+                        if (input.Value.Contains(uri.Host,
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            score += 100;
+                        }
+                    }
+
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        matchingHistory = history;
+                    }
+                }
+
+                // =====================================================
+                // RELATION ERZEUGEN
+                // =====================================================
 
                 var relation =
                     new ArtifactRelationEntry
@@ -236,35 +295,40 @@ namespace ZIVA_Prototype.Services.Timeline
                             input.Type switch
                             {
                                 UserInputType.Autofill =>
-                                    ArtifactRelationType
-                                        .AutofillToHistory,
+                                    ArtifactRelationType.AutofillToHistory,
 
                                 UserInputType.Favicon =>
-                                    ArtifactRelationType
-                                        .FaviconToHistory,
+                                    ArtifactRelationType.FaviconToHistory,
 
                                 _ =>
-                                    ArtifactRelationType
-                                        .UserInputToHistory
+                                    ArtifactRelationType.UserInputToHistory
                             },
 
                         UserInput = input,
 
                         Domain = matchingDomain,
 
+                        History = matchingHistory,
+
                         Time = input.Time,
 
-                        Confidence = 70,
+                        Confidence =
+                            matchingHistory != null
+                                ? 95
+                                : 75,
 
                         Reason =
-                            "User input timestamp correlates with history"
+                            matchingHistory != null
+                                ? "User input belongs to closest visited page."
+                                : "User input belongs to visited domain."
                     };
 
-                if (matchingDomain.VisitTime > input.Time)
-                    continue;
-
                 input.Relations.Add(relation);
+
                 matchingDomain.Relations.Add(relation);
+
+                if (matchingHistory != null)
+                    matchingHistory.Relations.Add(relation);
             }
         }
 
@@ -273,61 +337,99 @@ namespace ZIVA_Prototype.Services.Timeline
         // =====================================================
 
         private void BuildExtensionRelations(
-            List<DomainEntry> domains,
-            List<BrowserExtensionEntry> extensions)
+    List<DomainEntry> domains,
+    List<BrowserExtensionEntry> extensions)
         {
             foreach (var ext in extensions)
             {
                 var matchingDomain =
-                        domains
-                        .Where(d =>
-                            d.Url.Contains("chrome.google.com/webstore")
-                            ||
-                            d.Url.Contains("chromewebstore.google.com"))
-                        .Where(d =>
-                            d.VisitTime <= ext.InstallTime)
-                        .OrderBy(d =>
-                            Math.Abs(
-                                (ext.InstallTime - d.VisitTime)
-                                .TotalSeconds))
-                        .FirstOrDefault();
+                    domains
+                    .Where(d =>
+                        d.Url.Contains("chrome.google.com/webstore")
+                        || d.Url.Contains("chromewebstore.google.com"))
+                    .Where(d =>
+                        d.VisitTime <= ext.InstallTime)
+                    .OrderBy(d =>
+                        Math.Abs(
+                            (ext.InstallTime - d.VisitTime)
+                            .TotalSeconds))
+                    .FirstOrDefault();
 
                 if (matchingDomain == null)
                     continue;
 
-                if (matchingDomain.VisitTime >
-                    ext.InstallTime)
-                    continue;
+                // ----------------------------------------------------
+                // Passendsten History-Eintrag innerhalb der Domain suchen
+                // ----------------------------------------------------
 
-                if ((ext.InstallTime -
-                     matchingDomain.VisitTime)
-                    .TotalMinutes > 10)
-                    continue;
+                BrowserHistoryEntry? matchingHistory = null;
+
+                int bestScore = -1;
+
+                foreach (var history in matchingDomain.SubEntries)
+                {
+                    if (history.VisitTime > ext.InstallTime)
+                        continue;
+
+                    int score = 0;
+
+                    if (history.Url.Contains(
+                            "chrome.google.com/webstore",
+                            StringComparison.OrdinalIgnoreCase)
+                        ||
+                        history.Url.Contains(
+                            "chromewebstore.google.com",
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        score += 100;
+                    }
+
+                    score += Math.Max(
+                        0,
+                        60 - (int)(ext.InstallTime - history.VisitTime).TotalMinutes);
+
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        matchingHistory = history;
+                    }
+                }
+
+                // ----------------------------------------------------
+                // Relation erzeugen
+                // ----------------------------------------------------
 
                 var relation =
                     new ArtifactRelationEntry
                     {
                         Type =
-                            ArtifactRelationType
-                                .ExtensionToWebStore,
+                            ArtifactRelationType.ExtensionToWebStore,
 
                         Extension = ext,
 
                         Domain = matchingDomain,
 
+                        History = matchingHistory,
+
                         Time = ext.InstallTime,
 
-                        Confidence = 95,
+                        Confidence =
+                            matchingHistory != null
+                                ? 98
+                                : 90,
 
                         Reason =
-                            "Extension install preceded by WebStore visit"
+                            matchingHistory != null
+                                ? "Extension installation matches closest WebStore visit."
+                                : "Extension installation matches WebStore domain."
                     };
 
-                if (matchingDomain.VisitTime > ext.InstallTime)
-                    continue;
-
                 ext.Relations.Add(relation);
+
                 matchingDomain.Relations.Add(relation);
+
+                if (matchingHistory != null)
+                    matchingHistory.Relations.Add(relation);
             }
         }
 

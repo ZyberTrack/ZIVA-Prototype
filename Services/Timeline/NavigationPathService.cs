@@ -196,12 +196,12 @@ namespace ZIVA_Prototype.Services.Timeline
         // =====================================================
 
         private void CollectArtifacts(
-            List<BrowserCookieEntry> cookies,
-            List<UserInputEntry> inputs,
-            List<BrowserExtensionEntry> extensions,
-            List<StorageEntry> storage,
-            List<AnalysisEntry> analysis,
-            NavigationPathResult result)
+    List<BrowserCookieEntry> cookies,
+    List<UserInputEntry> inputs,
+    List<BrowserExtensionEntry> extensions,
+    List<StorageEntry> storage,
+    List<AnalysisEntry> analysis,
+    NavigationPathResult result)
         {
             // ---------------------------------------------
             // Cookies
@@ -210,11 +210,8 @@ namespace ZIVA_Prototype.Services.Timeline
             result.Cookies.UnionWith(
                 cookies.Where(c =>
                     c.Relations.Any(r =>
-                        (r.History != null &&
-                         result.History.Contains(r.History))
-                        ||
-                        (r.Domain != null &&
-                         result.Domains.Contains(r.Domain)))));
+                        r.History != null &&
+                        result.History.Contains(r.History))));
 
             // ---------------------------------------------
             // User Inputs
@@ -223,11 +220,8 @@ namespace ZIVA_Prototype.Services.Timeline
             result.Inputs.UnionWith(
                 inputs.Where(i =>
                     i.Relations.Any(r =>
-                        (r.History != null &&
-                         result.History.Contains(r.History))
-                        ||
-                        (r.Domain != null &&
-                         result.Domains.Contains(r.Domain)))));
+                        r.History != null &&
+                        result.History.Contains(r.History))));
 
             // ---------------------------------------------
             // Extensions
@@ -236,11 +230,8 @@ namespace ZIVA_Prototype.Services.Timeline
             result.Extensions.UnionWith(
                 extensions.Where(e =>
                     e.Relations.Any(r =>
-                        (r.History != null &&
-                         result.History.Contains(r.History))
-                        ||
-                        (r.Domain != null &&
-                         result.Domains.Contains(r.Domain)))));
+                        r.History != null &&
+                        result.History.Contains(r.History))));
 
             // ---------------------------------------------
             // Storage
@@ -249,14 +240,11 @@ namespace ZIVA_Prototype.Services.Timeline
             result.Storage.UnionWith(
                 storage.Where(s =>
                     s.Relations.Any(r =>
-                        (r.History != null &&
-                         result.History.Contains(r.History))
-                        ||
-                        (r.Domain != null &&
-                         result.Domains.Contains(r.Domain)))));
+                        r.History != null &&
+                        result.History.Contains(r.History))));
 
             // ---------------------------------------------
-            // Analysis
+            // Analyse
             // ---------------------------------------------
 
             foreach (var a in analysis)
@@ -282,39 +270,26 @@ namespace ZIVA_Prototype.Services.Timeline
                     a.LinkedStorage.Any(result.Storage.Contains))
                     related = true;
 
-                if (!related &&
-                    a.LinkedDomain != null &&
-                    result.Domains.Contains(a.LinkedDomain))
-                    related = true;
-
                 if (related)
                     result.Analysis.Add(a);
             }
 
             // ---------------------------------------------
             // Zweite Runde:
-            // Falls neue Analysen weitere Artefakte referenzieren,
-            // ebenfalls aufnehmen.
+            // Analysen dürfen weitere Artefakte hinzufügen
             // ---------------------------------------------
 
             foreach (var a in result.Analysis.ToList())
             {
                 result.History.UnionWith(a.LinkedHistory);
-
                 result.Cookies.UnionWith(a.LinkedCookies);
-
                 result.Inputs.UnionWith(a.LinkedInputs);
-
                 result.Extensions.UnionWith(a.LinkedExtensions);
-
                 result.Storage.UnionWith(a.LinkedStorage);
-
-                if (a.LinkedDomain != null)
-                    result.Domains.Add(a.LinkedDomain);
             }
 
             // ---------------------------------------------
-            // Domains nachziehen
+            // Domains aus den sichtbaren History-Einträgen
             // ---------------------------------------------
 
             foreach (var history in result.History)
