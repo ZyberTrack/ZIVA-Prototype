@@ -2715,7 +2715,7 @@
             {
                 <div class="cookie-marker"
                      style="
-                    left: calc(@($"{cookie.Position}px - 5px"));
+                    left: calc(@($"{cookie.Position + 8}px - 5px"));
                     --marker-color:@ColorService.GetCookieColor(cookie.Category);
                     color:@ColorService.GetCookieColor(cookie.Category);
                     @GetFocusedStyle(cookie)"
@@ -2745,7 +2745,7 @@
                 };
 
                 <div class="userinput-marker @cssClass"
-                     style="left: calc(@($"{item.Position}px - 5px"));
+                     style="left: calc(@($"{item.Position + 8}px - 5px"));
                     @GetFocusedStyle(item)"
                      data-value="@item.Value"
                      data-time="@item.Time"
@@ -2763,7 +2763,7 @@
             @foreach (var ext in RenderCache.VisibleExtensions)
         {
                 <div class="extension-marker"
-                     style="left: calc(@($"{ext.Position}px - 5px"));
+                     style="left: calc(@($"{ext.Position + 8}px - 5px"));
                     @GetFocusedStyle(ext)"
                      data-name="@ext.Name"
                      data-risk="@ext.RiskLevel"
@@ -2782,7 +2782,7 @@
             @foreach (var s in RenderCache.VisibleStorage)
         {
                 <div class="storage-marker @(s.IsSensitive ? "sensitive" : "")"
-                     style="left: calc(@($"{s.Position}px - 5px"));
+                     style="left: calc(@($"{s.Position + 8}px - 5px"));
                     @GetFocusedStyle(s)"
                      data-key="@s.Key"
                      data-origin="@s.Origin"
@@ -2842,8 +2842,7 @@
 
                         double historyPosY = history.ParentDomain?.RenderYPercent ?? baseTop;
 
-                        double cookiePosX =
-                            cookie.Position - 2;
+                        double cookiePosX = cookie.Position - 2 + 8;
 
                         double cookiePosY = 43;
 
@@ -2876,8 +2875,7 @@
 
                         double historyPosY = history.ParentDomain?.RenderYPercent ?? baseTop;
 
-                        double inputPosX =
-                            input.Position - 2;
+                        double inputPosX = input.Position - 2 + 8;
 
                         double inputPosY =
                             input.Type switch
@@ -2917,7 +2915,7 @@
 
                         double historyPosY = history.ParentDomain?.RenderYPercent ?? baseTop;
 
-                        double extPosX = ext.Position;
+                        double extPosX = ext.Position + 8;
                         double extPosY = 64;
 
                         <line x1="@historyPosX"
@@ -2948,7 +2946,7 @@
                         double historyPosY = history.ParentDomain?.RenderYPercent ?? baseTop;
 
                         double storagePosX =
-                            storage.Position;
+                            storage.Position + 8;
 
                         double storagePosY = 57;
 
@@ -3022,7 +3020,7 @@
 
                 <div class="anomaly-marker"
                      style="position:absolute;
-                    left:@($"{analysis.Position - 6}px");
+                    left:@($"{analysis.Position - 6 + 8}px");
                     top:@top;
                     transform:translateY(-50%);
                     color:@color;
@@ -3067,9 +3065,12 @@
 
                 foreach (var point in GetAnomalyTargetPoints(analysis))
                 {
-                    <line x1="@point.x"
+                    var anx = analysis.Position + 10;
+                    var poix = point.x + 6;
+
+                    <line x1="@poix"
                           y1="@($"{point.yPercent}%")"
-                          x2="@analysis.Position"
+                          x2="@anx"
                           y2="@targetY"
                           stroke="@color"
                           stroke-width="@(0.7 + analysis.Severity)"

@@ -126,13 +126,14 @@ namespace ZIVA_Prototype.Services.Import
 
                 var item = new UserInputEntry
                 {
-                    Time = normalized.Value,
+                    // History-Zeit bevorzugen
+                    Time = linkedHistory?.VisitTime ?? normalized.Value,
+
                     Value = favicon.PageUrl,
                     Type = UserInputType.Favicon,
 
                     LinkedHistory = linkedHistory
                 };
-
 
                 string key =
                     $"{item.Type}|{item.Time.Ticks}|{item.Value}";
