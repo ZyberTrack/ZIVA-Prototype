@@ -71,7 +71,9 @@
 
     private bool AnalysisFilterActive => ShowInformation || ShowWarnings || ShowAnomalies;
 
-    private bool AnyFilterActive => !string.IsNullOrWhiteSpace(SelectedDomainFilter) || AnalysisFilterActive || ShowNavigationPath;
+    private bool NavigationFilterActive => ShowNavigationPath || IncludeNavigationPaths;
+
+    private bool AnyFilterActive => !string.IsNullOrWhiteSpace(SelectedDomainFilter) || AnalysisFilterActive || NavigationFilterActive;
 
     private bool MatchesAnalysisFilter(AnalysisEntry analysis)
     {
@@ -1319,6 +1321,28 @@
         {
             _applyingFilter = false;
         }
+    }
+
+    private async Task ClearDomainFilter()
+    {
+        SelectedDomainFilter = "";
+
+        ShowContextMenu = false;
+
+        await ApplyDomainFilter();
+    }
+
+    private async Task ClearNavigationFilter()
+    {
+        ShowNavigationPath = false;
+        CurrentNavigationPath = null;
+        NavigationRootArtifact = null;
+
+        IncludeNavigationPaths = false;
+
+        ShowContextMenu = false;
+
+        await ApplyDomainFilter();
     }
 
     private async Task ClearAllFilters()
@@ -3159,7 +3183,7 @@
                     <div class="context-item"
                          @onclick="FilterByArtifactDomain">
 
-                        🔍 Nach dieser Domäne filtern
+                        🌐 Nach dieser Domäne filtern
 
                     </div>
                 }
@@ -3167,7 +3191,7 @@
                 <div class="context-item"
                      @onclick="ShowNavigationPathFilter">
 
-                    🧭 Navigationsverlauf anzeigen
+                    🧭 Navigationsverlauf filtern
 
                 </div>
             }
@@ -3179,12 +3203,32 @@
                 </div>
             }
 
-            @if (AnyFilterActive)
+            @if (NavigationFilterActive)
+            {
+                <div class="context-item"
+                     @onclick="ClearNavigationFilter">
+
+                    ❌ Navigationspfad-Filter aufheben
+
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(SelectedDomainFilter))
+            {
+                <div class="context-item"
+                     @onclick="ClearDomainFilter">
+
+                    ❌ Domain Filter aufheben
+
+                </div>
+            }
+
+            @if (NavigationFilterActive && !string.IsNullOrWhiteSpace(SelectedDomainFilter))
             {
                 <div class="context-item"
                      @onclick="ClearAllFilters">
 
-                    ❌ Filter aufheben
+                    ❌ Alle Filter aufheben
 
                 </div>
             }
