@@ -648,7 +648,7 @@
         VisibleStorage = State.StorageEntries;
         VisibleAnomalies = AnalysisEntries;
 
-        ApplyDomainFilter();
+        _ = ApplyDomainFilter();
 
         //BuildArtifactTimeline(FilteredAnalysisEntries);
         UpdateVisibleTimestamps();
@@ -1193,6 +1193,38 @@
                 AnalysisFilterActive,
                 viewportWidth,
                 SelectedDomainFilter);
+
+            RecalculatePositions(
+                State.BrowserEntries,
+                x => x.VisitTime,
+                (x, pos) => x.Position = pos);
+
+            RecalculatePositions(
+                State.BrowserCookies,
+                x => x.Created,
+                (x, pos) => x.Position = pos);
+
+            RecalculatePositions(
+                UserInputs,
+                x => x.Time,
+                (x, pos) => x.Position = pos);
+
+            RecalculatePositions(
+                State.Extensions,
+                x => x.InstallTime,
+                (x, pos) => x.Position = pos);
+
+            RecalculatePositions(
+                State.StorageEntries,
+                x => x.Time,
+                (x, pos) => x.Position = pos);
+
+            RecalculatePositions(
+                DomainEntries,
+                x => x.VisitTime,
+                (x, pos) => x.Position = pos);
+
+            RecalculateAnomalyPositions();
 
             FilteredAnalysisEntries = analysisList;
 
