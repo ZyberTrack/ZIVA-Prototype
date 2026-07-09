@@ -185,6 +185,37 @@ namespace ZIVA_Prototype.Services.Timeline
                 .ToList();
         }
 
+        public void ApplyNavigationPath(NavigationPathResult path)
+        {
+            VisibleHistory = VisibleHistory
+                .Where(path.History.Contains)
+                .ToList();
+
+            VisibleDomains = VisibleDomains
+                .Where(path.Domains.Contains)
+                .ToList();
+
+            VisibleCookies = VisibleCookies
+                .Where(path.Cookies.Contains)
+                .ToList();
+
+            VisibleInputs = VisibleInputs
+                .Where(path.Inputs.Contains)
+                .ToList();
+
+            VisibleExtensions = VisibleExtensions
+                .Where(path.Extensions.Contains)
+                .ToList();
+
+            VisibleStorage = VisibleStorage
+                .Where(path.Storage.Contains)
+                .ToList();
+
+            VisibleAnomalies = VisibleAnomalies
+                .Where(path.Analysis.Contains)
+                .ToList();
+        }
+
         private bool IsVisible(int position, int viewportWidth)
         {
             return position > -50 &&

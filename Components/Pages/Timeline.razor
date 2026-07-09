@@ -16,6 +16,7 @@
 @inject TimelineRenderCacheService RenderCache
 @inject ArtifactRelationService RelationService
 @inject TimelineSearchService SearchService
+@inject NavigationPathService NavigationService
 
 
 @code {
@@ -69,6 +70,8 @@
 
     private bool AnalysisFilterActive => ShowInformation || ShowWarnings || ShowAnomalies;
 
+    private bool AnyFilterActive => !string.IsNullOrWhiteSpace(SelectedDomainFilter) || AnalysisFilterActive || ShowNavigationPath;
+
     private bool MatchesAnalysisFilter(AnalysisEntry analysis)
     {
         if (!AnalysisFilterActive)
@@ -82,6 +85,10 @@
             _ => false
         };
     }
+
+    // Navigation Path
+    private NavigationPathResult? CurrentNavigationPath;
+    private bool ShowNavigationPath = false;
 
     // Context Menu
     private bool ShowContextMenu;
@@ -1186,6 +1193,11 @@
                 viewportWidth,
                 SelectedDomainFilter);
 
+            if (ShowNavigationPath && CurrentNavigationPath != null)
+            {
+                RenderCache.ApplyNavigationPath(CurrentNavigationPath);
+            }
+
             FilteredAnalysisEntries = analysisList;
 
             BuildArtifactTimeline(FilteredAnalysisEntries);
@@ -1223,6 +1235,35 @@
         ShowInformation = false;
         ShowWarnings = false;
         ShowAnomalies = false;
+
+        ShowNavigationPath = false;
+        CurrentNavigationPath = null;
+
+        ShowContextMenu = false;
+
+        await ApplyDomainFilter();
+    }
+
+    //------------------------------------------------------------
+    // Navigation Path Filter
+    //------------------------------------------------------------
+
+
+    private async Task ShowNavigationPathFilter()
+    {
+        if (ContextArtifact == null)
+            return;
+
+        CurrentNavigationPath = NavigationService.BuildNavigationPath(
+            ContextArtifact,
+            DomainEntries,
+            State.BrowserCookies,
+            UserInputs,
+            State.Extensions,
+            State.StorageEntries,
+            AnalysisEntries);
+
+        ShowNavigationPath = true;
 
         ShowContextMenu = false;
 
@@ -2341,8 +2382,6 @@
             }
 
 
-
-
         </div>
 
         
@@ -2967,6 +3006,13 @@
 
                     </div>
                 }
+
+                <div class="context-item"
+                     @onclick="ShowNavigationPathFilter">
+
+                    🧭 Navigationsverlauf anzeigen
+
+                </div>
             }
 
             @if (ContextArtifact is AnalysisEntry)
@@ -2976,7 +3022,7 @@
                 </div>
             }
 
-            @if (!string.IsNullOrWhiteSpace(SelectedDomainFilter) || AnalysisFilterActive)
+            @if (AnyFilterActive)
             {
                 <div class="context-item"
                      @onclick="ClearAllFilters">

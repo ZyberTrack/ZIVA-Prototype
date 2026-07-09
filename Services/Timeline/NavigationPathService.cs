@@ -1,0 +1,317 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using ZIVA_Prototype.Components.Models.Enums;
+using ZIVA_Prototype.Components.Models.Timeline;
+
+namespace ZIVA_Prototype.Services.Timeline
+{
+    internal class NavigationPathService
+    {
+        public NavigationPathResult BuildNavigationPath(
+            object artifact,
+            List<DomainEntry> domains,
+            List<BrowserCookieEntry> cookies,
+            List<UserInputEntry> inputs,
+            List<BrowserExtensionEntry> extensions,
+            List<StorageEntry> storage,
+            List<AnalysisEntry> analysis)
+        {
+            var result = new NavigationPathResult();
+
+            var startHistory = ResolveHistory(artifact, domains);
+
+            if (startHistory == null)
+                return result;
+
+            // Ursprung -> aktuelles Artefakt
+            BuildBackward(
+                startHistory,
+                result);
+
+            // aktuelles Artefakt -> weitere Navigation
+            BuildForward(
+                startHistory,
+                domains,
+                result);
+
+            CollectDomains(
+                domains,
+                result);
+
+            CollectArtifacts(
+                cookies,
+                inputs,
+                extensions,
+                storage,
+                analysis,
+                result);
+
+            return result;
+        }
+
+        // =====================================================
+        // HISTORY RESOLUTION
+        // =====================================================
+
+        private BrowserHistoryEntry? ResolveHistory(
+            object artifact,
+            List<DomainEntry> domains)
+        {
+            switch (artifact)
+            {
+                case BrowserHistoryEntry h:
+                    return h;
+
+                case DomainEntry d:
+                    return d.SubEntries
+                        .OrderByDescending(h => h.VisitTime)
+                        .FirstOrDefault();
+
+                case BrowserCookieEntry c:
+
+                    return c.Relations
+                        .Where(r => r.History != null)
+                        .OrderByDescending(r => r.Time)
+                        .Select(r => r.History)
+                        .FirstOrDefault();
+
+                case UserInputEntry i:
+
+                    return i.Relations
+                        .Where(r => r.History != null)
+                        .OrderByDescending(r => r.Time)
+                        .Select(r => r.History)
+                        .FirstOrDefault();
+
+                case BrowserExtensionEntry e:
+
+                    return e.Relations
+                        .Where(r => r.History != null)
+                        .OrderByDescending(r => r.Time)
+                        .Select(r => r.History)
+                        .FirstOrDefault();
+
+                case StorageEntry s:
+
+                    return s.Relations
+                        .Where(r => r.History != null)
+                        .OrderByDescending(r => r.Time)
+                        .Select(r => r.History)
+                        .FirstOrDefault();
+
+                default:
+                    return null;
+            }
+        }
+
+        // =====================================================
+        // BACKWARD NAVIGATION
+        // =====================================================
+
+        private void BuildBackward(
+            BrowserHistoryEntry history,
+            NavigationPathResult result)
+        {
+            if (!result.History.Add(history))
+                return;
+
+            foreach (var relation in history.Relations)
+            {
+                if (relation.Type != ArtifactRelationType.HistoryReferrer)
+                    continue;
+
+                if (relation.History == null)
+                    continue;
+
+                BuildBackward(
+                    relation.History,
+                    result);
+            }
+        }
+
+        // =====================================================
+        // FORWARD NAVIGATION
+        // =====================================================
+
+        private void BuildForward(
+            BrowserHistoryEntry history,
+            List<DomainEntry> domains,
+            NavigationPathResult result)
+        {
+            if (!result.History.Add(history))
+                return;
+
+            foreach (var candidate in domains.SelectMany(d => d.SubEntries))
+            {
+                bool followsCurrent =
+                    candidate.Relations.Any(r =>
+                        r.Type == ArtifactRelationType.HistoryReferrer &&
+                        r.History == history);
+
+                if (!followsCurrent)
+                    continue;
+
+                BuildForward(
+                    candidate,
+                    domains,
+                    result);
+            }
+        }
+
+        // =====================================================
+        // DOMAIN COLLECTION
+        // =====================================================
+
+        private void CollectDomains(
+            List<DomainEntry> domains,
+            NavigationPathResult result)
+        {
+            foreach (var history in result.History)
+            {
+                var domain =
+                    domains.FirstOrDefault(d =>
+                        d.SubEntries.Contains(history));
+
+                if (domain != null)
+                    result.Domains.Add(domain);
+            }
+        }
+
+        // =====================================================
+        // COLLECT ALL RELATED ARTIFACTS
+        // =====================================================
+
+        private void CollectArtifacts(
+            List<BrowserCookieEntry> cookies,
+            List<UserInputEntry> inputs,
+            List<BrowserExtensionEntry> extensions,
+            List<StorageEntry> storage,
+            List<AnalysisEntry> analysis,
+            NavigationPathResult result)
+        {
+            // ---------------------------------------------
+            // Cookies
+            // ---------------------------------------------
+
+            result.Cookies.UnionWith(
+                cookies.Where(c =>
+                    c.Relations.Any(r =>
+                        (r.History != null &&
+                         result.History.Contains(r.History))
+                        ||
+                        (r.Domain != null &&
+                         result.Domains.Contains(r.Domain)))));
+
+            // ---------------------------------------------
+            // User Inputs
+            // ---------------------------------------------
+
+            result.Inputs.UnionWith(
+                inputs.Where(i =>
+                    i.Relations.Any(r =>
+                        (r.History != null &&
+                         result.History.Contains(r.History))
+                        ||
+                        (r.Domain != null &&
+                         result.Domains.Contains(r.Domain)))));
+
+            // ---------------------------------------------
+            // Extensions
+            // ---------------------------------------------
+
+            result.Extensions.UnionWith(
+                extensions.Where(e =>
+                    e.Relations.Any(r =>
+                        (r.History != null &&
+                         result.History.Contains(r.History))
+                        ||
+                        (r.Domain != null &&
+                         result.Domains.Contains(r.Domain)))));
+
+            // ---------------------------------------------
+            // Storage
+            // ---------------------------------------------
+
+            result.Storage.UnionWith(
+                storage.Where(s =>
+                    s.Relations.Any(r =>
+                        (r.History != null &&
+                         result.History.Contains(r.History))
+                        ||
+                        (r.Domain != null &&
+                         result.Domains.Contains(r.Domain)))));
+
+            // ---------------------------------------------
+            // Analysis
+            // ---------------------------------------------
+
+            foreach (var a in analysis)
+            {
+                bool related = false;
+
+                if (a.LinkedHistory.Any(result.History.Contains))
+                    related = true;
+
+                if (!related &&
+                    a.LinkedCookies.Any(result.Cookies.Contains))
+                    related = true;
+
+                if (!related &&
+                    a.LinkedInputs.Any(result.Inputs.Contains))
+                    related = true;
+
+                if (!related &&
+                    a.LinkedExtensions.Any(result.Extensions.Contains))
+                    related = true;
+
+                if (!related &&
+                    a.LinkedStorage.Any(result.Storage.Contains))
+                    related = true;
+
+                if (!related &&
+                    a.LinkedDomain != null &&
+                    result.Domains.Contains(a.LinkedDomain))
+                    related = true;
+
+                if (related)
+                    result.Analysis.Add(a);
+            }
+
+            // ---------------------------------------------
+            // Zweite Runde:
+            // Falls neue Analysen weitere Artefakte referenzieren,
+            // ebenfalls aufnehmen.
+            // ---------------------------------------------
+
+            foreach (var a in result.Analysis.ToList())
+            {
+                result.History.UnionWith(a.LinkedHistory);
+
+                result.Cookies.UnionWith(a.LinkedCookies);
+
+                result.Inputs.UnionWith(a.LinkedInputs);
+
+                result.Extensions.UnionWith(a.LinkedExtensions);
+
+                result.Storage.UnionWith(a.LinkedStorage);
+
+                if (a.LinkedDomain != null)
+                    result.Domains.Add(a.LinkedDomain);
+            }
+
+            // ---------------------------------------------
+            // Domains nachziehen
+            // ---------------------------------------------
+
+            foreach (var history in result.History)
+            {
+                foreach (var relation in history.Relations)
+                {
+                    if (relation.Domain != null)
+                        result.Domains.Add(relation.Domain);
+                }
+            }
+        }
+    }
+}
