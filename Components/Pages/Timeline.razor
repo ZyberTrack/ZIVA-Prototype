@@ -1493,6 +1493,16 @@
 	// Verschiedene Hilfsmethoden
     //------------------------------------------------------------
 
+    private string ShortUrl(string? url, int maxLength = 40)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return "-";
+
+        return url.Length <= maxLength
+            ? url
+            : url[..maxLength] + "...";
+    }
+
     private TimelineArtifact? GetVisualFocusedArtifact()
     {
         // Anomalie?
@@ -2670,10 +2680,10 @@
 
                                 <div class="subentry-tooltip" style="background-color:@domainEntry.RenderColor;">
                                     <div><strong>Zeitstempel: @sub.VisitTime</strong></div>
-                                    <div>URL: @sub.Url</div>
+                                    <div>URL: @ShortUrl(sub.Url)</div>
                                     @if (!string.IsNullOrEmpty(sub.ReferrerUrl))
                                     {
-                                        <div>Verwiesen von: @sub.ReferrerUrl</div>
+                                        <div>Verwiesen von: @ShortUrl(sub.ReferrerUrl)</div>
                                     }
                                 </div>
                             </div>
@@ -2719,9 +2729,9 @@
                     --marker-color:@ColorService.GetCookieColor(cookie.Category);
                     color:@ColorService.GetCookieColor(cookie.Category);
                     @GetFocusedStyle(cookie)"
-                         data-host="@cookie.Host"
+                         data-host="@ShortUrl(cookie.Host)"
                          data-valueEncr="@cookie.EncryptedValue"
-                         data-value="@cookie.Value"
+                         data-value="@ShortUrl(cookie.Value)"
                          data-time="@cookie.Created"
                      @onclick="() => SelectCookie(cookie)"
                      @onclick:stopPropagation="true"
@@ -2747,7 +2757,7 @@
                 <div class="userinput-marker @cssClass"
                      style="left: calc(@($"{item.Position + 8}px - 5px"));
                     @GetFocusedStyle(item)"
-                     data-value="@item.Value"
+                     data-value="@ShortUrl(item.Value)"
                      data-time="@item.Time"
                      data-type="@item.Type"
                      @onclick="() => SelectInput(item)"
@@ -2785,8 +2795,8 @@
                      style="left: calc(@($"{s.Position + 8}px - 5px"));
                     @GetFocusedStyle(s)"
                      data-key="@s.Key"
-                     data-origin="@s.Origin"
-                     data-value="@s.Value"
+                     data-origin="@ShortUrl(s.Origin)"
+                     data-value="@ShortUrl(s.Value)"
                      @onclick="() => SelectStorage(s)"
                      @onclick:stopPropagation="true"
                      @oncontextmenu="args => OpenContextMenu(args, s)"
@@ -3025,6 +3035,7 @@
                     transform:translateY(-50%);
                     color:@color;
                     z-index:30;"
+                     data-category="@analysis.Category"
                      data-time="@analysis.FirstSeen"
                      data-lastseen="@analysis.LastSeen"
                      data-url="@analysis.Url"
