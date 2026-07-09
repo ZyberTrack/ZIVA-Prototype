@@ -25,7 +25,7 @@
     <div class="entry-content">
 
         <div class="entry-row">
-            <strong>Extension ID</strong><br />
+            <strong>Erweiterungs ID</strong><br />
 
             <span style="
                 font-family:monospace;
@@ -36,7 +36,7 @@
         </div>
 
         <div class="entry-row">
-            <strong>Risk</strong><br />
+            <strong>Risiko</strong><br />
             @Data.RiskLevel (@Data.RiskScore)
         </div>
 
@@ -46,14 +46,14 @@
         </div>
 
         <div class="entry-row">
-            <strong>Installed/Updated</strong><br />
+            <strong>Installiert/Aktualisiert</strong><br />
             @Data.InstallTime.ToLocalTime()
         </div>
 
         @if (Data.LastFilesystemActivity != default)
         {
             <div class="entry-row">
-                <strong>Last Filesystem Activity</strong><br />
+                <strong>Letzte Verzeichnis Aktivität</strong><br />
 
                 @Data.LastFilesystemActivity.ToLocalTime()
             </div>
@@ -62,28 +62,28 @@
         @if (Data.LastRuntimeActivity != default)
         {
             <div class="entry-row">
-                <strong>Last Runtime Activity</strong><br />
+                <strong>Letzte Laufzeit Aktivität</strong><br />
 
                 @Data.LastRuntimeActivity.ToLocalTime()
             </div>
         }
 
         <div class="entry-row">
-            <strong>Enabled</strong><br />
+            <strong>Aktiviert</strong><br />
             @(Data.IsEnabled ? "Yes" : "No")
         </div>
 
         <div class="entry-row">
-            <strong>Source</strong><br />
+            <strong>Quelle</strong><br />
             @(Data.IsUnpacked
-                ? "Unpacked / Developer"
+                ? "Entpackt / Entwickler"
                 : Data.IsFromWebStore
                     ? "Chrome Web Store"
-                    : "Unknown")
+                    : "Unbekannt")
         </div>
 
         <div class="entry-row">
-            <strong>Evidence</strong><br />
+            <strong>Funde</strong><br />
 
             @if (Data.IsInstalled)
             {
@@ -117,7 +117,7 @@
         </div>
 
         <div class="entry-row">
-            <strong>Found In</strong>
+            <strong>Gefunden In</strong>
 
             <ul>
 
@@ -157,7 +157,7 @@
         @if (Data.SourceTypes.Any())
         {
             <div class="entry-row">
-                <strong>Runtime Sources</strong>
+                <strong>Laufzeit Quellen</strong>
 
                 <ul>
                     @foreach (var s in Data.SourceTypes.Distinct())
@@ -171,7 +171,7 @@
         @if (!string.IsNullOrWhiteSpace(Data.InstallLocation))
         {
             <div class="entry-row">
-                <strong>Install Path</strong><br />
+                <strong>Installations Pfad</strong><br />
                 @Data.InstallLocation
             </div>
         }
@@ -179,7 +179,7 @@
         @if (Data.RuntimeArtifacts.Any())
         {
             <div class="entry-row">
-                <strong>Runtime Artifacts</strong>
+                <strong>Laufzeit Artefakte</strong>
 
                 <ul>
                     @foreach (var r in Data.RuntimeArtifacts.Take(10))
@@ -193,13 +193,13 @@
         @if (!string.IsNullOrWhiteSpace(Data.Description))
         {
             <div class="entry-row">
-                <strong>Description</strong><br />
+                <strong>Beschreibung</strong><br />
                 @Data.Description
             </div>
         }
 
         <div class="entry-row">
-            <strong>Top Findings</strong>
+            <strong>Top Funde</strong>
 
             <ul>
                 @foreach (var f in Data.Findings
@@ -214,7 +214,7 @@
         </div>
 
         <div class="entry-row">
-            <strong>Permissions</strong>
+            <strong>Berechtigungen</strong>
 
             <ul>
                 @foreach (var p in Data.AllPermissions)
@@ -249,7 +249,7 @@
         @if (RelatedAnomalies.Any())
         {
             <div class="entry-row">
-                <strong>Related Anomalies</strong><br />
+                <strong>Gefundene Anomalien</strong><br />
 
                 @foreach (var anomaly in RelatedAnomalies)
                 {
@@ -261,7 +261,7 @@
 
                         <br />
 
-                        Severity:
+                        Schweregrad:
                         @anomaly.Severity
 
                         <br />

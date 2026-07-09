@@ -28,7 +28,7 @@
     <div class="entry-content">
 
         <div class="entry-row">
-            <strong>Category</strong><br />
+            <strong>Kategorie</strong><br />
 
             <span style="
                 color:@GetCategoryColor();
@@ -41,7 +41,7 @@
         </div>
 
         <div class="entry-row">
-            <strong>Type</strong><br />
+            <strong>Typ</strong><br />
 
             <span style="
                 color:@GetCategoryColor();
@@ -55,14 +55,14 @@
         </div>
 
         <div class="entry-row">
-            <strong>Description</strong><br />
+            <strong>Beschreibung</strong><br />
             @(string.IsNullOrWhiteSpace(Data.Description)
                 ? "-"
                 : Data.Description)
         </div>
 
         <div class="entry-row">
-            <strong>Confidence</strong><br />
+            <strong>Vertraulichkeit</strong><br />
 
             <span style="
                 color:#9ad1ff;
@@ -74,42 +74,42 @@
         </div>
 
         <div class="entry-row">
-            <strong>Severity</strong><br />
+            <strong>Schweregrad</strong><br />
             @Data.Severity / 5
         </div>
 
         <div class="entry-row">
-            <strong>Occurrences</strong><br />
+            <strong>Treffer</strong><br />
             @Data.Count
         </div>
 
         <div class="entry-row">
-            <strong>First Seen</strong><br />
+            <strong>Erster Treffer</strong><br />
             @Data.FirstSeen
         </div>
 
         <div class="entry-row">
-            <strong>Last Seen</strong><br />
+            <strong>Letzter Treffer</strong><br />
             @Data.LastSeen
         </div>
 
         <div class="entry-row">
-            <strong>Duration</strong><br />
+            <strong>Dauer</strong><br />
             @((Data.LastSeen - Data.FirstSeen).ToString())
         </div>
 
         <div class="entry-row">
-            <strong>Target Type</strong><br />
+            <strong>Ziel Typ</strong><br />
             @Data.TargetType
         </div>
 
         <div class="entry-row">
-            <strong>Timeline Position</strong><br />
+            <strong>Zeitachsen Position</strong><br />
             X: @Data.Position
         </div>
 
         <div class="entry-row">
-            <strong>Target Position</strong><br />
+            <strong>Ziel Position</strong><br />
             X: @Math.Round(Data.TargetPosition, 1)
             <br />
             Y: @Math.Round(Data.TargetYPercent, 1)%
@@ -125,30 +125,20 @@
         @if (Data.LinkedDomain != null)
         {
             <div class="entry-row">
-                <strong>Linked Domain</strong><br />
+                <strong>Verlinkte Domäne</strong><br />
                 @Data.LinkedDomain.Domain
             </div>
 
             <div class="entry-row">
-                <strong>Linked Visits</strong><br />
+                <strong>Verlinkte Besuche</strong><br />
                 @(Data.LinkedDomain.SubEntries?.Count ?? 0)
-            </div>
-
-            <div class="entry-row">
-                <strong>Domain Expanded</strong><br />
-                @(Data.LinkedDomain.IsExpanded ? "Yes" : "No")
-            </div>
-
-            <div class="entry-row">
-                <strong>Heavy Cluster</strong><br />
-                @(Data.LinkedDomain.IsHeavyCluster ? "Yes" : "No")
             </div>
         }
 
         @if (Data.Evidence.Any())
         {
             <div class="entry-row">
-                <strong>Evidence</strong>
+                <strong>Beweise</strong>
 
                 <ul style="
                     margin-top:10px;
@@ -172,7 +162,7 @@
         @if (Data.LinkedExtensions.Any())
         {
             <div class="entry-row">
-                <strong>Linked Extensions</strong>
+                <strong>Verlinkte Erweiterungen</strong>
 
                 <ul style="
                     margin-top:10px;
@@ -209,7 +199,7 @@
         @if (Data.LinkedInputs.Any())
         {
             <div class="entry-row">
-                <strong>Linked Inputs</strong>
+                <strong>Verlinkte Benutzer Eingaben</strong>
 
                 <ul style="
                     margin-top:10px;
@@ -240,7 +230,7 @@
         @if (Data.LinkedCookies.Any())
         {
             <div class="entry-row">
-                <strong>Linked Cookies</strong>
+                <strong>Verlinkte Cookies</strong>
 
                 <ul style="
                     margin-top:10px;

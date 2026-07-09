@@ -4,7 +4,7 @@
      style="@GetSeverityStyle()">
 
     <div class="entry-header">
-        <span>Storage Artifact
+        <span>Localer Speicher
             @if (Data.HighestAnomalySeverity >= 3)
             {
                 <span class="severity-badge"
@@ -26,29 +26,29 @@
     <div class="entry-content">
 
         <div class="entry-row">
-            <strong>Profile</strong><br />
+            <strong>Profil</strong><br />
             @Data.Profile
         </div>
 
         <div class="entry-row">
-            <strong>Storage Type</strong><br />
+            <strong>Speicher Typ</strong><br />
             @Data.Type
         </div>
 
         <div class="entry-row">
-            <strong>Origin</strong><br />
+            <strong>Ursprung</strong><br />
             @Data.Origin
         </div>
 
         <div class="entry-row">
-            <strong>Timestamp</strong><br />
+            <strong>Zeitstempel</strong><br />
             @Data.Time.ToLocalTime()
         </div>
 
         @if (Data.LastModified != null)
         {
             <div class="entry-row">
-                <strong>Last Modified</strong><br />
+                <strong>Letzte Veränderung</strong><br />
                 @Data.LastModified.Value.ToLocalTime()
             </div>
         }
@@ -69,24 +69,24 @@
         </div>
 
         <div class="entry-row">
-            <strong>Binary Content</strong><br />
+            <strong>Binärer Inhalt</strong><br />
             @(Data.IsBinary ? "Yes" : "No")
         </div>
 
         <div class="entry-row">
-            <strong>Sensitive Content</strong><br />
+            <strong>Sensibler Inhalt</strong><br />
             @(Data.IsSensitive ? "Yes" : "No")
         </div>
 
         <div class="entry-row">
-            <strong>Relations</strong><br />
+            <strong>Relationen</strong><br />
             @Data.Relations.Count
         </div>
 
         @if (Data.Relations.Any(r => r.History != null))
         {
             <div class="entry-row">
-                <strong>Originating History Entries</strong><br />
+                <strong>Ursprungs Verlauf URL</strong><br />
 
                 @foreach (var relation in Data.Relations
                     .Where(r => r.History != null)
@@ -130,7 +130,7 @@
         @if (RelatedAnomalies.Any())
         {
             <div class="entry-row">
-                <strong>Related Anomalies</strong><br />
+                <strong>Gefundene Anomalien</strong><br />
 
                 @foreach (var anomaly in RelatedAnomalies)
                 {
@@ -142,7 +142,7 @@
 
                         <br />
 
-                        Severity:
+                        Schweregrad:
                         @anomaly.Severity
 
                         <br />

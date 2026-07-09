@@ -10,7 +10,7 @@
         <div class="entry-header">
 
             <span>
-                User Input Details
+                Benutzer Eingaben Details
 
                 @if (Data.HighestAnomalySeverity >= 3)
                 {
@@ -34,26 +34,26 @@
         <div class="entry-content">
 
             <div class="entry-row">
-                <strong>Type</strong><br />
+                <strong>Typ</strong><br />
                 @GetTypeLabel(Data.Type)
             </div>
 
             <div class="entry-row">
-                <strong>Value</strong><br />
+                <strong>Wert</strong><br />
                 @(string.IsNullOrWhiteSpace(Data.Value)
                     ? "-"
                     : Data.Value)
             </div>
 
             <div class="entry-row">
-                <strong>Timestamp</strong><br />
+                <strong>Zeitstempel</strong><br />
                 @Data.Time
             </div>
 
             @if (Data.LinkedHistory != null)
             {
                 <div class="entry-row">
-                    <strong>Originating History Entry</strong><br />
+                    <strong>Ursprungs Verlauf URL</strong><br />
 
                     <div>
                         <strong>Visited:</strong>
@@ -68,7 +68,7 @@
                     @if (!string.IsNullOrWhiteSpace(Data.LinkedHistory.ReferrerUrl))
                     {
                         <div style="margin-top:4px; word-break:break-word;">
-                            <strong>Referrer:</strong><br />
+                            <strong>Verweis:</strong><br />
                             @Data.LinkedHistory.ReferrerUrl
                         </div>
                     }
@@ -78,7 +78,7 @@
             @if (RelatedAnomalies.Any())
             {
                 <div class="entry-row">
-                    <strong>Related Anomalies</strong><br />
+                    <strong>Gefundene Anomalien</strong><br />
 
                     @foreach (var anomaly in RelatedAnomalies)
                     {
@@ -90,7 +90,7 @@
 
                             <br />
 
-                            Severity:
+                            Schweregrad:
                             @anomaly.Severity
 
                             <br />

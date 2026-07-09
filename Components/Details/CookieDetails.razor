@@ -36,7 +36,7 @@
         </div>
 
         <div class="entry-row">
-            <strong>Path</strong><br />
+            <strong>Pfad</strong><br />
             @(string.IsNullOrWhiteSpace(Data.Path) ? "/" : Data.Path)
         </div>
 
@@ -46,12 +46,12 @@
         </div>
 
         <div class="entry-row">
-            <strong>Category</strong><br />
+            <strong>Kategorie</strong><br />
             @Data.Category
         </div>
 
         <div class="entry-row">
-            <strong>Value</strong><br />
+            <strong>Wert</strong><br />
             @(string.IsNullOrWhiteSpace(Data.Value)
                 ? "(encrypted)"
                 : Data.Value)
@@ -60,28 +60,28 @@
         @if (Data.EncryptedValue.Length > 0)
         {
             <div class="entry-row">
-                <strong>Encrypted Value</strong><br />
+                <strong>Verschlüsselter Wert</strong><br />
                 @($"{Data.EncryptedValue.Length} bytes")
             </div>
         }
 
         <div class="entry-row">
-            <strong>Created</strong><br />
+            <strong>Erstellt</strong><br />
             @Data.Created
         </div>
 
         <div class="entry-row">
-            <strong>Last Accessed</strong><br />
+            <strong>Letzter Zugriff</strong><br />
             @Data.LastAccessed
         </div>
 
         <div class="entry-row">
-            <strong>Expires</strong><br />
+            <strong>Gültigkeit</strong><br />
             @Data.Expires
         </div>
 
         <div class="entry-row">
-            <strong>Persistence</strong><br />
+            <strong>Persistenz</strong><br />
 
             @(Data.Expires > DateTime.Now
                 ? "Persistent Cookie"
@@ -89,14 +89,14 @@
         </div>
 
         <div class="entry-row">
-            <strong>Relations</strong><br />
+            <strong>Relationen</strong><br />
             @Data.Relations.Count
         </div>
 
         @if (Data.Relations.Any(r => r.History != null))
         {
             <div class="entry-row">
-                <strong>Originating History Entries</strong><br />
+                <strong>Ursprünglichs Verlauf URL</strong><br />
 
                 @foreach (var relation in Data.Relations.Where(r => r.History != null))
                 {
@@ -116,7 +116,7 @@
         @if (RelatedAnomalies.Any())
         {
             <div class="entry-row">
-                <strong>Related Anomalies</strong><br />
+                <strong>Gefundene Anomalien</strong><br />
 
                 @foreach (var anomaly in RelatedAnomalies)
                 {
@@ -128,7 +128,7 @@
 
                         <br />
 
-                        Severity:
+                        Schweregrad:
                         @anomaly.Severity
 
                         <br />
