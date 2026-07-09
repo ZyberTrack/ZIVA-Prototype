@@ -521,6 +521,14 @@
     {
         DomainEntries = BuildDomainEntries(State.BrowserEntries);
 
+        foreach (var domain in DomainEntries)
+        {
+            foreach (var history in domain.SubEntries)
+            {
+                history.ParentDomain = domain;
+            }
+        }
+
         foreach (var entry in DomainEntries)
         {
             // Farbe nur einmal berechnen
@@ -2804,24 +2812,25 @@
                 {
                     foreach (var relation in cookie.Relations)
                     {
-                        var domainEntry = GetRenderedDomain(relation.Domain);
-
-                        if (domainEntry == null)
+                        if (relation.History == null)
                             continue;
 
-                        double domainPosX = domainEntry.Position;
-                        double domainPosY = domainEntry.RenderYPercent;
+                        var history = relation.History;
 
                         string color =
-                            ColorService.GetColor(domainEntry.Url);
+                            ColorService.GetColor(history.Url);
+
+                        double historyPosX = history.Position;
+
+                        double historyPosY = history.ParentDomain?.RenderYPercent ?? baseTop;
 
                         double cookiePosX =
                             cookie.Position - 2;
 
                         double cookiePosY = 43;
 
-                        <line x1="@domainPosX"
-                              y1="@($"{domainPosY}%")"
+                        <line x1="@historyPosX"
+                              y1="@($"{historyPosY}%")"
                               x2="@cookiePosX"
                               y2="@($"{cookiePosY}%")"
                               stroke="@color"
@@ -2835,16 +2844,17 @@
                 {
                     foreach (var relation in input.Relations)
                     {
-                        var domainEntry = GetRenderedDomain(relation.Domain);
-
-                        if (domainEntry == null)
+                        if (relation.History == null)
                             continue;
 
-                        double domainPosX = domainEntry.Position;
-                        double domainPosY = domainEntry.RenderYPercent;
+                        var history = relation.History;
 
                         string color =
-                            ColorService.GetColor(domainEntry.Url);
+                            ColorService.GetColor(history.Url);
+
+                        double historyPosX = history.Position;
+
+                        double historyPosY = history.ParentDomain?.RenderYPercent ?? baseTop;
 
                         double inputPosX =
                             input.Position - 2;
@@ -2857,8 +2867,8 @@
                                 _ => 50
                             };
 
-                        <line x1="@domainPosX"
-                              y1="@($"{domainPosY}%")"
+                        <line x1="@historyPosX"
+                              y1="@($"{historyPosY}%")"
                               x2="@inputPosX"
                               y2="@($"{inputPosY}%")"
                               stroke="@color"
@@ -2872,29 +2882,26 @@
                 {
                     foreach (var relation in ext.Relations)
                     {
-                        if (relation.Type !=
-                            ArtifactRelationType
-                                .ExtensionToWebStore)
+                        if (relation.Type != ArtifactRelationType.ExtensionToWebStore)
                             continue;
 
-                        var domainEntry = GetRenderedDomain(relation.Domain);
-
-                        if (domainEntry == null)
+                        if (relation.History == null)
                             continue;
 
-                        double domainPosX = domainEntry.Position;
-                        double domainPosY = domainEntry.RenderYPercent;
+                        var history = relation.History;
 
                         string color =
-                            ColorService.GetColor(domainEntry.Url);
+                            ColorService.GetColor(history.Url);
 
-                        double extPosX =
-                            ext.Position;
+                        double historyPosX = history.Position;
 
+                        double historyPosY = history.ParentDomain?.RenderYPercent ?? baseTop;
+
+                        double extPosX = ext.Position;
                         double extPosY = 64;
 
-                        <line x1="@domainPosX"
-                              y1="@($"{domainPosY}%")"
+                        <line x1="@historyPosX"
+                              y1="@($"{historyPosY}%")"
                               x2="@extPosX"
                               y2="@($"{extPosY}%")"
                               stroke="@color"
@@ -2908,24 +2915,25 @@
                 {
                     foreach (var relation in storage.Relations)
                     {
-                        var domainEntry = GetRenderedDomain(relation.Domain);
-
-                        if (domainEntry == null)
+                        if (relation.History == null)
                             continue;
 
-                        double domainPosX = domainEntry.Position;
-                        double domainPosY = domainEntry.RenderYPercent;
+                        var history = relation.History;
 
                         string color =
-                            ColorService.GetColor(domainEntry.Url);
+                            ColorService.GetColor(history.Url);
+
+                        double historyPosX = history.Position;
+
+                        double historyPosY = history.ParentDomain?.RenderYPercent ?? baseTop;
 
                         double storagePosX =
                             storage.Position;
 
                         double storagePosY = 57;
 
-                        <line x1="@domainPosX"
-                              y1="@($"{domainPosY}%")"
+                        <line x1="@historyPosX"
+                              y1="@($"{historyPosY}%")"
                               x2="@storagePosX"
                               y2="@($"{storagePosY}%")"
                               stroke="@color"

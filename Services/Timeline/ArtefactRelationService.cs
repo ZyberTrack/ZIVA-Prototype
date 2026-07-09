@@ -244,7 +244,6 @@ namespace ZIVA_Prototype.Services.Timeline
                     continue;
 
                 BrowserHistoryEntry? matchingHistory = null;
-                DomainEntry? matchingDomain = null;
 
                 // =====================================================
                 // SEARCH QUERY
@@ -252,13 +251,25 @@ namespace ZIVA_Prototype.Services.Timeline
 
                 if (input.Type == UserInputType.SearchQuery && input.LinkedHistory != null)
                 {
-                    matchingHistory = input.LinkedHistory;
+                    var relation1 = new ArtifactRelationEntry
+                    {
+                        Type = ArtifactRelationType.UserInputToHistory,
 
-                    matchingDomain = domains.FirstOrDefault(d =>
-                        d.SubEntries.Contains(matchingHistory));
+                        UserInput = input,
 
-                    if (matchingDomain == null)
-                        continue;
+                        History = input.LinkedHistory,
+
+                        Time = input.Time,
+
+                        Confidence = 100,
+
+                        Reason = "Search query extracted directly from browser history."
+                    };
+
+                    input.Relations.Add(relation1);
+                    input.LinkedHistory.Relations.Add(relation1);
+
+                    continue;
                 }
 
                 // =====================================================
@@ -267,25 +278,40 @@ namespace ZIVA_Prototype.Services.Timeline
 
                 else if (input.Type == UserInputType.Favicon)
                 {
-                    string faviconUrl =
-                        input.Value.Trim().ToLower();
+                    string faviconUrl = input.Value.Trim();
 
-                    matchingDomain =
+                    // Exakte URL
+                    matchingHistory =
                         domains
-                        .Where(d =>
-                            !string.IsNullOrWhiteSpace(d.Url))
-                        .Where(d =>
-                            d.Url.ToLower().Contains(faviconUrl) ||
-                            faviconUrl.Contains(d.Domain.ToLower()))
-                        .FirstOrDefault();
+                            .SelectMany(d => d.SubEntries)
+                            .FirstOrDefault(h =>
+                                string.Equals(
+                                    h.Url,
+                                    faviconUrl,
+                                    StringComparison.OrdinalIgnoreCase));
 
-                    if (matchingDomain != null)
+                    // Fallback: gleicher Host
+                    if (matchingHistory == null)
                     {
-                        matchingHistory =
-                            matchingDomain.SubEntries
-                            .Where(h => h.VisitTime <= input.Time)
-                            .OrderByDescending(h => h.VisitTime)
-                            .FirstOrDefault();
+                        if (Uri.TryCreate(faviconUrl, UriKind.Absolute, out var faviconUri))
+                        {
+                            matchingHistory =
+                                domains
+                                    .SelectMany(d => d.SubEntries)
+                                    .Where(h =>
+                                    {
+                                        if (!Uri.TryCreate(h.Url, UriKind.Absolute, out var historyUri))
+                                            return false;
+
+                                        return historyUri.Host.Equals(
+                                            faviconUri.Host,
+                                            StringComparison.OrdinalIgnoreCase);
+                                    })
+                                    .OrderBy(h =>
+                                        Math.Abs(
+                                            (h.VisitTime - input.Time).TotalSeconds))
+                                    .FirstOrDefault();
+                        }
                     }
                 }
 
@@ -295,24 +321,19 @@ namespace ZIVA_Prototype.Services.Timeline
 
                 else
                 {
-                    matchingDomain =
+                    matchingHistory =
                         domains
-                        .OrderBy(d =>
-                            Math.Abs((input.Time - d.VisitTime).TotalSeconds))
-                        .FirstOrDefault(d =>
-                            Math.Abs((input.Time - d.VisitTime).TotalMinutes) <= 5);
-
-                    if (matchingDomain != null)
-                    {
-                        matchingHistory =
-                            matchingDomain.SubEntries
-                            .Where(h => h.VisitTime <= input.Time)
-                            .OrderByDescending(h => h.VisitTime)
+                            .SelectMany(d => d.SubEntries)
+                            .Where(h =>
+                                Math.Abs(
+                                    (h.VisitTime - input.Time).TotalSeconds) <= 10)
+                            .OrderBy(h =>
+                                Math.Abs(
+                                    (h.VisitTime - input.Time).TotalSeconds))
                             .FirstOrDefault();
-                    }
                 }
 
-                if (matchingDomain == null)
+                if (matchingHistory == null)
                     continue;
 
                 var relation = new ArtifactRelationEntry
@@ -330,24 +351,26 @@ namespace ZIVA_Prototype.Services.Timeline
                     },
 
                     UserInput = input,
-                    Domain = matchingDomain,
+
                     History = matchingHistory,
+
+                    // Optional:
+                    Domain = matchingHistory.Relations
+                        .Select(r => r.Domain)
+                        .FirstOrDefault(d => d != null),
+
                     Time = input.Time,
 
-                    Confidence = matchingHistory != null ? 100 : 75,
+                    Confidence = 100,
 
-                    Reason = matchingHistory != null
-                        ? "User input belongs to originating history entry."
-                        : "User input belongs to visited domain."
+                    Reason = "User input originates from history entry."
                 };
 
                 input.Relations.Add(relation);
-                matchingDomain.Relations.Add(relation);
-
-                if (matchingHistory != null)
-                    matchingHistory.Relations.Add(relation);
+                matchingHistory.Relations.Add(relation);
             }
         }
+
 
         // =====================================================
         // EXTENSIONS
