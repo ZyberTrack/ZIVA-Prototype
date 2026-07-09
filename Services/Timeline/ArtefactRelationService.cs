@@ -98,57 +98,104 @@ namespace ZIVA_Prototype.Services.Timeline
                         .TrimStart('.')
                         .ToLower();
 
-                // ---------------------------------------
-                // Domain bestimmen
-                // ---------------------------------------
-
                 var matchingDomain =
-                    domains
-                    .Where(d =>
+                    domains.FirstOrDefault(d =>
                     {
-                        var domain =
+                        string domain =
                             d.Domain
-                             .TrimStart('.')
-                             .ToLower();
+                                .TrimStart('.')
+                                .ToLower();
 
                         return domain == cookieDomain
                             || domain.EndsWith("." + cookieDomain)
                             || cookieDomain.EndsWith("." + domain);
-                    })
-                    .FirstOrDefault();
+                    });
 
                 if (matchingDomain == null)
                     continue;
 
-                // ---------------------------------------
-                // Passendste History bestimmen
-                // ---------------------------------------
-
                 BrowserHistoryEntry? matchingHistory = null;
-
-                int bestScore = -1;
+                int bestScore = int.MinValue;
 
                 foreach (var history in matchingDomain.SubEntries)
                 {
+                    // Seiten, die nach der Cookie-Erstellung besucht wurden,
+                    // können das Cookie nicht erzeugt haben.
                     if (history.VisitTime > cookie.Created)
                         continue;
 
                     int score = 0;
 
+                    //----------------------------------------------------
+                    // 1. Host
+                    //----------------------------------------------------
+
                     if (Uri.TryCreate(history.Url, UriKind.Absolute, out var uri))
                     {
-                        if (uri.Host.Equals(
-                                cookieDomain,
-                                StringComparison.OrdinalIgnoreCase))
+                        if (uri.Host.Equals(cookieDomain,
+                            StringComparison.OrdinalIgnoreCase))
                         {
                             score += 100;
                         }
+
+                        //------------------------------------------------
+                        // 2. Cookie-Pfad
+                        //------------------------------------------------
+
+                        if (!string.IsNullOrWhiteSpace(cookie.Path)
+                            && cookie.Path != "/")
+                        {
+                            if (uri.AbsolutePath.StartsWith(
+                                cookie.Path,
+                                StringComparison.OrdinalIgnoreCase))
+                            {
+                                score += 60;
+                            }
+                        }
+
+                        //------------------------------------------------
+                        // 3. Typische Auth-/Login-Seiten
+                        //------------------------------------------------
+
+                        string path = uri.AbsolutePath.ToLower();
+
+                        if (path.Contains("/login"))
+                            score += 25;
+
+                        if (path.Contains("/signin"))
+                            score += 25;
+
+                        if (path.Contains("/auth"))
+                            score += 25;
+
+                        if (path.Contains("/account"))
+                            score += 15;
                     }
 
-                    // Zeitliche Nähe (max. 60 Punkte)
+                    //----------------------------------------------------
+                    // 4. LastAccessed
+                    //----------------------------------------------------
+
+                    if (cookie.LastAccessed > DateTime.MinValue)
+                    {
+                        score += Math.Max(
+                            0,
+                            20 - (int)Math.Abs(
+                                (cookie.LastAccessed - history.VisitTime)
+                                .TotalMinutes));
+                    }
+
+                    //----------------------------------------------------
+                    // 5. Created
+                    //----------------------------------------------------
+
                     score += Math.Max(
                         0,
-                        60 - (int)(cookie.Created - history.VisitTime).TotalMinutes);
+                        20 - (int)Math.Abs(
+                            (cookie.Created - history.VisitTime)
+                            .TotalMinutes));
+
+                    //----------------------------------------------------
 
                     if (score > bestScore)
                     {
@@ -157,36 +204,25 @@ namespace ZIVA_Prototype.Services.Timeline
                     }
                 }
 
-                // ---------------------------------------
-                // Relation erzeugen
-                // ---------------------------------------
+                var relation = new ArtifactRelationEntry
+                {
+                    Type = ArtifactRelationType.CookieToHistory,
 
-                var relation =
-                    new ArtifactRelationEntry
-                    {
-                        Type = ArtifactRelationType.CookieToHistory,
+                    Cookie = cookie,
 
-                        Cookie = cookie,
+                    Domain = matchingDomain,
 
-                        Domain = matchingDomain,
+                    History = matchingHistory,
 
-                        History = matchingHistory,
+                    Time = cookie.Created,
 
-                        Time = cookie.Created,
+                    Confidence = Math.Clamp(bestScore, 0, 100),
 
-                        Confidence =
-                            matchingHistory != null
-                                ? 95
-                                : 80,
-
-                        Reason =
-                            matchingHistory != null
-                                ? "Cookie belongs to closest visited page."
-                                : "Cookie belongs to visited domain."
-                    };
+                    Reason =
+                        $"Cookie correlated using host, path and temporal proximity (Score: {bestScore})."
+                };
 
                 cookie.Relations.Add(relation);
-
                 matchingDomain.Relations.Add(relation);
 
                 if (matchingHistory != null)
@@ -199,42 +235,64 @@ namespace ZIVA_Prototype.Services.Timeline
         // =====================================================
 
         private void BuildInputRelations(
-    List<DomainEntry> domains,
-    List<UserInputEntry> inputs)
+     List<DomainEntry> domains,
+     List<UserInputEntry> inputs)
         {
             foreach (var input in inputs)
             {
                 if (string.IsNullOrWhiteSpace(input.Value))
                     continue;
 
+                BrowserHistoryEntry? matchingHistory = null;
                 DomainEntry? matchingDomain = null;
 
                 // =====================================================
-                // DOMAIN FINDEN
+                // SEARCH QUERY
                 // =====================================================
 
-                if (input.Type == UserInputType.Favicon)
+                if (input.Type == UserInputType.SearchQuery && input.LinkedHistory != null)
+                {
+                    matchingHistory = input.LinkedHistory;
+
+                    matchingDomain = domains.FirstOrDefault(d =>
+                        d.SubEntries.Contains(matchingHistory));
+
+                    if (matchingDomain == null)
+                        continue;
+                }
+
+                // =====================================================
+                // FAVICON
+                // =====================================================
+
+                else if (input.Type == UserInputType.Favicon)
                 {
                     string faviconUrl =
-                        input.Value?
-                        .Trim()
-                        .ToLower() ?? "";
+                        input.Value.Trim().ToLower();
 
                     matchingDomain =
                         domains
-                        .Where(d => !string.IsNullOrWhiteSpace(d.Url))
                         .Where(d =>
-                            d.Url.ToLower().Contains(faviconUrl)
-                            || faviconUrl.Contains(d.Domain.ToLower()))
+                            !string.IsNullOrWhiteSpace(d.Url))
+                        .Where(d =>
+                            d.Url.ToLower().Contains(faviconUrl) ||
+                            faviconUrl.Contains(d.Domain.ToLower()))
                         .FirstOrDefault();
 
-                    matchingDomain ??=
-                        domains
-                        .OrderBy(d =>
-                            Math.Abs((input.Time - d.VisitTime).TotalSeconds))
-                        .FirstOrDefault(d =>
-                            Math.Abs((input.Time - d.VisitTime).TotalMinutes) <= 5);
+                    if (matchingDomain != null)
+                    {
+                        matchingHistory =
+                            matchingDomain.SubEntries
+                            .Where(h => h.VisitTime <= input.Time)
+                            .OrderByDescending(h => h.VisitTime)
+                            .FirstOrDefault();
+                    }
                 }
+
+                // =====================================================
+                // AUTOFILL
+                // =====================================================
+
                 else
                 {
                     matchingDomain =
@@ -243,88 +301,47 @@ namespace ZIVA_Prototype.Services.Timeline
                             Math.Abs((input.Time - d.VisitTime).TotalSeconds))
                         .FirstOrDefault(d =>
                             Math.Abs((input.Time - d.VisitTime).TotalMinutes) <= 5);
+
+                    if (matchingDomain != null)
+                    {
+                        matchingHistory =
+                            matchingDomain.SubEntries
+                            .Where(h => h.VisitTime <= input.Time)
+                            .OrderByDescending(h => h.VisitTime)
+                            .FirstOrDefault();
+                    }
                 }
 
                 if (matchingDomain == null)
                     continue;
 
-                // =====================================================
-                // PASSENDSTEN HISTORY-EINTRAG FINDEN
-                // =====================================================
-
-                BrowserHistoryEntry? matchingHistory = null;
-
-                int bestScore = -1;
-
-                foreach (var history in matchingDomain.SubEntries)
+                var relation = new ArtifactRelationEntry
                 {
-                    if (history.VisitTime > input.Time)
-                        continue;
-
-                    int score = 0;
-
-                    score += Math.Max(
-                        0,
-                        60 - (int)(input.Time - history.VisitTime).TotalMinutes);
-
-                    if (input.Type == UserInputType.Favicon &&
-                        Uri.TryCreate(history.Url, UriKind.Absolute, out var uri))
+                    Type = input.Type switch
                     {
-                        if (input.Value.Contains(uri.Host,
-                                StringComparison.OrdinalIgnoreCase))
-                        {
-                            score += 100;
-                        }
-                    }
+                        UserInputType.Autofill =>
+                            ArtifactRelationType.AutofillToHistory,
 
-                    if (score > bestScore)
-                    {
-                        bestScore = score;
-                        matchingHistory = history;
-                    }
-                }
+                        UserInputType.Favicon =>
+                            ArtifactRelationType.FaviconToHistory,
 
-                // =====================================================
-                // RELATION ERZEUGEN
-                // =====================================================
+                        _ =>
+                            ArtifactRelationType.UserInputToHistory
+                    },
 
-                var relation =
-                    new ArtifactRelationEntry
-                    {
-                        Type =
-                            input.Type switch
-                            {
-                                UserInputType.Autofill =>
-                                    ArtifactRelationType.AutofillToHistory,
+                    UserInput = input,
+                    Domain = matchingDomain,
+                    History = matchingHistory,
+                    Time = input.Time,
 
-                                UserInputType.Favicon =>
-                                    ArtifactRelationType.FaviconToHistory,
+                    Confidence = matchingHistory != null ? 100 : 75,
 
-                                _ =>
-                                    ArtifactRelationType.UserInputToHistory
-                            },
-
-                        UserInput = input,
-
-                        Domain = matchingDomain,
-
-                        History = matchingHistory,
-
-                        Time = input.Time,
-
-                        Confidence =
-                            matchingHistory != null
-                                ? 95
-                                : 75,
-
-                        Reason =
-                            matchingHistory != null
-                                ? "User input belongs to closest visited page."
-                                : "User input belongs to visited domain."
-                    };
+                    Reason = matchingHistory != null
+                        ? "User input belongs to originating history entry."
+                        : "User input belongs to visited domain."
+                };
 
                 input.Relations.Add(relation);
-
                 matchingDomain.Relations.Add(relation);
 
                 if (matchingHistory != null)

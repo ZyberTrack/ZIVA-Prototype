@@ -1,89 +1,118 @@
 ﻿@using ZIVA_Prototype.Components.Models.Timeline;
 @using ZIVA_Prototype.Components.Models.Enums;
 
-<div class="entry-details anomaly-details"
-     style="@GetSeverityStyle()">
+@if (Data != null)
+{
 
-    <div class="entry-header">
+    <div class="entry-details anomaly-details"
+         style="@GetSeverityStyle()">
 
-        <span>
-            User Input Details
+        <div class="entry-header">
 
-            @if (Data.HighestAnomalySeverity >= 3)
+            <span>
+                User Input Details
+
+                @if (Data.HighestAnomalySeverity >= 3)
+                {
+                    <span class="severity-badge"
+                          style="@GetArtifactBadgeStyle()">
+
+                        SEV-@Data.HighestAnomalySeverity
+
+                    </span>
+                }
+
+            </span>
+
+            <button class="close-btn"
+                    @onclick="OnClose">
+                ✕
+            </button>
+
+        </div>
+
+        <div class="entry-content">
+
+            <div class="entry-row">
+                <strong>Type</strong><br />
+                @GetTypeLabel(Data.Type)
+            </div>
+
+            <div class="entry-row">
+                <strong>Value</strong><br />
+                @(string.IsNullOrWhiteSpace(Data.Value)
+                    ? "-"
+                    : Data.Value)
+            </div>
+
+            <div class="entry-row">
+                <strong>Timestamp</strong><br />
+                @Data.Time
+            </div>
+
+            @if (Data.LinkedHistory != null)
             {
-                <span class="severity-badge"
-                      style="@GetArtifactBadgeStyle()">
+                <div class="entry-row">
+                    <strong>Originating History Entry</strong><br />
 
-                    SEV-@Data.HighestAnomalySeverity
+                    <div>
+                        <strong>Visited:</strong>
+                        @Data.LinkedHistory.VisitTime
+                    </div>
 
-                </span>
+                    <div style="margin-top:4px; word-break:break-word;">
+                        <strong>URL:</strong><br />
+                        @Data.LinkedHistory.Url
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Data.LinkedHistory.ReferrerUrl))
+                    {
+                        <div style="margin-top:4px; word-break:break-word;">
+                            <strong>Referrer:</strong><br />
+                            @Data.LinkedHistory.ReferrerUrl
+                        </div>
+                    }
+                </div>
             }
 
-        </span>
+            @if (RelatedAnomalies.Any())
+            {
+                <div class="entry-row">
+                    <strong>Related Anomalies</strong><br />
 
-        <button class="close-btn"
-                @onclick="OnClose">
-            ✕
-        </button>
+                    @foreach (var anomaly in RelatedAnomalies)
+                    {
+                        <div class="linked-anomaly"
+                             style="@GetAnomalyStyle(anomaly)"
+                             @onclick="() => OnFocusAnomaly.InvokeAsync(anomaly)">
+
+                            <strong>@anomaly.Type</strong>
+
+                            <br />
+
+                            Severity:
+                            @anomaly.Severity
+
+                            <br />
+
+                            @(string.IsNullOrWhiteSpace(anomaly.Description)
+                                ? "-"
+                                : anomaly.Description)
+
+                        </div>
+                    }
+                </div>
+            }
+
+        </div>
 
     </div>
-
-    <div class="entry-content">
-
-        <div class="entry-row">
-            <strong>Type</strong><br />
-            @GetTypeLabel(Data.Type)
-        </div>
-
-        <div class="entry-row">
-            <strong>Value</strong><br />
-            @(string.IsNullOrWhiteSpace(Data.Value)
-                ? "-"
-                : Data.Value)
-        </div>
-
-        <div class="entry-row">
-            <strong>Timestamp</strong><br />
-            @Data.Time
-        </div>
-
-        @if (RelatedAnomalies.Any())
-        {
-            <div class="entry-row">
-                <strong>Related Anomalies</strong><br />
-
-                @foreach (var anomaly in RelatedAnomalies)
-                {
-                    <div class="linked-anomaly"
-                         style="@GetAnomalyStyle(anomaly)"
-                         @onclick="() => OnFocusAnomaly.InvokeAsync(anomaly)">
-
-                        <strong>@anomaly.Type</strong>
-
-                        <br />
-
-                        Severity:
-                        @anomaly.Severity
-
-                        <br />
-
-                        @(string.IsNullOrWhiteSpace(anomaly.Description)
-                            ? "-"
-                            : anomaly.Description)
-
-                    </div>
-                }
-            </div>
-        }
-
-    </div>
-
-</div>
+}
 
 @code {
 
     [Parameter]
-    public UserInputEntry Data { get; set; }
+    public UserInputEntry? Data { get; set; }
 
     [Parameter]
     public EventCallback OnClose { get; set; }
@@ -95,14 +124,18 @@
     public EventCallback<AnalysisEntry> OnFocusAnomaly { get; set; }
 
     private List<AnalysisEntry> RelatedAnomalies =>
-        AnalysisEntries
-            .Where(a => a.LinkedInputs.Contains(Data))
-            .OrderByDescending(a => a.Severity)
-            .ToList();
+        Data == null
+            ? new()
+            : AnalysisEntries
+                .Where(a =>
+                    a.LinkedInputs != null &&
+                    a.LinkedInputs.Contains(Data))
+                .OrderByDescending(a => a.Severity)
+                .ToList();
 
-    private string GetAnomalyStyle(AnalysisEntry AnalysisEntries)
+    private string GetAnomalyStyle(AnalysisEntry anomaly)
     {
-        return AnalysisEntries.Severity switch
+        return anomaly.Severity switch
         {
             5 => "border-left:4px solid #ff2b2b;",
             4 => "border-left:4px solid #ff7a2b;",
@@ -114,6 +147,9 @@
 
     private string GetSeverityStyle()
     {
+        if (Data == null)
+            return "";
+
         return Data.HighestAnomalySeverity switch
         {
             5 =>
@@ -140,6 +176,9 @@
 
     private string GetArtifactBadgeStyle()
     {
+        if (Data == null)
+            return "";
+
         return Data.HighestAnomalySeverity switch
         {
             5 => "background:#ff2b2b;",
@@ -150,22 +189,14 @@
         };
     }
 
-    private string GetTypeLabel(
-        UserInputType type)
+    private string GetTypeLabel(UserInputType type)
     {
         return type switch
         {
-            UserInputType.SearchQuery =>
-                "Search Query",
-
-            UserInputType.Autofill =>
-                "Autofill Data",
-
-            UserInputType.Favicon =>
-                "Favicon Artifact",
-
-            _ =>
-                type.ToString()
+            UserInputType.SearchQuery => "Search Query",
+            UserInputType.Autofill => "Autofill Data",
+            UserInputType.Favicon => "Favicon Artifact",
+            _ => type.ToString()
         };
     }
 }

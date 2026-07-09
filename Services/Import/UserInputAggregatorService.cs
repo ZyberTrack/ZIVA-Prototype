@@ -52,7 +52,9 @@ namespace ZIVA_Prototype.Services.Import
                 {
                     Time = normalized.Value,
                     Value = query,
-                    Type = UserInputType.SearchQuery
+                    Type = UserInputType.SearchQuery,
+
+                    LinkedHistory = h
                 };
 
                 string key =

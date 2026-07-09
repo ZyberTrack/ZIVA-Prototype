@@ -2556,6 +2556,15 @@
                     @{
                         bool isHeavy = domainEntry.IsHeavyCluster;
 
+                        if (AnyFilterActive)
+                        {
+                            var visible = domainEntry.SubEntries
+                                .Where(RenderCache.VisibleHistory.Contains)
+                                .ToList();
+
+                            isHeavy &= visible.Count >= 10;
+                        }
+
                         string topStyle = $"calc({baseTop}% - 12px)";
                         string topStyleSquare = $"calc({baseTop}% + 5px)";
 
@@ -3125,9 +3134,9 @@
     else if (selectedInput != null)
     {
         <AutofillDetails Data="selectedInput"
-                         Anomalies="AnalysisEntries"
-                         OnFocusAnomaly="FocusAnomaly"
-                         OnClose="CloseAll" />
+                          AnalysisEntries="AnalysisEntries"
+                          OnFocusAnomaly="FocusAnomaly"
+                          OnClose="CloseAll" />
     }
     else if (selectedSubEntry != null)
     {

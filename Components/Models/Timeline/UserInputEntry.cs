@@ -14,6 +14,8 @@ namespace ZIVA_Prototype.Components.Models.Timeline
         public UserInputType Type { get; set; }
         public int Position { get; set; }
 
+        public BrowserHistoryEntry? LinkedHistory { get; set; }
+
         [JsonIgnore]
         public List<ArtifactRelationEntry> Relations { get; set; } = new(); // Für Verknüpfungen zu anderen Artefakten
 
