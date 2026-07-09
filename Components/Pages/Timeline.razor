@@ -2508,19 +2508,43 @@
 
                 domainEntry.RenderYPercent = Math.Round(baseTop - offsetPercent);
 
-                for (int x = domainEntry.ClusterStartPosition; x < domainEntry.ClusterEndPosition; x += MaxSegment)
+                int start;
+                int end;
+
+                if (AnyFilterActive)
                 {
-                    int segmentWidth = Math.Min(MaxSegment, domainEntry.ClusterEndPosition - x);
+                    var visible = domainEntry.SubEntries
+                        .Where(RenderCache.VisibleHistory.Contains)
+                        .OrderBy(h => h.Position)
+                        .ToList();
+
+                    if (visible.Count < 10)
+                    {
+                        continue;
+                    }
+
+                    start = visible.First().Position;
+                    end = visible.Last().Position;
+                }
+                else
+                {
+                    start = domainEntry.ClusterStartPosition;
+                    end = domainEntry.ClusterEndPosition;
+                }
+
+                for (int x = start; x < end; x += MaxSegment)
+                {
+                    int segmentWidth = Math.Min(MaxSegment, end - x);
 
                     <div class="heavy-cluster-line"
                          style="
-                        position:absolute;
-                        top:@($"calc({baseTop}% - 7px - {domainEntry.HeavyClusterIndex * heavyClusterSpacingPx}px)");
-                        left:@($"{x}px");
-                        width:@($"{segmentWidth}px");
-                        height:2px;
-                        background-color:@domainEntry.RenderColor;
-                        z-index:20;">
+                            position:absolute;
+                            top:@($"calc({baseTop}% - 7px - {domainEntry.HeavyClusterIndex * heavyClusterSpacingPx}px)");
+                            left:@($"{x}px");
+                            width:@($"{segmentWidth}px");
+                            height:2px;
+                            background-color:@domainEntry.RenderColor;
+                            z-index:20;">
                     </div>
                 }
             }
