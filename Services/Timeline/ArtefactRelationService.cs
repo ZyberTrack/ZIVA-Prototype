@@ -267,7 +267,6 @@ namespace ZIVA_Prototype.Services.Timeline
                     };
 
                     input.Relations.Add(relation1);
-                    input.LinkedHistory.Relations.Add(relation1);
 
                     continue;
                 }
@@ -278,41 +277,27 @@ namespace ZIVA_Prototype.Services.Timeline
 
                 else if (input.Type == UserInputType.Favicon)
                 {
-                    string faviconUrl = input.Value.Trim();
+                    if (input.LinkedHistory == null)
+                        continue;
 
-                    // Exakte URL
-                    matchingHistory =
-                        domains
-                            .SelectMany(d => d.SubEntries)
-                            .FirstOrDefault(h =>
-                                string.Equals(
-                                    h.Url,
-                                    faviconUrl,
-                                    StringComparison.OrdinalIgnoreCase));
-
-                    // Fallback: gleicher Host
-                    if (matchingHistory == null)
+                    var relation2 = new ArtifactRelationEntry
                     {
-                        if (Uri.TryCreate(faviconUrl, UriKind.Absolute, out var faviconUri))
-                        {
-                            matchingHistory =
-                                domains
-                                    .SelectMany(d => d.SubEntries)
-                                    .Where(h =>
-                                    {
-                                        if (!Uri.TryCreate(h.Url, UriKind.Absolute, out var historyUri))
-                                            return false;
+                        Type = ArtifactRelationType.FaviconToHistory,
 
-                                        return historyUri.Host.Equals(
-                                            faviconUri.Host,
-                                            StringComparison.OrdinalIgnoreCase);
-                                    })
-                                    .OrderBy(h =>
-                                        Math.Abs(
-                                            (h.VisitTime - input.Time).TotalSeconds))
-                                    .FirstOrDefault();
-                        }
-                    }
+                        UserInput = input,
+
+                        History = input.LinkedHistory,
+
+                        Time = input.Time,
+
+                        Confidence = 100,
+
+                        Reason = "Relation imported from source."
+                    };
+
+                    input.Relations.Add(relation2);
+
+                    continue;
                 }
 
                 // =====================================================
@@ -321,16 +306,22 @@ namespace ZIVA_Prototype.Services.Timeline
 
                 else
                 {
-                    matchingHistory =
-                        domains
-                            .SelectMany(d => d.SubEntries)
-                            .Where(h =>
-                                Math.Abs(
-                                    (h.VisitTime - input.Time).TotalSeconds) <= 10)
-                            .OrderBy(h =>
-                                Math.Abs(
-                                    (h.VisitTime - input.Time).TotalSeconds))
-                            .FirstOrDefault();
+                    // Falls bereits beim Import gesetzt
+                    if (input.LinkedHistory != null)
+                    {
+                        matchingHistory = input.LinkedHistory;
+                    }
+                    else
+                    {
+                        matchingHistory =
+                            domains
+                                .SelectMany(d => d.SubEntries)
+                                .Where(h =>
+                                    Math.Abs((h.VisitTime - input.Time).TotalSeconds) <= 10)
+                                .OrderBy(h =>
+                                    Math.Abs((h.VisitTime - input.Time).TotalSeconds))
+                                .FirstOrDefault();
+                    }
                 }
 
                 if (matchingHistory == null)
@@ -354,20 +345,25 @@ namespace ZIVA_Prototype.Services.Timeline
 
                     History = matchingHistory,
 
-                    // Optional:
-                    Domain = matchingHistory.Relations
-                        .Select(r => r.Domain)
-                        .FirstOrDefault(d => d != null),
+                    // Domain nur noch für Rendering
+                    Domain = matchingHistory.ParentDomain,
 
                     Time = input.Time,
 
                     Confidence = 100,
 
-                    Reason = "User input originates from history entry."
+                    Reason = input.LinkedHistory != null
+                        ? "Relation imported directly from source."
+                        : "Relation inferred from history."
                 };
 
                 input.Relations.Add(relation);
                 matchingHistory.Relations.Add(relation);
+
+                if (matchingHistory.ParentDomain != null)
+                {
+                    matchingHistory.ParentDomain.Relations.Add(relation);
+                }
             }
         }
 

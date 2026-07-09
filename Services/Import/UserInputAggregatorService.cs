@@ -112,18 +112,27 @@ namespace ZIVA_Prototype.Services.Import
             foreach (var favicon in favicons)
             {
                 var normalized =
-                    NormalizeTimestamp(
-                        favicon.Time);
+                    NormalizeTimestamp(favicon.Time);
 
                 if (normalized == null)
                     continue;
+
+                BrowserHistoryEntry? linkedHistory =
+                    history.FirstOrDefault(h =>
+                        string.Equals(
+                            h.Url.TrimEnd('/'),
+                            favicon.PageUrl.TrimEnd('/'),
+                            StringComparison.OrdinalIgnoreCase));
 
                 var item = new UserInputEntry
                 {
                     Time = normalized.Value,
                     Value = favicon.PageUrl,
-                    Type = UserInputType.Favicon
+                    Type = UserInputType.Favicon,
+
+                    LinkedHistory = linkedHistory
                 };
+
 
                 string key =
                     $"{item.Type}|{item.Time.Ticks}|{item.Value}";

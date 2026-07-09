@@ -606,6 +606,24 @@
                 domain.SubEntries.Last().Position;
         }
 
+        foreach (var input in UserInputs)
+            input.Relations.Clear();
+
+        foreach (var history in State.BrowserEntries)
+            history.Relations.Clear();
+
+        foreach (var cookie in State.BrowserCookies)
+            cookie.Relations.Clear();
+
+        foreach (var ext in State.Extensions)
+            ext.Relations.Clear();
+
+        foreach (var storage in State.StorageEntries)
+            storage.Relations.Clear();
+
+        foreach (var domain in DomainEntries)
+            domain.Relations.Clear();
+
         RelationService.BuildRelations(
             DomainEntries,
             State.BrowserCookies,
@@ -2839,6 +2857,8 @@
                               stroke-linecap="round" />
                     }
                 }
+
+              
 
                 @foreach (var input in RenderCache.VisibleInputs)
                 {
