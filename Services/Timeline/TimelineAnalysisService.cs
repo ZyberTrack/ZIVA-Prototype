@@ -63,6 +63,7 @@ namespace ZIVA_Prototype.Services.Timeline
                 userInputs
             );
 
+            
             DetectSuspiciousExtensions(
                 orphanArtifacts,
                 anomalyIndex,
@@ -70,10 +71,13 @@ namespace ZIVA_Prototype.Services.Timeline
                 summarizedEntries
             );
 
+
+            // Entfernt weil für den Scope der Analyse nicht relevant.
+            /* 
             DetectOrphanExtensions(
                 orphanArtifacts,
                 extensions
-            );
+            );*/
 
             BuildDeletedHistoryPhases(
                 anomalyIndex,
@@ -391,93 +395,98 @@ namespace ZIVA_Prototype.Services.Timeline
             foreach (var ext in extensions)
             {
                 // =====================================================
-                // SIGNALS
+                // UPDATE SOURCE
+                // =====================================================
+
+                string updateUrl =
+                    ext.UpdateUrl?.Trim() ?? "";
+
+                bool validGoogleUpdate =
+                    updateUrl.StartsWith(
+                        "https://clients2.google.com/service/update2/",
+                        StringComparison.OrdinalIgnoreCase)
+                    ||
+                    updateUrl.StartsWith(
+                        "https://clients2.googleusercontent.com/service/update2/",
+                        StringComparison.OrdinalIgnoreCase);
+
+                // =====================================================
+                // INSTALL LOCATION
+                // =====================================================
+
+                string installLocation =
+                    ext.InstallLocation ?? "";
+
+                bool suspiciousInstallLocation =
+                    !installLocation.Contains(
+                        @"\Extensions\",
+                        StringComparison.OrdinalIgnoreCase);
+
+                // =====================================================
+                // DEVELOPER EXTENSION
+                // =====================================================
+
+                bool developerExtension =
+                    ext.IsUnpacked;
+
+                // =====================================================
+                // LOCALHOST COMMUNICATION
                 // =====================================================
 
                 bool localhostCommunication =
                     ext.AllPermissions.Any(p =>
-                        p.Contains(
-                            "localhost",
-                            StringComparison.OrdinalIgnoreCase))
+                        p.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
+                        p.Contains("127.0.0.1"))
                     ||
                     ext.HostPermissions.Any(p =>
-                        p.Contains(
-                            "localhost",
-                            StringComparison.OrdinalIgnoreCase))
+                        p.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
+                        p.Contains("127.0.0.1"))
                     ||
                     ext.ContentScripts.Any(c =>
-                        c.Contains(
-                            "localhost",
-                            StringComparison.OrdinalIgnoreCase));
-
-                bool dangerousScripting =
-                    ext.AllPermissions.Any(p =>
-                        p.Contains(
-                            "scripting",
-                            StringComparison.OrdinalIgnoreCase))
-                    ||
-                    ext.AllPermissions.Any(p =>
-                        p.Contains(
-                            "webRequestBlocking",
-                            StringComparison.OrdinalIgnoreCase));
-
-                bool runtimeActive =
-                    ext.RuntimeArtifacts.Any();
-
+                        c.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
+                        c.Contains("127.0.0.1"));
 
                 // =====================================================
-                // DELETED HISTORY CORRELATION
+                // UPDATE SOURCE
                 // =====================================================
 
-                bool hasMatchingHistory = ext.Relations.Any(r => r.Type == ArtifactRelationType.ExtensionToWebStore);
+                bool suspiciousUpdateSource =
+                    developerExtension ||
+                    string.IsNullOrWhiteSpace(updateUrl) ||
+                    !validGoogleUpdate;
 
                 // =====================================================
-                // NO REAL SIGNAL
+                // NOTHING SUSPICIOUS
                 // =====================================================
 
-                if (!localhostCommunication
-                    &&
-                    !ext.IsUnpacked
-                    &&
-                    ext.IsFromWebStore
-                    &&
-                    !dangerousScripting)
+                if (!developerExtension &&
+                    !suspiciousUpdateSource &&
+                    !suspiciousInstallLocation &&
+                    !localhostCommunication)
                 {
                     continue;
                 }
 
                 // =====================================================
-                // SEVERITY
-                // =====================================================
-
-                int severity = 2;
-
-                if (dangerousScripting)
-                    severity = 3;
-
-                if (!ext.IsFromWebStore)
-                    severity = 3;
-
-                if (ext.IsUnpacked)
-                    severity = 4;
-
-                if (localhostCommunication)
-                    severity = 5;
-
-                // =====================================================
                 // DESCRIPTION
                 // =====================================================
 
+                List<string> reasons = new();
+
+                if (developerExtension)
+                    reasons.Add("loaded in Chrome developer mode");
+
+                if (suspiciousUpdateSource)
+                    reasons.Add("uses a non-standard update source");
+
+                if (suspiciousInstallLocation)
+                    reasons.Add("is installed outside the default Chrome Extensions directory");
+
+                if (localhostCommunication)
+                    reasons.Add("communicates with localhost");
+
                 string description =
-                    localhostCommunication
-                        ? "Extension communicates with localhost infrastructure"
-                        : ext.IsUnpacked
-                            ? "Developer / unpacked extension detected"
-                            : !ext.IsFromWebStore
-                                ? "Extension not installed from Chrome Web Store"
-                                : dangerousScripting
-                                    ? "Extension has scripting capabilities"
-                                    : "Suspicious extension detected";
+                    "Extension " + string.Join(", ", reasons) + ".";
 
                 // =====================================================
                 // CREATE
@@ -486,7 +495,9 @@ namespace ZIVA_Prototype.Services.Timeline
                 var anomaly =
                     new AnalysisEntry
                     {
-                        Category = GetCategory(AnalysisType.SuspiciousExtension),
+                        Category =
+                            GetCategory(
+                                AnalysisType.SuspiciousExtension),
 
                         Type =
                             AnalysisType.SuspiciousExtension,
@@ -496,24 +507,15 @@ namespace ZIVA_Prototype.Services.Timeline
                                 ? ext.Id
                                 : ext.Name,
 
-                        Severity =
-                            severity,
+                        Severity = localhostCommunication ? 5 : 4,
 
-                        Confidence =
-                            localhostCommunication
-                                ? 95
-                                : 75,
+                        Confidence = 95,
 
-                        Description =
-                            description,
+                        Description = description,
 
-                        FirstSeen =
-                            ext.InstallTime,
+                        FirstSeen = ext.InstallTime,
 
-                        LastSeen =
-                            runtimeActive
-                                ? ext.LastRuntimeActivity
-                                : ext.InstallTime,
+                        LastSeen = ext.InstallTime,
 
                         TargetType =
                             AnomalyTargetType.Extension,
@@ -521,90 +523,55 @@ namespace ZIVA_Prototype.Services.Timeline
                         TargetPosition =
                             ext.Position,
 
-                        TargetYPercent =
-                            64,
+                        TargetYPercent = 64,
 
                         LinkedExtensions =
                         {
                     ext
                         },
 
-                        Url =
-                            ext.InstallLocation,
+                        Url = ext.InstallLocation,
 
-                        Domain =
-                            ext.Name,
+                        Domain = ext.Name,
 
-                        Color =
-                            severity switch
-                            {
-                                5 => "#ff2b2b",
-                                4 => "#ff7a2b",
-                                3 => "#ffb52b",
-                                2 => "#ffe12b",
-                                _ => "#6cff6c"
-                            },
+                        Color = localhostCommunication
+                            ? "#ff2b2b"
+                            : "#ff7a2b",
 
                         Evidence =
                         {
                     $"Extension ID: {ext.Id}",
-                    $"Source: {(ext.IsFromWebStore ? "WebStore" : "Non-WebStore")}",
-                    $"Unpacked: {ext.IsUnpacked}",
-                    $"Runtime Active: {runtimeActive}"
+                    $"Developer Mode: {developerExtension}",
+                    $"Update URL: {updateUrl}",
+                    $"Install Location: {installLocation}"
                         }
                     };
 
-                // =====================================================
-                // LOCALHOST
-                // =====================================================
+                if (developerExtension)
+                {
+                    anomaly.Evidence.Add(
+                        "Extension is loaded in Chrome developer mode (unpacked extension).");
+                }
+
+                if (suspiciousUpdateSource)
+                {
+                    anomaly.Evidence.Add(
+                        "Non-standard update source detected.");
+                }
+
+                if (suspiciousInstallLocation)
+                {
+                    anomaly.Evidence.Add(
+                        "Extension installed outside Chrome Extensions directory.");
+                }
 
                 if (localhostCommunication)
                 {
                     anomaly.Evidence.Add(
-                        "Localhost communication detected");
+                        "Localhost communication detected.");
                 }
-
-                // =====================================================
-                // SCRIPTING
-                // =====================================================
-
-                if (dangerousScripting)
-                {
-                    anomaly.Evidence.Add(
-                        "Dangerous scripting capability");
-
-                    foreach (var permission in ext.AllPermissions
-                        .Where(p =>
-                            p.Contains(
-                                "scripting",
-                                StringComparison.OrdinalIgnoreCase)
-                            ||
-                            p.Contains(
-                                "webRequestBlocking",
-                                StringComparison.OrdinalIgnoreCase)))
-                    {
-                        anomaly.Evidence.Add(
-                            $"Permission: {permission}");
-                    }
-                }
-
-                // =====================================================
-                // RUNTIME
-                // =====================================================
-
-                if (runtimeActive)
-                {
-                    anomaly.Evidence.Add(
-                        "Runtime artifacts detected");
-                }
-
-                // =====================================================
-                // STORE
-                // =====================================================
 
                 anomalyIndex[$"extension:{ext.Id}"] = anomaly;
-
-                
             }
         }
 
