@@ -62,7 +62,7 @@
     private string? _lastAutoFocusedFilter; // Hilfe um dauerschle Fokusierung auf ein Artefakt zu verhindern, wenn der Filter sich nicht ändert
     private bool _initialFocusDone = false;
     private bool showLegend = true;
-    bool IncludeNavigationPaths = false;
+    bool IncludeNavigationPaths = true;
 
     // Filter nach Analyse Kategorien
     private bool ShowInformation = false;
@@ -73,7 +73,7 @@
 
     private bool NavigationFilterActive => ShowNavigationPath || IncludeNavigationPaths;
 
-    private bool AnyFilterActive => !string.IsNullOrWhiteSpace(SelectedDomainFilter) || AnalysisFilterActive || NavigationFilterActive;
+    private bool AnyFilterActive => !string.IsNullOrWhiteSpace(SelectedDomainFilter) || AnalysisFilterActive || ArtifactFilterActive || NavigationFilterActive;
 
     private bool MatchesAnalysisFilter(AnalysisEntry analysis)
     {
@@ -159,6 +159,19 @@
     private List<AnalysisEntry> VisibleAnomalies = new();
     private List<AnalysisEntry> FilteredAnalysisEntries = new();
 
+    // Artefakt filterung
+    private bool ShowHistory = false;
+    private bool ShowCookies = false;
+    private bool ShowInputs = false;
+    private bool ShowStorage = false;
+    private bool ShowExtensions = false;
+
+    private bool ArtifactFilterActive =>
+        ShowHistory ||
+        ShowCookies ||
+        ShowInputs ||
+        ShowStorage ||
+        ShowExtensions;
 
     //Suche
     private List<SearchResult> SearchResults = new();
@@ -1219,7 +1232,16 @@
                 State.StorageEntries,
                 DomainEntries,
                 analysisList,
+
                 AnalysisFilterActive,
+
+                ArtifactFilterActive,
+                ShowHistory,
+                ShowCookies,
+                ShowInputs,
+                ShowExtensions,
+                ShowStorage,
+
                 viewportWidth,
                 SelectedDomainFilter);
 
@@ -1255,9 +1277,9 @@
 
             RecalculateAnomalyPositions();
 
-            FilteredAnalysisEntries = analysisList;
+            FilteredAnalysisEntries = RenderCache.VisibleAnomalies;
 
-            BuildArtifactTimeline(FilteredAnalysisEntries);
+            BuildArtifactTimeline(RenderCache.VisibleAnomalies);
 
             // Nur einmal automatisch fokussieren,
             // solange sich der Filter nicht geändert hat.
@@ -1358,6 +1380,12 @@
         IncludeNavigationPaths = false;
 
         ShowContextMenu = false;
+
+        ShowHistory = false;
+        ShowCookies = false;
+        ShowInputs = false;
+        ShowStorage = false;
+        ShowExtensions = false;
 
         await ApplyDomainFilter();
     }
@@ -2474,7 +2502,46 @@
                        @bind="IncludeNavigationPaths"
                        @bind:after="ApplyDomainFilter" />
 
-                    Inkl. Navigations Pfad
+                    Inkl. Relationen
+                </label>
+
+            </div>
+
+            <div class="artifact-filter">
+
+                <label>
+                    <input type="checkbox"
+                           @bind="ShowHistory"
+                           @bind:after="ApplyDomainFilter" />
+                    Verlauf
+                </label>
+
+                <label>
+                    <input type="checkbox"
+                           @bind="ShowCookies"
+                           @bind:after="ApplyDomainFilter" />
+                    Cookies
+                </label>
+
+                <label>
+                    <input type="checkbox"
+                           @bind="ShowInputs"
+                           @bind:after="ApplyDomainFilter" />
+                    Eingaben
+                </label>
+
+                <label>
+                    <input type="checkbox"
+                           @bind="ShowStorage"
+                           @bind:after="ApplyDomainFilter" />
+                    Storage
+                </label>
+
+                <label>
+                    <input type="checkbox"
+                           @bind="ShowExtensions"
+                           @bind:after="ApplyDomainFilter" />
+                    Erweiterungen
                 </label>
 
             </div>

@@ -32,6 +32,14 @@ namespace ZIVA_Prototype.Services.Timeline
             List<DomainEntry> domains,
             List<AnalysisEntry> anomalies,
             bool analysisFilterActive,
+
+            bool artifactFilterActive,
+            bool showHistory,
+            bool showCookies,
+            bool showInputs,
+            bool showExtensions,
+            bool showStorage,
+
             int viewportWidth,
             string? activeDomain = null)
         {
@@ -147,6 +155,38 @@ namespace ZIVA_Prototype.Services.Timeline
 
                 domains = domains
                     .Where(domainSet.Contains)
+                    .ToList();
+            }
+
+            // --------------------------------------------------
+            // Artefaktfilter
+            // --------------------------------------------------
+
+            if (artifactFilterActive)
+            {
+                if (!showHistory)
+                    history = new();
+
+                if (!showCookies)
+                    cookies = new();
+
+                if (!showInputs)
+                    inputs = new();
+
+                if (!showExtensions)
+                    extensions = new();
+
+                if (!showStorage)
+                    storage = new();
+
+                // Passende Anomalien ebenfalls einschränken
+                anomalies = anomalies
+                    .Where(a =>
+                        (showHistory && a.LinkedHistory.Any()) ||
+                        (showCookies && a.LinkedCookies.Any()) ||
+                        (showInputs && a.LinkedInputs.Any()) ||
+                        (showExtensions && a.LinkedExtensions.Any()) ||
+                        (showStorage && a.LinkedStorage.Any()))
                     .ToList();
             }
 
