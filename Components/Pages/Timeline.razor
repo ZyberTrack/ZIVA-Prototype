@@ -1138,7 +1138,8 @@
 
             result = FilterService.ApplyDomainSelection(
                 result,
-                SelectedDomainFilter);
+                SelectedDomainFilter,
+                IncludeNavigationPaths);
 
             //------------------------------------------------------
             // Navigation Filter
@@ -2432,7 +2433,7 @@
                        @bind="IncludeNavigationPaths"
                        @bind:after="ApplyDomainFilter" />
 
-                    Inkl. Relationen
+                    Inkl. Navigationsverlauf
                 </label>
 
             </div>

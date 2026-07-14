@@ -106,8 +106,9 @@ namespace ZIVA_Prototype.Services.Timeline
         }
 
         public TimelineFilterResult ApplyDomainSelection(
-     TimelineFilterResult current,
-     string? selectedDomain)
+    TimelineFilterResult current,
+    string? selectedDomain,
+    bool includeNavigationHistory)
         {
             if (string.IsNullOrWhiteSpace(selectedDomain))
                 return current;
@@ -133,6 +134,35 @@ namespace ZIVA_Prototype.Services.Timeline
                 .SelectMany(d => d.SubEntries)
                 .Distinct()
                 .ToList();
+
+            //------------------------------------------------------
+            // Optional: Navigationsverlauf hinzufügen
+            //------------------------------------------------------
+
+            if (includeNavigationHistory)
+            {
+                var navigationHistory = new HashSet<BrowserHistoryEntry>(result.History);
+
+                foreach (var history in result.History.ToList())
+                {
+                    var path = _navigationService.BuildNavigationPath(
+                        history,
+                        current.Domains,
+                        current.Cookies,
+                        current.Inputs,
+                        current.Extensions,
+                        current.Storage,
+                        current.Analysis);
+
+                    navigationHistory.UnionWith(path.History);
+                }
+
+                result.History = navigationHistory.ToList();
+            }
+
+            //------------------------------------------------------
+            // Für alle weiteren Relationen verwenden
+            //------------------------------------------------------
 
             var historySet = result.History.ToHashSet();
 
