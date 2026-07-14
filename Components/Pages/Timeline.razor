@@ -2905,6 +2905,9 @@
                         if (relation.History == null)
                             continue;
 
+                        if (!RenderCache.VisibleHistory.Contains(relation.History))
+                            continue;
+
                         var history = relation.History;
 
                         string color =
@@ -2936,6 +2939,9 @@
                     foreach (var relation in input.Relations)
                     {
                         if (relation.History == null)
+                            continue;
+
+                        if (!RenderCache.VisibleHistory.Contains(relation.History))
                             continue;
 
                         var history = relation.History;
@@ -2978,6 +2984,9 @@
                         if (relation.History == null)
                             continue;
 
+                        if (!RenderCache.VisibleHistory.Contains(relation.History))
+                            continue;
+
                         var history = relation.History;
 
                         string color =
@@ -3006,6 +3015,9 @@
                     foreach (var relation in storage.Relations)
                     {
                         if (relation.History == null)
+                            continue;
+
+                        if (!RenderCache.VisibleHistory.Contains(relation.History))
                             continue;
 
                         var history = relation.History;
@@ -3053,7 +3065,7 @@
                             bool targetVisible =
                                 RenderCache.VisibleHistory.Contains(history);
 
-                            if (!sourceVisible && !targetVisible)
+                            if (!sourceVisible || !targetVisible)
                                 continue;
 
                             var sourceDomain = GetRenderedDomain(relation.Domain);
