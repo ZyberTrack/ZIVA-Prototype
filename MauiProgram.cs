@@ -54,6 +54,8 @@ namespace ZIVA_Prototype
             builder.Services.AddSingleton<ArtifactRelationService>();
             builder.Services.AddSingleton<TimelineSearchService>();
             builder.Services.AddSingleton<NavigationPathService>();
+            builder.Services.AddSingleton<TimelineArtifactBuilderService>();
+            builder.Services.AddSingleton<TimelineFilterService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

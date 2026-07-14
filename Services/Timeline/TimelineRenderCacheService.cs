@@ -24,180 +24,21 @@ namespace ZIVA_Prototype.Services.Timeline
 
 
         public void BuildVisibleCaches(
-            List<BrowserHistoryEntry> history,
-            List<BrowserCookieEntry> cookies,
-            List<UserInputEntry> inputs,
-            List<BrowserExtensionEntry> extensions,
-            List<StorageEntry> storage,
-            List<DomainEntry> domains,
-            List<AnalysisEntry> anomalies,
-            bool analysisFilterActive,
-
-            bool artifactFilterActive,
-            bool showHistory,
-            bool showCookies,
-            bool showInputs,
-            bool showExtensions,
-            bool showStorage,
-
-            int viewportWidth,
-            string? activeDomain = null)
+    List<BrowserHistoryEntry> history,
+    List<BrowserCookieEntry> cookies,
+    List<UserInputEntry> inputs,
+    List<BrowserExtensionEntry> extensions,
+    List<StorageEntry> storage,
+    List<DomainEntry> domains,
+    List<AnalysisEntry> anomalies,
+    int viewportWidth)
         {
-            if (!string.IsNullOrWhiteSpace(activeDomain))
-            {
-                domains = domains
-                    .Where(d => d.Domain == activeDomain)
-                    .ToList();
-
-                if (domains.Any())
-                {
-                    history = domains
-                        .SelectMany(d => d.SubEntries)
-                        .ToList();
-
-                    cookies = cookies
-                        .Where(c => c.Relations.Any(r => r.Domain?.Domain == activeDomain))
-                        .ToList();
-
-                    inputs = inputs
-                        .Where(i => i.Relations.Any(r => r.Domain?.Domain == activeDomain))
-                        .ToList();
-
-                    extensions = extensions
-                        .Where(e => e.Relations.Any(r => r.Domain?.Domain == activeDomain))
-                        .ToList();
-
-                    storage = storage
-                        .Where(s => s.Relations.Any(r => r.Domain?.Domain == activeDomain))
-                        .ToList();
-
-                    // Für schnelle Contains()-Abfragen
-                    var historySet = history.ToHashSet();
-                    var cookieSet = cookies.ToHashSet();
-                    var inputSet = inputs.ToHashSet();
-                    var extensionSet = extensions.ToHashSet();
-                    var storageSet = storage.ToHashSet();
-
-                    // Langfristig auf ungefilterte Listen zugreifen, um umgewollte Filterung zu vermeiden
-                    anomalies = anomalies
-                        .Where(a =>
-                            a.LinkedDomain?.Domain == activeDomain ||
-
-                            a.LinkedHistory.Any(h =>
-                                domains.Any(d => d.SubEntries.Contains(h))) ||
-
-                            a.LinkedCookies.Any(c =>
-                                c.Relations.Any(r => r.Domain?.Domain == activeDomain)) ||
-
-                            a.LinkedInputs.Any(i =>
-                                i.Relations.Any(r => r.Domain?.Domain == activeDomain)) ||
-
-                            a.LinkedExtensions.Any(e =>
-                                e.Relations.Any(r => r.Domain?.Domain == activeDomain)) ||
-
-                            a.LinkedStorage.Any(s =>
-                                s.Relations.Any(r => r.Domain?.Domain == activeDomain))
-                        )
-                        .ToList();
-                }
-            }
-
-            // --------------------------------------------------
-            // Analysefilter auf Artefakte anwenden
-            // --------------------------------------------------
-
-            if (analysisFilterActive)
-            {
-                var historySet = anomalies
-                    .SelectMany(a => a.LinkedHistory)
-                    .ToHashSet();
-
-                var cookieSet = anomalies
-                    .SelectMany(a => a.LinkedCookies)
-                    .ToHashSet();
-
-                var inputSet = anomalies
-                    .SelectMany(a => a.LinkedInputs)
-                    .ToHashSet();
-
-                var extensionSet = anomalies
-                    .SelectMany(a => a.LinkedExtensions)
-                    .ToHashSet();
-
-                var storageSet = anomalies
-                    .SelectMany(a => a.LinkedStorage)
-                    .ToHashSet();
-
-                var domainSet = anomalies
-                    .Where(a => a.LinkedDomain != null)
-                    .Select(a => a.LinkedDomain!)
-                    .ToHashSet();
-
-                history = history
-                    .Where(historySet.Contains)
-                    .ToList();
-
-                cookies = cookies
-                    .Where(cookieSet.Contains)
-                    .ToList();
-
-                inputs = inputs
-                    .Where(inputSet.Contains)
-                    .ToList();
-
-                extensions = extensions
-                    .Where(extensionSet.Contains)
-                    .ToList();
-
-                storage = storage
-                    .Where(storageSet.Contains)
-                    .ToList();
-
-                domains = domains
-                    .Where(domainSet.Contains)
-                    .ToList();
-            }
-
-            // --------------------------------------------------
-            // Artefaktfilter
-            // --------------------------------------------------
-
-            if (artifactFilterActive)
-            {
-                if (!showHistory)
-                    history = new();
-
-                if (!showCookies)
-                    cookies = new();
-
-                if (!showInputs)
-                    inputs = new();
-
-                if (!showExtensions)
-                    extensions = new();
-
-                if (!showStorage)
-                    storage = new();
-
-                // Passende Anomalien ebenfalls einschränken
-                anomalies = anomalies
-                    .Where(a =>
-                        (showHistory && a.LinkedHistory.Any()) ||
-                        (showCookies && a.LinkedCookies.Any()) ||
-                        (showInputs && a.LinkedInputs.Any()) ||
-                        (showExtensions && a.LinkedExtensions.Any()) ||
-                        (showStorage && a.LinkedStorage.Any()))
-                    .ToList();
-            }
-
-            //--------------------------------------------------
+            VisibleHistory = history
+                .Where(h => IsVisible(h.Position, viewportWidth))
+                .ToList();
 
             VisibleCookies = cookies
                 .Where(c => IsVisible(c.Position, viewportWidth))
-                .ToList();
-
-            VisibleHistory = history
-                .Where(h => IsVisible(h.Position, viewportWidth))
                 .ToList();
 
             VisibleInputs = inputs
@@ -224,6 +65,8 @@ namespace ZIVA_Prototype.Services.Timeline
                 .Where(a => IsVisible(a.Position, viewportWidth))
                 .ToList();
         }
+
+
 
         public void AddNavigationPath(NavigationPathResult path)
         {

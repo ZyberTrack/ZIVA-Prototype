@@ -6,7 +6,7 @@ using ZIVA_Prototype.Components.Models.Timeline;
 
 namespace ZIVA_Prototype.Services.Timeline
 {
-    internal class NavigationPathService
+    public class NavigationPathService
     {
         public NavigationPathResult BuildNavigationPath(
             object artifact,

@@ -17,6 +17,8 @@
 @inject ArtifactRelationService RelationService
 @inject TimelineSearchService SearchService
 @inject NavigationPathService NavigationService
+@inject TimelineArtifactBuilderService ArtifactBuilder
+@inject TimelineFilterService FilterService
 
 
 @code {
@@ -62,7 +64,7 @@
     private string? _lastAutoFocusedFilter; // Hilfe um dauerschle Fokusierung auf ein Artefakt zu verhindern, wenn der Filter sich nicht ändert
     private bool _initialFocusDone = false;
     private bool showLegend = true;
-    bool IncludeNavigationPaths = true;
+    bool IncludeNavigationPaths = false;
 
     // Filter nach Analyse Kategorien
     private bool ShowInformation = false;
@@ -574,42 +576,7 @@
             );
         }
 
-        RecalculatePositions(
-        State.BrowserEntries,
-        x => x.VisitTime,
-        (x, pos) => x.Position = pos
-        );
-
-        RecalculatePositions(
-            State.BrowserCookies,
-            x => x.Created,
-            (x, pos) => x.Position = pos
-        );
-
-        RecalculatePositions(
-            UserInputs,
-            x => x.Time,
-            (x, pos) => x.Position = pos
-        );
-
-        RecalculatePositions(
-            DomainEntries,
-            x => x.VisitTime,
-            (x, pos) => x.Position = pos
-        );
-
-        RecalculatePositions(
-            State.Extensions,
-            x => x.InstallTime,
-            (x, pos) => x.Position = pos
-        );
-
-        RecalculatePositions(
-            State.StorageEntries,
-            x => x.Time,
-            (x, pos) => x.Position = pos
-        );
-
+        /*
         foreach (var domain in DomainEntries)
         {
             if (!domain.SubEntries.Any())
@@ -620,7 +587,7 @@
 
             domain.ClusterEndPosition =
                 domain.SubEntries.Last().Position;
-        }
+        }*/
 
         foreach (var input in UserInputs)
             input.Relations.Clear();
@@ -659,9 +626,7 @@
             SuspiciousDomains
         );
 
-        RecalculateAnomalyPositions();
-
-        InvokeAsync(StateHasChanged);
+        //RecalculateAnomalyPositions(AnalysisEntries);
 
         /*RenderCache.BuildVisibleCaches(
             State.BrowserEntries,
@@ -682,18 +647,14 @@
         .OrderBy(d => d)
         .ToList();
 
-        VisibleDomains = DomainEntries;
-        VisibleHistory = State.BrowserEntries;
-        VisibleCookies = State.BrowserCookies;
-        VisibleInputs = UserInputs;
-        VisibleExtensions = State.Extensions;
-        VisibleStorage = State.StorageEntries;
-        VisibleAnomalies = AnalysisEntries;
-
-        _ = ApplyDomainFilter();
+        _ = InvokeAsync(async () =>
+        {
+            await ApplyDomainFilter();
+            UpdateVisibleTimestamps();
+        });
 
         //BuildArtifactTimeline(FilteredAnalysisEntries);
-        UpdateVisibleTimestamps();
+        //UpdateVisibleTimestamps();
 
 
         // Fokus auf erstes Artefakt, wenn noch nicht geschehen und Artefakte vorhanden sind
@@ -716,69 +677,6 @@
         }
 
     }
-
-    private void BuildArtifactTimeline(IEnumerable<AnalysisEntry> visibleAnalysis)
-    {
-        TimelineArtifacts.Clear();
-
-        TimelineArtifacts.AddRange(
-            State.BrowserEntries.Select(e => new TimelineArtifact
-            {
-                Time = e.VisitTime,
-                Data = e,
-                Type = ArtifactType.History
-            })
-        );
-
-        TimelineArtifacts.AddRange(
-            State.BrowserCookies.Select(c => new TimelineArtifact
-            {
-                Time = c.Created,
-                Data = c,
-                Type = ArtifactType.Cookie
-            })
-        );
-
-        TimelineArtifacts.AddRange(
-            UserInputs.Select(i => new TimelineArtifact
-            {
-                Time = i.Time,
-                Data = i,
-                Type = ArtifactType.UserInput
-            })
-        );
-
-        TimelineArtifacts.AddRange(
-            State.Extensions.Select(e => new TimelineArtifact
-            {
-                Time = e.InstallTime,
-                Data = e,
-                Type = ArtifactType.Extension
-            })
-        );
-
-        TimelineArtifacts.AddRange(
-            State.StorageEntries.Select(s => new TimelineArtifact
-            {
-                Time = s.Time,
-                Data = s,
-                Type = ArtifactType.Storage
-            })
-        );
-
-        TimelineArtifacts.AddRange(
-        visibleAnalysis.Select(a => new TimelineArtifact
-        {
-            Time = a.FirstSeen,
-            Data = a,
-            Type = ArtifactType.Anomaly
-        }));
-
-        TimelineArtifacts = TimelineArtifacts
-            .OrderBy(t => t.Time)
-            .ToList();
-    }
-
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -864,9 +762,10 @@
         }
     }
 
-    void RecalculateAnomalyPositions()
+    private void RecalculateAnomalyPositions(
+    IEnumerable<AnalysisEntry> analysis)
     {
-        foreach (var a in AnalysisEntries)
+        foreach (var a in analysis)
         {
             DateTime positionTime;
 
@@ -880,11 +779,14 @@
                     (a.FirstSeen.Ticks +
                      a.LastSeen.Ticks) / 2;
 
-                positionTime =
-                    new DateTime(ticks);
+                positionTime = new DateTime(ticks);
             }
 
-            a.Position = (int)TimelineScaleService.TimeToPixel(positionTime, ScaleContext) - (int)scrollIndex;
+            a.Position =
+                (int)TimelineScaleService.TimeToPixel(
+                    positionTime,
+                    ScaleContext)
+                - (int)scrollIndex;
         }
     }
 
@@ -1210,79 +1112,140 @@
 
         _applyingFilter = true;
 
-        var visibleAnalysis = AnalysisEntries.AsEnumerable();
-
-        if (AnalysisFilterActive)
-        {
-            visibleAnalysis = visibleAnalysis.Where(a =>
-                   (ShowInformation && a.Category == AnalysisCategory.Information)
-                || (ShowWarnings && a.Category == AnalysisCategory.Warning)
-                || (ShowAnomalies && a.Category == AnalysisCategory.Anomaly));
-        }
-
-        var analysisList = visibleAnalysis.ToList();
-
         try
         {
-            RenderCache.BuildVisibleCaches(
+            //------------------------------------------------------
+            // Ausgangsdaten
+            //------------------------------------------------------
+
+            var result = new TimelineFilterResult(
                 State.BrowserEntries,
                 State.BrowserCookies,
                 UserInputs,
                 State.Extensions,
                 State.StorageEntries,
                 DomainEntries,
-                analysisList,
+                AnalysisEntries);
 
-                AnalysisFilterActive,
+            //------------------------------------------------------
+            // Domain Filter
+            //------------------------------------------------------
 
+            result = FilterService.ApplyDomainSelection(
+                result,
+                SelectedDomainFilter);
+
+            //------------------------------------------------------
+            // Navigation Filter
+            //------------------------------------------------------
+
+            result = FilterService.ApplyNavigationSelection(
+                result,
+                ShowNavigationPath,
+                IncludeNavigationPaths,
+                NavigationRootArtifact);
+
+            //------------------------------------------------------
+            // Artefakt Filter
+            //------------------------------------------------------
+
+            result = FilterService.ApplyArtifactSelection(
+                result,
                 ArtifactFilterActive,
                 ShowHistory,
                 ShowCookies,
                 ShowInputs,
                 ShowExtensions,
-                ShowStorage,
+                ShowStorage);
 
-                viewportWidth,
-                SelectedDomainFilter);
+            //------------------------------------------------------
+            // Analyse Filter
+            //------------------------------------------------------
+
+            result = FilterService.ApplyAnalysisSelection(
+                result,
+                AnalysisFilterActive,
+                ShowInformation,
+                ShowWarnings,
+                ShowAnomalies);
+
+            //------------------------------------------------------
+            // Positionen
+            //------------------------------------------------------
 
             RecalculatePositions(
-                State.BrowserEntries,
+                result.History,
                 x => x.VisitTime,
                 (x, pos) => x.Position = pos);
 
             RecalculatePositions(
-                State.BrowserCookies,
+                result.Cookies,
                 x => x.Created,
                 (x, pos) => x.Position = pos);
 
             RecalculatePositions(
-                UserInputs,
+                result.Inputs,
                 x => x.Time,
                 (x, pos) => x.Position = pos);
 
             RecalculatePositions(
-                State.Extensions,
+                result.Extensions,
                 x => x.InstallTime,
                 (x, pos) => x.Position = pos);
 
             RecalculatePositions(
-                State.StorageEntries,
+                result.Storage,
                 x => x.Time,
                 (x, pos) => x.Position = pos);
 
             RecalculatePositions(
-                DomainEntries,
+                result.Domains,
                 x => x.VisitTime,
                 (x, pos) => x.Position = pos);
 
-            RecalculateAnomalyPositions();
+            RecalculateAnomalyPositions(result.Analysis);
 
-            FilteredAnalysisEntries = RenderCache.VisibleAnomalies;
+            foreach (var domain in RenderCache.VisibleDomains)
+            {
+                if (!domain.SubEntries.Any())
+                    continue;
 
-            BuildArtifactTimeline(RenderCache.VisibleAnomalies);
+                domain.ClusterStartPosition =
+                    domain.SubEntries.First().Position;
 
-            // Nur einmal automatisch fokussieren,
-            // solange sich der Filter nicht geändert hat.
+                domain.ClusterEndPosition =
+                    domain.SubEntries.Last().Position;
+            } 
+
+            FilteredAnalysisEntries = result.Analysis;
+
+
+            //------------------------------------------------------
+            // Render Cache
+            //------------------------------------------------------
+
+            RenderCache.BuildVisibleCaches(
+                result.History,
+                result.Cookies,
+                result.Inputs,
+                result.Extensions,
+                result.Storage,
+                result.Domains,
+                result.Analysis,
+                viewportWidth);
+
+            TimelineArtifacts = ArtifactBuilder.Build(
+                RenderCache.VisibleHistory,
+                RenderCache.VisibleCookies,
+                RenderCache.VisibleInputs,
+                RenderCache.VisibleExtensions,
+                RenderCache.VisibleStorage,
+                RenderCache.VisibleAnomalies);
+
+            //------------------------------------------------------
+            // Auto Focus
+            //------------------------------------------------------
+
             if (!string.IsNullOrWhiteSpace(SelectedDomainFilter) &&
                 _lastAutoFocusedFilter != SelectedDomainFilter)
             {
@@ -1290,51 +1253,12 @@
 
                 var firstArtifact = TimelineArtifacts.FirstOrDefault(a =>
                     a.Data is BrowserHistoryEntry h &&
-                    h.Url.Contains(SelectedDomainFilter,
+                    h.Url.Contains(
+                        SelectedDomainFilter,
                         StringComparison.OrdinalIgnoreCase));
 
                 if (firstArtifact != null)
-                {
                     await FocusArtifact(firstArtifact);
-                }
-            }
-
-            //------------------------------------------------------
-            // NAVIGATION PATH FILTER
-            //------------------------------------------------------
-
-            if (IncludeNavigationPaths)
-            {
-                var histories = RenderCache.VisibleHistory.ToList();
-
-                foreach (var history in histories)
-                {
-                    var path =
-                        NavigationService.BuildNavigationPath(
-                            history,
-                            DomainEntries,
-                            State.BrowserCookies,
-                            UserInputs,
-                            State.Extensions,
-                            State.StorageEntries,
-                            AnalysisEntries);
-
-                    RenderCache.AddNavigationPath(path);
-                }
-            }
-            else if (ShowNavigationPath && NavigationRootArtifact != null)
-            {
-                CurrentNavigationPath =
-                    NavigationService.BuildNavigationPath(
-                        NavigationRootArtifact,
-                        DomainEntries,
-                        State.BrowserCookies,
-                        UserInputs,
-                        State.Extensions,
-                        State.StorageEntries,
-                        AnalysisEntries);
-
-                RenderCache.ApplyNavigationPath(CurrentNavigationPath);
             }
 
             StateHasChanged();
