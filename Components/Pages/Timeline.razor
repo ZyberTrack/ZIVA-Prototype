@@ -77,6 +77,8 @@
 
     private bool AnyFilterActive => !string.IsNullOrWhiteSpace(SelectedDomainFilter) || AnalysisFilterActive || ArtifactFilterActive || NavigationFilterActive;
 
+    private bool ShowClearAllFilters => ArtifactFilterActive || AnalysisFilterActive;
+
     private bool MatchesAnalysisFilter(AnalysisEntry analysis)
     {
         if (!AnalysisFilterActive)
@@ -3235,7 +3237,7 @@
                 </div>
             }
 
-            @if (NavigationFilterActive && !string.IsNullOrWhiteSpace(SelectedDomainFilter))
+            @if (ShowClearAllFilters)
             {
                 <div class="context-item"
                      @onclick="ClearAllFilters">
