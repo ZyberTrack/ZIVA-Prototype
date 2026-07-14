@@ -1205,18 +1205,6 @@
 
             RecalculateAnomalyPositions(result.Analysis);
 
-            foreach (var domain in RenderCache.VisibleDomains)
-            {
-                if (!domain.SubEntries.Any())
-                    continue;
-
-                domain.ClusterStartPosition =
-                    domain.SubEntries.First().Position;
-
-                domain.ClusterEndPosition =
-                    domain.SubEntries.Last().Position;
-            } 
-
             FilteredAnalysisEntries = result.Analysis;
 
 
@@ -1241,6 +1229,18 @@
                 RenderCache.VisibleExtensions,
                 RenderCache.VisibleStorage,
                 RenderCache.VisibleAnomalies);
+
+            foreach (var domain in RenderCache.VisibleDomains)
+            {
+                if (!domain.SubEntries.Any())
+                    continue;
+
+                domain.ClusterStartPosition =
+                    domain.SubEntries.First().Position;
+
+                domain.ClusterEndPosition =
+                    domain.SubEntries.Last().Position;
+            }
 
             //------------------------------------------------------
             // Auto Focus

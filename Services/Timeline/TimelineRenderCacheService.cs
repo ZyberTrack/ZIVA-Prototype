@@ -138,7 +138,8 @@ namespace ZIVA_Prototype.Services.Timeline
 
         private bool IsVisible(int position, int viewportWidth)
         {
-            return position > -50 && position < viewportWidth - 300;
+            return true;
+            //return position > -50 && position < viewportWidth - 300;
         }
     }
 }
