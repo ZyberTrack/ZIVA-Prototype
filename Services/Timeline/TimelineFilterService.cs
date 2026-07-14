@@ -19,14 +19,10 @@ namespace ZIVA_Prototype.Services.Timeline
         public TimelineFilterResult ApplyNavigationSelection(
     TimelineFilterResult current,
     bool showNavigationPath,
-    bool includeNavigationPaths,
     object? navigationRootArtifact)
         {
-            if (!showNavigationPath &&
-                !includeNavigationPaths)
-            {
+            if (!showNavigationPath)
                 return current;
-            }
 
             var result = new TimelineFilterResult(current);
 
@@ -58,50 +54,6 @@ namespace ZIVA_Prototype.Services.Timeline
                 return result;
             }
 
-            //------------------------------------------------------
-            // Alle Navigation Paths
-            //------------------------------------------------------
-
-            if (includeNavigationPaths)
-            {
-                var history = new HashSet<BrowserHistoryEntry>();
-                var cookies = new HashSet<BrowserCookieEntry>();
-                var inputs = new HashSet<UserInputEntry>();
-                var extensions = new HashSet<BrowserExtensionEntry>();
-                var storage = new HashSet<StorageEntry>();
-                var domains = new HashSet<DomainEntry>();
-                var analysis = new HashSet<AnalysisEntry>();
-
-                foreach (var entry in current.History)
-                {
-                    var path =
-                        _navigationService.BuildNavigationPath(
-                            entry,
-                            current.Domains,
-                            current.Cookies,
-                            current.Inputs,
-                            current.Extensions,
-                            current.Storage,
-                            current.Analysis);
-
-                    history.UnionWith(path.History);
-                    cookies.UnionWith(path.Cookies);
-                    inputs.UnionWith(path.Inputs);
-                    extensions.UnionWith(path.Extensions);
-                    storage.UnionWith(path.Storage);
-                    domains.UnionWith(path.Domains);
-                    analysis.UnionWith(path.Analysis);
-                }
-
-                result.History = history.ToList();
-                result.Cookies = cookies.ToList();
-                result.Inputs = inputs.ToList();
-                result.Extensions = extensions.ToList();
-                result.Storage = storage.ToList();
-                result.Domains = domains.ToList();
-                result.Analysis = analysis.ToList();
-            }
-
             return result;
         }
 
@@ -114,6 +66,7 @@ namespace ZIVA_Prototype.Services.Timeline
                 return current;
 
             var result = new TimelineFilterResult(current);
+
 
             //------------------------------------------------------
             // Gewählte Domain
@@ -158,6 +111,11 @@ namespace ZIVA_Prototype.Services.Timeline
                 }
 
                 result.History = navigationHistory.ToList();
+
+                // NEU: Alle Domains der nun enthaltenen History wieder aufnehmen
+                result.Domains = current.Domains
+                    .Where(d => d.SubEntries.Any(result.History.Contains))
+                    .ToList();
             }
 
             //------------------------------------------------------
@@ -231,11 +189,12 @@ namespace ZIVA_Prototype.Services.Timeline
         }
 
         public TimelineFilterResult ApplyAnalysisSelection(
-    TimelineFilterResult current,
-    bool filterActive,
-    bool showInformation,
-    bool showWarnings,
-    bool showAnomalies)
+           TimelineFilterResult current,
+           bool filterActive,
+           bool showInformation,
+           bool showWarnings,
+           bool showAnomalies,
+           bool keepHistory)
         {
             if (!filterActive)
                 return current;
@@ -257,9 +216,12 @@ namespace ZIVA_Prototype.Services.Timeline
             // Artefakte auf diese Analysen einschränken
             //------------------------------------------------------
 
-            result.History = current.History
-                .Where(h => result.Analysis.Any(a => a.LinkedHistory.Contains(h)))
-                .ToList();
+            if (!keepHistory)
+            {
+                result.History = current.History
+                    .Where(h => result.Analysis.Any(a => a.LinkedHistory.Contains(h)))
+                    .ToList();
+            }
 
             result.Cookies = current.Cookies
                 .Where(c => result.Analysis.Any(a => a.LinkedCookies.Contains(c)))

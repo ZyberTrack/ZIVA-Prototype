@@ -1113,9 +1113,9 @@
         _applyingFilter = true;
 
         bool keepHistory =
-            !string.IsNullOrWhiteSpace(SelectedDomainFilter)
-            || ShowNavigationPath
-            || IncludeNavigationPaths;
+            ShowNavigationPath ||
+            (!string.IsNullOrWhiteSpace(SelectedDomainFilter) &&
+             IncludeNavigationPaths);
 
         try
         {
@@ -1148,7 +1148,6 @@
             result = FilterService.ApplyNavigationSelection(
                 result,
                 ShowNavigationPath,
-                IncludeNavigationPaths,
                 NavigationRootArtifact);
 
             //------------------------------------------------------
@@ -1174,7 +1173,8 @@
                 AnalysisFilterActive,
                 ShowInformation,
                 ShowWarnings,
-                ShowAnomalies);
+                ShowAnomalies,
+                keepHistory);
 
             //------------------------------------------------------
             // Positionen
