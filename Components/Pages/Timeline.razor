@@ -1112,6 +1112,11 @@
 
         _applyingFilter = true;
 
+        bool keepHistory =
+            !string.IsNullOrWhiteSpace(SelectedDomainFilter)
+            || ShowNavigationPath
+            || IncludeNavigationPaths;
+
         try
         {
             //------------------------------------------------------
@@ -1152,6 +1157,7 @@
             result = FilterService.ApplyArtifactSelection(
                 result,
                 ArtifactFilterActive,
+                keepHistory,
                 ShowHistory,
                 ShowCookies,
                 ShowInputs,

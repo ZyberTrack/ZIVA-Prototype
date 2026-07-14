@@ -106,86 +106,96 @@ namespace ZIVA_Prototype.Services.Timeline
         }
 
         public TimelineFilterResult ApplyDomainSelection(
-    TimelineFilterResult current,
-    string? selectedDomain)
+     TimelineFilterResult current,
+     string? selectedDomain)
         {
-            // Kein Filter aktiv
             if (string.IsNullOrWhiteSpace(selectedDomain))
-            {
                 return current;
-            }
 
             var result = new TimelineFilterResult(current);
 
-            // -----------------------------
-            // Domains
-            // -----------------------------
+            //------------------------------------------------------
+            // Gewählte Domain
+            //------------------------------------------------------
 
             result.Domains = current.Domains
-                .Where(d => d.Domain.Equals(
-                    selectedDomain,
-                    StringComparison.OrdinalIgnoreCase))
+                .Where(d =>
+                    d.Domain.Equals(
+                        selectedDomain,
+                        StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            // -----------------------------
-            // History
-            // -----------------------------
+            //------------------------------------------------------
+            // History dieser Domain
+            //------------------------------------------------------
 
             result.History = result.Domains
                 .SelectMany(d => d.SubEntries)
                 .Distinct()
                 .ToList();
 
-            // -----------------------------
-            // Cookies
-            // -----------------------------
+            var historySet = result.History.ToHashSet();
+
+            //------------------------------------------------------
+            // Alle verknüpften Cookies
+            //------------------------------------------------------
 
             result.Cookies = current.Cookies
                 .Where(c =>
                     c.Relations.Any(r =>
-                        r.Domain?.Domain.Equals(
-                            selectedDomain,
-                            StringComparison.OrdinalIgnoreCase) == true))
+                        r.History != null &&
+                        historySet.Contains(r.History)))
                 .ToList();
 
-            // -----------------------------
-            // Inputs
-            // -----------------------------
+            //------------------------------------------------------
+            // Alle verknüpften Inputs
+            //------------------------------------------------------
 
             result.Inputs = current.Inputs
                 .Where(i =>
                     i.Relations.Any(r =>
-                        r.Domain?.Domain.Equals(
-                            selectedDomain,
-                            StringComparison.OrdinalIgnoreCase) == true))
+                        r.History != null &&
+                        historySet.Contains(r.History)))
                 .ToList();
 
-            // -----------------------------
-            // Extensions
-            // -----------------------------
+            //------------------------------------------------------
+            // Alle verknüpften Extensions
+            //------------------------------------------------------
 
             result.Extensions = current.Extensions
                 .Where(e =>
                     e.Relations.Any(r =>
-                        r.Domain?.Domain.Equals(
-                            selectedDomain,
-                            StringComparison.OrdinalIgnoreCase) == true))
+                        r.History != null &&
+                        historySet.Contains(r.History)))
                 .ToList();
 
-            // -----------------------------
-            // Storage
-            // -----------------------------
+            //------------------------------------------------------
+            // Alle verknüpften Storage Artefakte
+            //------------------------------------------------------
 
             result.Storage = current.Storage
                 .Where(s =>
                     s.Relations.Any(r =>
-                        r.Domain?.Domain.Equals(
-                            selectedDomain,
-                            StringComparison.OrdinalIgnoreCase) == true))
+                        r.History != null &&
+                        historySet.Contains(r.History)))
                 .ToList();
 
-            // Analysis bleibt unverändert.
-            // Sie wird erst in ApplyAnalysisSelection gefiltert.
+            //------------------------------------------------------
+            // Analyse
+            //------------------------------------------------------
+
+            result.Analysis = current.Analysis
+                .Where(a =>
+                    a.LinkedHistory.Any(historySet.Contains) ||
+
+                    a.LinkedCookies.Any(result.Cookies.Contains) ||
+
+                    a.LinkedInputs.Any(result.Inputs.Contains) ||
+
+                    a.LinkedExtensions.Any(result.Extensions.Contains) ||
+
+                    a.LinkedStorage.Any(result.Storage.Contains))
+                .ToList();
 
             return result;
         }
@@ -202,6 +212,10 @@ namespace ZIVA_Prototype.Services.Timeline
 
             var result = new TimelineFilterResult(current);
 
+            //------------------------------------------------------
+            // Analyse nach Kategorie filtern
+            //------------------------------------------------------
+
             result.Analysis = current.Analysis
                 .Where(a =>
                        (showInformation && a.Category == AnalysisCategory.Information)
@@ -209,34 +223,32 @@ namespace ZIVA_Prototype.Services.Timeline
                     || (showAnomalies && a.Category == AnalysisCategory.Anomaly))
                 .ToList();
 
+            //------------------------------------------------------
+            // Artefakte auf diese Analysen einschränken
+            //------------------------------------------------------
+
             result.History = current.History
-                .Where(h =>
-                    result.Analysis.Any(a => a.LinkedHistory.Contains(h)))
+                .Where(h => result.Analysis.Any(a => a.LinkedHistory.Contains(h)))
                 .ToList();
 
             result.Cookies = current.Cookies
-                .Where(c =>
-                    result.Analysis.Any(a => a.LinkedCookies.Contains(c)))
+                .Where(c => result.Analysis.Any(a => a.LinkedCookies.Contains(c)))
                 .ToList();
 
             result.Inputs = current.Inputs
-                .Where(i =>
-                    result.Analysis.Any(a => a.LinkedInputs.Contains(i)))
+                .Where(i => result.Analysis.Any(a => a.LinkedInputs.Contains(i)))
                 .ToList();
 
             result.Extensions = current.Extensions
-                .Where(e =>
-                    result.Analysis.Any(a => a.LinkedExtensions.Contains(e)))
+                .Where(e => result.Analysis.Any(a => a.LinkedExtensions.Contains(e)))
                 .ToList();
 
             result.Storage = current.Storage
-                .Where(s =>
-                    result.Analysis.Any(a => a.LinkedStorage.Contains(s)))
+                .Where(s => result.Analysis.Any(a => a.LinkedStorage.Contains(s)))
                 .ToList();
 
             result.Domains = current.Domains
-                .Where(d =>
-                    result.History.Any(h => d.SubEntries.Contains(h)))
+                .Where(d => result.History.Any(h => d.SubEntries.Contains(h)))
                 .ToList();
 
             return result;
@@ -245,6 +257,7 @@ namespace ZIVA_Prototype.Services.Timeline
         public TimelineFilterResult ApplyArtifactSelection(
     TimelineFilterResult current,
     bool filterActive,
+    bool keepHistory,
     bool showHistory,
     bool showCookies,
     bool showInputs,
@@ -256,8 +269,16 @@ namespace ZIVA_Prototype.Services.Timeline
 
             var result = new TimelineFilterResult(current);
 
-            if (!showHistory)
+            //------------------------------------------------------
+            // History
+            //------------------------------------------------------
+
+            if (!showHistory && !keepHistory)
                 result.History.Clear();
+
+            //------------------------------------------------------
+            // Restliche Artefakte
+            //------------------------------------------------------
 
             if (!showCookies)
                 result.Cookies.Clear();
@@ -271,22 +292,32 @@ namespace ZIVA_Prototype.Services.Timeline
             if (!showStorage)
                 result.Storage.Clear();
 
-            // Domains bleiben immer sichtbar,
-            // sofern History vorhanden ist.
+            //------------------------------------------------------
+            // Analyse an sichtbare Artefakte koppeln
+            //------------------------------------------------------
 
-            result.Domains = result.Domains
-                .Where(d =>
-                    result.History.Any(h =>
-                        d.SubEntries.Contains(h)))
-                .ToList();
-
-            result.Analysis = result.Analysis
+            result.Analysis = current.Analysis
                 .Where(a =>
-                    (showHistory && a.LinkedHistory.Any()) ||
-                    (showCookies && a.LinkedCookies.Any()) ||
-                    (showInputs && a.LinkedInputs.Any()) ||
-                    (showExtensions && a.LinkedExtensions.Any()) ||
-                    (showStorage && a.LinkedStorage.Any()))
+                {
+                    bool linked = false;
+
+                    if (result.History.Any())
+                        linked |= a.LinkedHistory.Any(result.History.Contains);
+
+                    if (result.Cookies.Any())
+                        linked |= a.LinkedCookies.Any(result.Cookies.Contains);
+
+                    if (result.Inputs.Any())
+                        linked |= a.LinkedInputs.Any(result.Inputs.Contains);
+
+                    if (result.Extensions.Any())
+                        linked |= a.LinkedExtensions.Any(result.Extensions.Contains);
+
+                    if (result.Storage.Any())
+                        linked |= a.LinkedStorage.Any(result.Storage.Contains);
+
+                    return linked;
+                })
                 .ToList();
 
             return result;
