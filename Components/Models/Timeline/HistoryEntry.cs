@@ -11,6 +11,8 @@ namespace ZIVA_Prototype.Components.Models.Timeline
         public string Url { get; set; } = string.Empty;
         public DateTime VisitTime { get; set; }
         public string? Title { get; set; }
+
+        public string Host { get; set; } = string.Empty;
         public string? ReferrerUrl { get; set; }
         public string? ReferrerTitle { get; set; }
         public int Position { get; set; }

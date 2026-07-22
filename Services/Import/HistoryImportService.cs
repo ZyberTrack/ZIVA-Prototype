@@ -46,9 +46,16 @@ namespace ZIVA_Prototype.Services.Import
 
                     var visitTime = DateTime.Parse(visitTimeRaw);
 
+                    string host = string.Empty;
+                    if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                    {
+                        host = uri.Host;
+                    }
+
                     entries.Add(new BrowserHistoryEntry
                     {
                         Url = url,
+                        Host = host,
                         Title = title,
                         VisitTime = visitTime,
                         ReferrerUrl = referrerUrl,

@@ -734,6 +734,35 @@ namespace ZIVA_Prototype.Services.Timeline
 
                 if (relation == null || relation.History == null)
                 {
+                    string cookieHost = cookie.Host.TrimStart('.');
+
+                    var candidate =
+                        summarizedEntries
+                            .SelectMany(d => d.SubEntries)
+                            .Where(h =>
+                                (
+                                    h.Host.EndsWith(
+                                        cookieHost,
+                                        StringComparison.OrdinalIgnoreCase)
+                                    ||
+                                    cookieHost.EndsWith(
+                                        h.Host,
+                                        StringComparison.OrdinalIgnoreCase)
+                                )
+                                &&
+                                Math.Abs(
+                                    (h.VisitTime - cookie.Created).TotalSeconds)
+                                    <= toleranceSeconds)
+                            .OrderBy(h =>
+                                Math.Abs(
+                                    (h.VisitTime - cookie.Created).TotalSeconds))
+                            .FirstOrDefault();
+
+                    // Wahrscheinlich passende Domain gefunden.
+                    // Vermutlich fehlende Relation und kein Hinweis auf gelöschten Verlauf.
+                    if (candidate != null)
+                        continue;
+
                     orphanArtifacts.Add(
                         new OrphanArtifact
                         {
