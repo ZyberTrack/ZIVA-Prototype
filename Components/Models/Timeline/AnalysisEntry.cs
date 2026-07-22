@@ -190,7 +190,8 @@
         LocalStorageCredential,
         ExposedSecret,
         PersistentSession,
-        
+        HttpConnection,
+
 
         // ---------------- Anomaly ----------------
 

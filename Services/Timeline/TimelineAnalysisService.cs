@@ -133,6 +133,34 @@ namespace ZIVA_Prototype.Services.Timeline
 
                     continue;
                 }
+                
+            }
+
+            foreach (var domain in summarizedEntries)
+            {
+                bool usesHttp =
+                    domain.SubEntries.Any(h =>
+                        Uri.TryCreate(h.Url, UriKind.Absolute, out var uri)
+                        && uri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase));
+
+                if (!usesHttp)
+                    continue;
+
+                var anomaly = AddOrUpdateAnomaly(
+                    anomalyIndex,
+                    AnalysisType.HttpConnection,
+                    domain,
+                    domain.SubEntries.Select(h => h.VisitTime),
+                    severity: 2,
+                    description: "Domain was accessed over an unencrypted HTTP connection."
+                );
+
+                anomaly.Title = "HTTP Connection";
+                anomaly.TargetType = AnomalyTargetType.Domain;
+                anomaly.LinkedDomain = domain;
+
+                // GANZ WICHTIG:
+                anomaly.LinkedHistory.AddRange(domain.SubEntries);
             }
 
             anomalies.AddRange(anomalyIndex.Values.Where(x => x.Type != AnalysisType.Unknown));
@@ -179,6 +207,7 @@ namespace ZIVA_Prototype.Services.Timeline
                 AnalysisType.PlaintextPassword => AnalysisCategory.Warning,
                 AnalysisType.SessionToken => AnalysisCategory.Warning,
                 AnalysisType.OAuthToken => AnalysisCategory.Warning,
+                AnalysisType.HttpConnection => AnalysisCategory.Warning,
 
                 // -----------------------------
                 // ANOMALIES
