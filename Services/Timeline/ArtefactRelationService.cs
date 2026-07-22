@@ -569,6 +569,12 @@ namespace ZIVA_Prototype.Services.Timeline
                 foreach (var history in targetDomain.SubEntries)
                 {
                     if (string.IsNullOrWhiteSpace(history.ReferrerUrl))
+                    {
+                        TryBuildGoogleRedirectRelation(history, domains);
+                        continue;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(history.ReferrerUrl))
                         continue;
 
                     Uri? refUri;
@@ -636,6 +642,56 @@ namespace ZIVA_Prototype.Services.Timeline
                     //sourceDomainEntry.Relations.Add(relation);
                 }
             }
+        }
+
+        private void TryBuildGoogleRedirectRelation(
+    BrowserHistoryEntry history,
+    List<DomainEntry> domains)
+        {
+            if (!Uri.TryCreate(history.Url, UriKind.Absolute, out var uri))
+                return;
+
+            if (!uri.Host.EndsWith("google.com", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            if (!uri.AbsolutePath.Equals("/url", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+
+            if (!string.Equals(query["source"], "gmail", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            // letzten Gmail-Eintrag innerhalb 5 Sekunden suchen
+            var gmailHistory =
+                domains
+                    .SelectMany(d => d.SubEntries)
+                    .Where(h =>
+                        h.Url.Contains("mail.google.com", StringComparison.OrdinalIgnoreCase) &&
+                        h.VisitTime <= history.VisitTime &&
+                        (history.VisitTime - h.VisitTime).TotalSeconds <= 5)
+                    .OrderByDescending(h => h.VisitTime)
+                    .FirstOrDefault();
+
+            if (gmailHistory == null)
+                return;
+
+            var relation = new ArtifactRelationEntry
+            {
+                Type = ArtifactRelationType.HistoryReferrer,
+
+                History = gmailHistory,
+
+                Domain = gmailHistory.ParentDomain,
+
+                Time = history.VisitTime,
+
+                Confidence = 90,
+
+                Reason = "Heuristic Gmail redirect relation."
+            };
+
+            history.Relations.Add(relation);
         }
 
     }
