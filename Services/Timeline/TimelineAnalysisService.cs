@@ -90,6 +90,12 @@ namespace ZIVA_Prototype.Services.Timeline
                 summarizedEntries
             );
 
+            DetectSuspiciousCookies(
+                anomalyIndex,
+                cookies,
+                summarizedEntries
+            );
+
             foreach (var domain in summarizedEntries)
             {
                 var artifactTimes = domain.SubEntries.Any()
@@ -220,6 +226,7 @@ namespace ZIVA_Prototype.Services.Timeline
                 AnalysisType.BurstActivity => AnalysisCategory.Anomaly,
                 AnalysisType.SessionHijackIndicator => AnalysisCategory.Anomaly,
                 AnalysisType.CorrelatedThreat => AnalysisCategory.Anomaly,
+                AnalysisType.SuspiciousCookie => AnalysisCategory.Anomaly,
 
                 _ => AnalysisCategory.Information
             };
@@ -791,6 +798,59 @@ namespace ZIVA_Prototype.Services.Timeline
                         Autofill = autofill,
                         Input = input
                     });
+            }
+        }
+
+        private void DetectSuspiciousCookies(
+    Dictionary<string, AnalysisEntry> analysisIndex,
+    List<BrowserCookieEntry> cookies,
+    List<DomainEntry> domains)
+        {
+            foreach (var cookie in cookies)
+            {
+                if (!cookie.Name.Contains(
+                        "script",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                DomainEntry? domain =
+                    cookie.Relations
+                        .Select(r => r.Domain)
+                        .FirstOrDefault();
+
+                var analysis = new AnalysisEntry
+                {
+                    Category = AnalysisCategory.Anomaly,
+                    Type = AnalysisType.SuspiciousCookie,
+
+                    Title = "Suspicious Cookie",
+
+                    Description =
+                        "Cookie name indicates possible script content.",
+
+                    Severity = 4,
+                    Confidence = 100,
+
+                    FirstSeen = cookie.Created,
+                    LastSeen = cookie.Created,
+
+                    TargetType = AnomalyTargetType.Cookie,
+                    TargetPosition = cookie.Position,
+                    TargetYPercent = 50,
+
+                    LinkedDomain = domain,
+
+                    Url = domain?.Url ?? cookie.Host,
+                    Domain = domain?.Domain ?? cookie.Host
+                };
+
+                analysis.LinkedCookies.Add(cookie);
+                analysis.Evidence.Add($"Cookie Name: {cookie.Name}");
+
+                analysisIndex[$"cookie:{cookie.Name}:{cookie.Created.Ticks}"] =
+                    analysis;
             }
         }
 

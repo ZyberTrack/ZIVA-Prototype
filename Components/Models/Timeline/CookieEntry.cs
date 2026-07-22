@@ -13,6 +13,10 @@ namespace ZIVA_Prototype.Components.Models.Timeline
         public byte[] EncryptedValue { get; set; } = Array.Empty<byte>();
         public string Path { get; set; } = "";
 
+        public bool IsEncrypted { get; set; }
+
+        public bool CouldDecrypt { get; set; }
+
         public DateTime Expires { get; set; }
         public DateTime Created { get; set; }
         public DateTime LastAccessed { get; set; }

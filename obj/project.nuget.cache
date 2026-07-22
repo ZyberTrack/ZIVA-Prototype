@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "K5N8/s5p4D0=",
+  "dgSpecHash": "4dhHbTcAmoA=",
   "success": true,
   "projectFilePath": "C:\\Users\\ZyberTrack\\source\\repos\\ZyberTrack\\ZIVA-prototype\\ZIVA-Prototype.csproj",
   "expectedPackageFiles": [
@@ -74,6 +74,7 @@
     "C:\\Users\\ZyberTrack\\.nuget\\packages\\sqlitepclraw.lib.e_sqlite3\\2.1.11\\sqlitepclraw.lib.e_sqlite3.2.1.11.nupkg.sha512",
     "C:\\Users\\ZyberTrack\\.nuget\\packages\\sqlitepclraw.provider.e_sqlite3\\2.1.11\\sqlitepclraw.provider.e_sqlite3.2.1.11.nupkg.sha512",
     "C:\\Users\\ZyberTrack\\.nuget\\packages\\system.numerics.tensors\\9.0.0\\system.numerics.tensors.9.0.0.nupkg.sha512",
+    "C:\\Users\\ZyberTrack\\.nuget\\packages\\system.security.cryptography.protecteddata\\10.0.10\\system.security.cryptography.protecteddata.10.0.10.nupkg.sha512",
     "C:\\Users\\ZyberTrack\\.nuget\\packages\\system.speech\\10.0.1\\system.speech.10.0.1.nupkg.sha512",
     "C:\\Users\\ZyberTrack\\.nuget\\packages\\microsoft.windows.sdk.net.ref\\10.0.19041.57\\microsoft.windows.sdk.net.ref.10.0.19041.57.nupkg.sha512"
   ],
