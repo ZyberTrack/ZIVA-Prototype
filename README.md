@@ -110,10 +110,14 @@ Planned improvements include:
 - Zoom focus is not yet centered on the selected artifact.
 - Only Chromium-based browser profiles are supported.
 - Some parser implementations are still experimental.
-- Import performance may decrease for very large browser profiles.
+- Import performance may decrease for large browser profiles.
 
 ---
 
 # License
 
-Prototype created for academic research purposes.
+Copyright (c) 2026 Viktor Olenberg.
+
+All rights reserved.
+
+This repository is published for documentation and academic reference only. The source code may not be copied, redistributed, modified, or used without the explicit permission of the author.
