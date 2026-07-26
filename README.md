@@ -102,6 +102,7 @@ Planned improvements include:
 - Plugin architecture for additional artifact parsers
 - Improved anomaly detection using configurable rule sets
 - Enhanced scalability for large browser profiles
+- Cookie decryption
 
 ---
 
