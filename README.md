@@ -4,6 +4,10 @@ Prototype of a browser forensic timeline visualization tool developed as part of
 
 ## Overview
 
+> **Note for Reviewers**
+>
+> This prototype was developed iteratively with AI assistance (ChatGPT GPT-4o, GPT-5.3 and GPT-5.5). AI was used as a development support tool (implementation, debugging and algorithm design), while the overall concept, architecture, implementation and validation were carried out by the author. :contentReference[oaicite:1]{index=1}
+
 ZIVA is a prototype designed to support browser forensic investigations by automatically correlating browser artifacts and reconstructing navigation events within a visual timeline. The prototype aims to reduce manual analysis effort by combining multiple browser artifacts into a single interactive interface and supporting investigators through rule-based anomaly detection.
 
 ---
