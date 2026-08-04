@@ -1,128 +1,128 @@
-# ZIVA Prototype
+# ZIVA-Prototyp
 
-Prototype of a browser forensic timeline visualization tool developed as part of a Bachelor's thesis.
-
-## Overview
-
-> **Note for Reviewers**
+> **Hinweis für Gutachter**
 >
-> This prototype was developed iteratively with AI assistance (ChatGPT GPT-4o, GPT-5.3 and GPT-5.5). AI was used as a development support tool (implementation, debugging and algorithm design), while the overall concept, architecture, implementation and validation were carried out by the author. :contentReference[oaicite:1]{index=1}
+> Dieser Prototyp wurde über einen längeren Zeitraum iterativ mit Unterstützung von KI (ChatGPT GPT-4o, GPT-5.3 und GPT-5.5) entwickelt. Die KI wurde als Entwicklungswerkzeug für Implementierung, Fehlersuche und die Ausarbeitung von Algorithmen eingesetzt. Die fachliche Konzeption, Architektur, Implementierung und Validierung des Prototyps erfolgten durch den Autor. :contentReference[oaicite:0]{index=0}
 
-ZIVA is a prototype designed to support browser forensic investigations by automatically correlating browser artifacts and reconstructing navigation events within a visual timeline. The prototype aims to reduce manual analysis effort by combining multiple browser artifacts into a single interactive interface and supporting investigators through rule-based anomaly detection.
+Prototyp eines Visualisierungstools für Browserforensik, entwickelt im Rahmen einer Bachelorarbeit.
 
----
+## Überblick
 
-# Main Features
-
-- Import Chromium browser profiles
-- Interactive timeline visualization
-- Automatic correlation of browser artifacts
-- Navigation path reconstruction
-- Rule-based anomaly detection
-- Domain filtering
-- Artifact filtering
-- Timeline zooming and navigation
-- Detailed artifact inspection
-- Tooltips and contextual information
+ZIVA ist ein Prototyp zur Unterstützung browserforensischer Untersuchungen. Das Werkzeug korreliert Browserartefakte automatisch, rekonstruiert Navigationsereignisse und stellt diese in einer interaktiven Zeitleiste dar. Ziel ist es, den manuellen Analyseaufwand zu reduzieren, indem verschiedene Browserartefakte in einer gemeinsamen Oberfläche zusammengeführt und Ermittler durch eine regelbasierte Anomalieerkennung unterstützt werden.
 
 ---
 
-# User Guide
+# Hauptfunktionen
 
-## Importing a Browser Profile
-
-1. Open the application.
-2. Select any file located inside the Chromium browser profile directory.
-3. ZIVA automatically detects the profile and imports all supported browser databases.
-4. Start the analysis.
-
----
-
-## Timeline Navigation
-
-### Zoom
-
-**CTRL + Mouse Wheel**
-
-Zoom in or out of the timeline.
-
-> **Note:**  
-> The zoom currently focuses on the current viewport instead of the mouse cursor or selected artifact. For the best experience, click the artifact you want to inspect before zooming. This behavior will be improved in a future version.
+- Import von Chromium-Browserprofilen
+- Interaktive Zeitleistenvisualisierung
+- Automatische Korrelation von Browserartefakten
+- Rekonstruktion von Navigationspfaden
+- Regelbasierte Anomalieerkennung
+- Domänenfilter
+- Artefaktfilter
+- Zoomen und Navigieren innerhalb der Zeitleiste
+- Detaillierte Artefaktinspektion
+- Tooltips und kontextbezogene Informationen
 
 ---
 
-### Navigate Between Artifacts
+# Benutzerhandbuch
 
-**← / → Arrow Keys**
+## Import eines Browserprofils
 
-Moves the focus to the previous or next visible artifact within the timeline.
-
----
-
-### Filters
-
-The filter panel is located in the **upper-right corner**.
-
-Current filters include:
-
-- Domains
-- Artifact types
-- Analysis results
-- Navigation path
-
-*A detailed description of each filter will be added in a future revision.*
+1. Anwendung starten.
+2. Eine beliebige Datei innerhalb des Chromium-Browserprofilordners auswählen.
+3. ZIVA erkennt das Browserprofil automatisch und importiert alle unterstützten Browserdatenbanken.
+4. Analyse starten.
 
 ---
 
-## Artifact Details
+## Navigation in der Zeitleiste
 
-Click an artifact to
+### Zoomen
 
-- inspect its metadata,
-- view timestamps,
-- inspect relations,
-- display additional forensic information.
+**STRG + Mausrad**
 
----
+Vergrößert oder verkleinert die Zeitleiste.
 
-# Future Work
-
-The prototype is still under development.
-
-Planned improvements include:
-
-- Improved rendering performance
-- Complete UI and design revision
-- Support for additional browser artifacts
-- Multilingual interface (English / German)
-- More robust profile import and parsing
-- Persistent cases with save/load functionality
-- Manual creation and editing of artifact relationships
-- Investigator notes and annotations
-- Improved timeline zoom behavior
-- Advanced search functionality
-- Support for additional Chromium-based browsers
-- Export of investigation reports
-- Plugin architecture for additional artifact parsers
-- Improved anomaly detection using configurable rule sets
-- Enhanced scalability for large browser profiles
-- Cookie decryption
+> **Hinweis:**  
+> Der Zoom fokussiert derzeit den aktuellen sichtbaren Bereich und nicht den Mauszeiger oder das ausgewählte Artefakt. Für eine optimale Nutzung sollte vor dem Zoomen zunächst das gewünschte Artefakt ausgewählt werden. Dieses Verhalten wird in einer zukünftigen Version verbessert.
 
 ---
 
-# Current Limitations
+### Zwischen Artefakten navigieren
 
-- Zoom focus is not yet centered on the selected artifact.
-- Only Chromium-based browser profiles are supported.
-- Some parser implementations are still experimental.
-- Import performance may decrease for large browser profiles.
+**← / → Pfeiltasten**
+
+Wechselt zum vorherigen bzw. nächsten sichtbaren Artefakt innerhalb der Zeitleiste.
 
 ---
 
-# License
+### Filter
+
+Das Filtermenü befindet sich in der **oberen rechten Ecke**.
+
+Derzeit verfügbare Filter:
+
+- Domänen
+- Artefakttypen
+- Analyseergebnisse
+- Navigationspfad
+
+*Eine ausführliche Beschreibung der einzelnen Filter wird in einer zukünftigen Version ergänzt.*
+
+---
+
+## Artefaktdetails
+
+Durch Anklicken eines Artefakts können
+
+- Metadaten eingesehen,
+- Zeitstempel angezeigt,
+- Beziehungen zwischen Artefakten untersucht sowie
+- weitere forensische Informationen dargestellt werden.
+
+---
+
+# Geplante Weiterentwicklung
+
+Der Prototyp befindet sich weiterhin in der Entwicklung.
+
+Geplante Erweiterungen umfassen:
+
+- Verbesserte Rendering-Performance
+- Vollständige Überarbeitung der Benutzeroberfläche
+- Unterstützung zusätzlicher Browserartefakte
+- Mehrsprachige Benutzeroberfläche (Deutsch / Englisch)
+- Robusterer Profilimport und Parser
+- Persistente Fälle mit Speicher- und Ladefunktion
+- Manuelles Erstellen und Bearbeiten von Artefaktbeziehungen
+- Ermittlernotizen und Annotationen
+- Verbesserter Zoom der Zeitleiste
+- Erweiterte Suchfunktion
+- Unterstützung weiterer Chromium-basierter Browser
+- Export von Untersuchungsberichten
+- Plugin-Architektur für zusätzliche Artefaktparser
+- Verbesserte Anomalieerkennung durch konfigurierbare Regelsätze
+- Höhere Skalierbarkeit für große Browserprofile
+- Entschlüsselung von Cookies
+
+---
+
+# Aktuelle Einschränkungen
+
+- Der Zoom zentriert sich derzeit nicht auf das ausgewählte Artefakt.
+- Es werden ausschließlich Chromium-basierte Browserprofile unterstützt.
+- Einige Parser befinden sich noch im experimentellen Entwicklungsstadium.
+- Die Importgeschwindigkeit kann bei großen Browserprofilen abnehmen.
+
+---
+
+# Lizenz
 
 Copyright (c) 2026 Viktor Olenberg.
 
-All rights reserved.
+Alle Rechte vorbehalten.
 
-This repository is published for documentation and academic reference only. The source code may not be copied, redistributed, modified, or used without the explicit permission of the author.
+Dieses Repository wird ausschließlich zu Dokumentations- und wissenschaftlichen Zwecken veröffentlicht. Der Quellcode darf ohne ausdrückliche Genehmigung des Autors weder kopiert, weitergegeben, verändert noch anderweitig verwendet werden.
