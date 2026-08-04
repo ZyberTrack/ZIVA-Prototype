@@ -2,7 +2,11 @@
 
 > **Hinweis für Gutachter**
 >
-> Dieser Prototyp wurde über einen längeren Zeitraum iterativ mit Unterstützung von KI (ChatGPT GPT-4o, GPT-5.3 und GPT-5.5) entwickelt. Die KI wurde als Entwicklungswerkzeug für Implementierung, Fehlersuche und die Ausarbeitung von Algorithmen eingesetzt. Die fachliche Konzeption, Architektur, Implementierung und Validierung des Prototyps erfolgten durch den Autor. :contentReference[oaicite:0]{index=0}
+> Dieser Prototyp wurde über mehrere Monate hinweg iterativ mit Unterstützung von KI (ChatGPT GPT-4o, GPT-5.3 und GPT-5.5) entwickelt. Die KI wurde als Entwicklungswerkzeug für die Implementierung, Fehlersuche, Ausarbeitung von Algorithmen sowie zur Diskussion verschiedener Lösungsansätze eingesetzt.
+>
+> Da der Entwicklungsprozess mehrere hundert Prompts und zahlreiche fortlaufende Konversationen umfasste, lassen sich einzelne Codeabschnitte keinem eindeutigen ursprünglichen Prompt mehr zuordnen. Komponenten wurden im Verlauf der Entwicklung mehrfach überarbeitet oder vollständig ersetzt, wodurch eine lückenlose Dokumentation aller verwendeten Prompts nicht mehr möglich ist.
+>
+> Die fachliche Konzeption, Architektur, Implementierung und Integration des Prototyps erfolgten durch den Autor. Sämtliche von der KI generierten Inhalte wurden überprüft, angepasst und in den Gesamtkontext des Prototyps integriert.
 
 Prototyp eines Visualisierungstools für Browserforensik, entwickelt im Rahmen einer Bachelorarbeit.
 
