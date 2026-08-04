@@ -8,7 +8,7 @@ namespace ZIVA_Prototype.Services.Import
 {
     public class WebDataAutofillImportService
     {
-        public async Task<List<WebDataAutofillEntry>> LoadAutofillAsync(string filePath)
+        public async Task<List<WebDataAutofillEntry>> LoadAutofillAsync(string filePath, ImportRange? range = null)
         {
             return await Task.Run(() =>
             {
@@ -117,6 +117,15 @@ namespace ZIVA_Prototype.Services.Import
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Autofill Import Fehler: {ex.Message}");
+                }
+
+                if (range != null)
+                {
+                    list = list
+                        .Where(x =>
+                            x.DateLastUsed >= range.From &&
+                            x.DateLastUsed <= range.To)
+                        .ToList();
                 }
 
                 return list;

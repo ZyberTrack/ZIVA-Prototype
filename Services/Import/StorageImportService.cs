@@ -12,7 +12,7 @@ namespace ZIVA_Prototype.Services.Import
 {
     public class StorageImportService
     {
-        public List<StorageEntry> Load(string profilePath)
+        public List<StorageEntry> Load(string profilePath, ImportRange? range = null)
         {
             var entries = new List<StorageEntry>();
 
@@ -27,6 +27,18 @@ namespace ZIVA_Prototype.Services.Import
             LoadIndexedDb(profilePath, profileName, entries);
 
             Console.WriteLine($"[Storage] TOTAL ENTRIES: {entries.Count}");
+
+            if (range != null)
+            {
+                entries = entries
+                    .Where(x =>
+                        x.Time >= range.From &&
+                        x.Time <= range.To)
+                    .ToList();
+
+                Console.WriteLine(
+                    $"[Storage] After time filter: {entries.Count}");
+            }
 
             return entries;
         }

@@ -6,8 +6,7 @@ namespace ZIVA_Prototype.Services.Import;
 public class FaviconsImportService
 {
     public async Task<List<FaviconEntry>>
-        LoadFromFaviconsAsync(
-            string faviconsDbPath)
+        LoadFromFaviconsAsync(string faviconsDbPath, ImportRange? range = null)
     {
         return await Task.Run(() =>
         {
@@ -145,6 +144,18 @@ public class FaviconsImportService
                     "❌ Fehler beim Öffnen/Laden der Favicons DB:");
 
                 Console.WriteLine(ex);
+            }
+
+            if (range != null)
+            {
+                list = list
+                    .Where(x =>
+                        x.Time >= range.From &&
+                        x.Time <= range.To)
+                    .ToList();
+
+                Console.WriteLine(
+                    $"✅ Favicons after time filter: {list.Count}");
             }
 
             return list;

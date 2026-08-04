@@ -39,7 +39,7 @@ namespace ZIVA_Prototype.Services.Import
         // =========================================================
         // MAIN SCAN
         // =========================================================
-        public List<StorageEntry> Scan(string profilePath)
+        public List<StorageEntry> Scan(string profilePath, ImportRange? range = null)
         {
             var results = new List<StorageEntry>();
 
@@ -88,7 +88,19 @@ namespace ZIVA_Prototype.Services.Import
             }
 
             Console.WriteLine(
-                $"[ArtifactScanner] TOTAL ARTIFACTS: {results.Count}");
+    $"[ArtifactScanner] TOTAL ARTIFACTS: {results.Count}");
+
+            if (range != null)
+            {
+                results = results
+                    .Where(x =>
+                        x.Time >= range.From &&
+                        x.Time <= range.To)
+                    .ToList();
+
+                Console.WriteLine(
+                    $"[ArtifactScanner] After time filter: {results.Count}");
+            }
 
             return results;
         }

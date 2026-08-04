@@ -19,6 +19,7 @@
 @inject NavigationPathService NavigationService
 @inject TimelineArtifactBuilderService ArtifactBuilder
 @inject TimelineFilterService FilterService
+@using ZIVA_Prototype.Configuration;
 
 
 @code {
@@ -838,7 +839,7 @@
         int clusterCounter = 1;
 
         foreach (var domain in domainCounts
-            .Where(x => x.Value >= 10)
+            .Where(x => x.Value >= TimelineConstants.HeavyClusterThreshold)
             .OrderBy(x => x.Key))
         {
             heavyClusterIndices[domain.Key] = clusterCounter++;
@@ -2616,7 +2617,7 @@
                         .OrderBy(h => h.Position)
                         .ToList();
 
-                    if (visible.Count < 10)
+                    if (visible.Count < TimelineConstants.HeavyClusterThreshold)
                     {
                         continue;
                     }

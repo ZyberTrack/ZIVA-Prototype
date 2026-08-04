@@ -1,18 +1,19 @@
 ﻿using Microsoft.Data.Sqlite;
+using Radzen.Blazor.Markdown;
 using System;
 using System.Collections.Generic;
-using ZIVA_Prototype.Components.Models.Timeline;
-using ZIVA_Prototype.Components.Models.Enums;
-using System.Security.Cryptography;
-using System.Text.Json;
-using System.Text;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using ZIVA_Prototype.Components.Models.Enums;
+using ZIVA_Prototype.Components.Models.Timeline;
 
 namespace ZIVA_Prototype.Services.Import
 {
     public class CookieImportService
     {
-        public async Task<List<BrowserCookieEntry>> LoadFromCookieDatabaseAsync(string filePath)
+        public async Task<List<BrowserCookieEntry>> LoadFromCookieDatabaseAsync(string filePath, ImportRange? range = null)
         {
             return await Task.Run(() =>
             {
@@ -113,6 +114,14 @@ namespace ZIVA_Prototype.Services.Import
                     }
 
                     cookies.Add(cookie);
+                }
+
+                if (range != null)
+                {
+                    cookies = cookies.Where(c =>
+                        c.Created >= range.From &&
+                        c.Created <= range.To)
+                        .ToList();
                 }
 
                 return cookies;

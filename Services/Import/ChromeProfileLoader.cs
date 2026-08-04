@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ZIVA_Prototype.Components.Models.Timeline;
 using ZIVA_Prototype.Services.Timeline;
 
 namespace ZIVA_Prototype.Services.Import
@@ -36,7 +37,7 @@ namespace ZIVA_Prototype.Services.Import
             _favicons = favicons;
         }
 
-        public async Task LoadProfileAsync(string profilePath)
+        public async Task LoadProfileAsync(string profilePath, ImportRange? range = null)
         {
             _state.ClearAll();
 
@@ -53,7 +54,8 @@ namespace ZIVA_Prototype.Services.Import
             {
                 Console.WriteLine($"✅ History gefunden: {historyPath}");
 
-                var history = await _history.LoadFromHistoryDatabaseAsync(historyPath);
+                var history = await _history.LoadFromHistoryDatabaseAsync(historyPath,range);
+
                 Console.WriteLine($"➡️ History Count: {history.Count}");
 
                 _state.SetBrowserEntries(history);
@@ -68,7 +70,7 @@ namespace ZIVA_Prototype.Services.Import
             {
                 Console.WriteLine($"✅ Cookies gefunden: {cookiesPath}");
 
-                var cookies = await _cookies.LoadFromCookieDatabaseAsync(cookiesPath);
+                var cookies = await _cookies.LoadFromCookieDatabaseAsync(cookiesPath, range);
                 Console.WriteLine($"➡️ Cookies Count: {cookies.Count}");
 
                 _state.SetBrowserCookies(cookies);
@@ -83,7 +85,7 @@ namespace ZIVA_Prototype.Services.Import
             {
                 Console.WriteLine($"✅ Web Data gefunden: {webDataPath}");
 
-                var autofill = await _autofill.LoadAutofillAsync(webDataPath);
+                var autofill = await _autofill.LoadAutofillAsync(webDataPath, range);
                 Console.WriteLine($"➡️ Autofill Count: {autofill.Count}");
 
                 _state.SetAutofillEntries(autofill);
@@ -95,7 +97,7 @@ namespace ZIVA_Prototype.Services.Import
                 Console.WriteLine($"✅ Extensions werden geladen aus: {profilePath}");
 
                 
-                var extList = await _extensions.LoadExtensionsAsync(profilePath);
+                var extList = await _extensions.LoadExtensionsAsync(profilePath, null, range);
                 Console.WriteLine($"➡️ Extensions Count: {extList.Count}");
 
                 _state.SetExtensions(extList);
@@ -117,14 +119,14 @@ namespace ZIVA_Prototype.Services.Import
             {
                 Console.WriteLine($"✅ Storage wird geladen aus: {profilePath}");
 
-                var storageEntries = _storage.Load(profilePath);
+                var storageEntries = _storage.Load(profilePath, range);
 
                 Console.WriteLine($"➡️ Storage Count: {storageEntries.Count}");
 
                 Console.WriteLine("✅ Artifact Scanner startet...");
 
                 var recoveredArtifacts =
-                    _artifactScanner.Scan(profilePath);
+                    _artifactScanner.Scan(profilePath, range);
 
                 Console.WriteLine(
                     $"➡️ Recovered Artifacts: {recoveredArtifacts.Count}");
@@ -145,7 +147,7 @@ namespace ZIVA_Prototype.Services.Import
                 Console.WriteLine($"✅ Favicons werden geladen aus: {faviconsPath}");
 
                 var faviconList =
-                    await _favicons.LoadFromFaviconsAsync(faviconsPath);
+                    await _favicons.LoadFromFaviconsAsync(faviconsPath, range);
 
                 Console.WriteLine(
                     $"➡️ Favicons Count: {faviconList.Count}");

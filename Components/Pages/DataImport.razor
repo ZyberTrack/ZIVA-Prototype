@@ -10,23 +10,133 @@
 @inject TimelineStateService State
 @inject PersistStateService PersistService
 @inject ChromeProfileLoader Loader
+@using ZIVA_Prototype.Components.Models.Timeline;
+@using ZIVA_Prototype.Configuration;
 
 @code {
 
     string? CurrentProfilePath; // Current folder Path
 
+    bool ShowRangeSelection = false;
+
+    bool IsImporting = false;
+
+    //private const int MaxImportDays = 7;
+
+    private string? ErrorMessage;
+
+    DateTime MinHistory;
+    DateTime MaxHistory;
+
+    DateTime SelectedFrom;
+    DateTime SelectedTo;
+
     private async Task ImportChromeProfile()
     {
+        ErrorMessage = null;
+
         var folderPath = await SelectProfileFolderFromFile();
 
-        if (!string.IsNullOrEmpty(folderPath))
-        {
-            CurrentProfilePath = folderPath;
+        if (string.IsNullOrWhiteSpace(folderPath))
+            return;
 
-            await Loader.LoadProfileAsync(folderPath);
+        CurrentProfilePath = folderPath;
+
+        var historyFile = Directory
+            .GetFiles(folderPath, "History", SearchOption.AllDirectories)
+            .FirstOrDefault();
+
+        if (historyFile == null)
+        {
+            ErrorMessage = "Keine Chromium-History-Datenbank gefunden.";
+            return;
+        }
+
+        var range =
+            await HistoryImportService.GetHistoryRangeAsync(historyFile);
+
+        // Profil ist bereits klein genug -> direkt importieren
+        if (range.TotalDays <= TimelineConstants.MaxImportDays)
+        {
+            IsImporting = true;
+            StateHasChanged();
+
+            try
+            {
+                await Loader.LoadProfileAsync(folderPath);
+
+                await PersistService.PersistStateAsync(State);
+
+                ShowRangeSelection = false;
+
+                NavigationManager.NavigateTo("/");
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = ex.Message;
+            }
+            finally
+            {
+                IsImporting = false;
+                StateHasChanged();
+            }
+
+            return;
+        }
+
+        // Zeitraum auswählen lassen
+        MinHistory = range.Min;
+        MaxHistory = range.Max;
+
+        SelectedFrom = range.Max.AddDays(-(TimelineConstants.MaxImportDays - 1));
+        SelectedTo = range.Max;
+
+        ShowRangeSelection = true;
+    }
+
+    private async Task ImportSelectedRange()
+    {
+        ErrorMessage = null;
+
+        if (SelectedFrom > SelectedTo)
+        {
+            ErrorMessage = "Der Startzeitpunkt darf nicht nach dem Endzeitpunkt liegen.";
+            return;
+        }
+
+        if ((SelectedTo - SelectedFrom).TotalDays >= TimelineConstants.MaxImportDays)
+        {
+            ErrorMessage =
+                $"Der Analysezeitraum darf maximal {TimelineConstants.MaxImportDays} Tage umfassen.";
+
+            return;
+        }
+
+        IsImporting = true;
+        StateHasChanged();
+
+        try
+        {
+            await Loader.LoadProfileAsync(
+                CurrentProfilePath!,
+                new ImportRange
+                {
+                    From = SelectedFrom,
+                    To = SelectedTo
+                });
+
             await PersistService.PersistStateAsync(State);
 
-            //NavigationManager.NavigateTo("/");
+            ShowRangeSelection = false;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsImporting = false;
+            StateHasChanged();
         }
     }
 
@@ -54,65 +164,153 @@
 
 <div class="import-page">
 
+    @if (IsImporting)
+    {
+        <div class="import-overlay">
+
+            <div class="import-loading-card">
+
+                <div class="spinner"></div>
+
+                <h3>Browserprofil wird importiert...</h3>
+
+                <p>
+                    Bitte warten. Je nach Größe des Browserprofils kann
+                    der Import einige Zeit dauern.
+                </p>
+
+            </div>
+
+        </div>
+    }
+
     <div class="import-panel">
 
         <div class="import-header">
-            DATA IMPORT
+            DATENIMPORT
         </div>
 
         <div class="import-content">
 
-          
+            <!-- ========================================= -->
+            <!-- PROFILIMPORT -->
+            <!-- ========================================= -->
 
             <div class="import-section">
 
                 <div class="import-title">
-                    Chrome Profile
+                    Chromium-Profil
                 </div>
 
                 <div class="import-description">
-                    Load a Chrome profile to extract browser history,
-                    cookies, autofill data, local storage entries and extensions.
+                    Importiert Browser-Verlauf, Cookies, Autofill-Daten,
+                    Browser-Erweiterungen sowie weitere unterstützte
+                    Browserartefakte aus einem Chromium-Profil.
                 </div>
+
+                @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+                {
+                    <div class="import-error">
+                        @ErrorMessage
+                    </div>
+                }
 
                 <button class="import-btn primary"
                         @onclick="ImportChromeProfile">
-                    Load Chrome Profile
+                    Chromium-Profil importieren
                 </button>
 
             </div>
 
-            
+            <!-- ========================================= -->
+            <!-- ZEITRAUMAUSWAHL -->
+            <!-- ========================================= -->
+            @if (ShowRangeSelection)
+            {
+                <div class="import-section">
+
+                    <div class="import-title">
+                        Analysezeitraum auswählen
+                    </div>
+
+                    <div class="import-description">
+                        Das ausgewählte Browserprofil enthält einen längeren
+                        Browser-Verlauf. Bitte wählen Sie einen Analysezeitraum
+                        von maximal <strong>@TimelineConstants.MaxImportDays Tagen</strong> aus.
+                    </div>
+
+                    <div class="profile-box">
+
+                        <div>
+                            <strong>Verfügbarer Browser-Verlauf</strong>
+                        </div>
+
+                        <div>
+                            @MinHistory.ToString("dd.MM.yyyy")
+                            –
+                            @MaxHistory.ToString("dd.MM.yyyy")
+                        </div>
+
+                        <br />
+
+                        <div>
+                            <strong>Ausgewählter Zeitraum</strong>
+                        </div>
+
+                        <div>
+                            @SelectedFrom.ToString("dd.MM.yyyy")
+                            –
+                            @SelectedTo.ToString("dd.MM.yyyy")
+                        </div>
+
+                    </div>
+
+                    <!-- Hier kommt später der Timeline-Slider hin -->
+
+                    <button class="import-btn primary"
+                            @onclick="ImportSelectedRange">
+                        Zeitraum importieren
+                    </button>
+
+                </div>
+            }
+
+            <!-- ========================================= -->
+            <!-- AKTUELLES PROFIL -->
+            <!-- ========================================= -->
 
             <div class="import-section">
 
                 <div class="import-title">
-                    Current Profile
+                    Aktuelles Profil
                 </div>
 
                 <div class="profile-box">
                     @(string.IsNullOrWhiteSpace(CurrentProfilePath)
-                        ? "No profile loaded"
+                        ? "Kein Profil ausgewählt."
                         : CurrentProfilePath)
                 </div>
 
             </div>
 
-            
+            <!-- ========================================= -->
+            <!-- GEFAHRENBEREICH -->
+            <!-- ========================================= -->
 
             <div class="import-section danger-zone">
 
                 <div class="import-title">
-                    Danger Zone
+                    Gefahrenbereich
                 </div>
 
                 <div class="import-description">
-                    Remove all currently loaded artifacts and analysis data.
+                    Entfernt alle aktuell importierten Browserartefakte,
+                    Analyseergebnisse und den aktuellen Fall aus dem Arbeitsspeicher.
                 </div>
 
                 <button class="import-btn danger"
                         @onclick="ClearAllData">
-                    Clear All Data
+                    Alle Daten löschen
                 </button>
 
             </div>
@@ -122,5 +320,3 @@
     </div>
 
 </div>
-
-

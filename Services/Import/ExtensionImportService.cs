@@ -15,9 +15,7 @@ namespace ZIVA_Prototype.Services.Import
     public class ExtensionImportService
     {
         public async Task<List<BrowserExtensionEntry>>
-            LoadExtensionsAsync(
-                string profilePath,
-                List<BrowserHistoryEntry>? historyEntries = null)
+            LoadExtensionsAsync(string profilePath,List<BrowserHistoryEntry>? historyEntries = null, ImportRange? range = null)
         {
 
             var preferenceScanner = new ExtensionPreferenceScanner();
@@ -81,7 +79,18 @@ namespace ZIVA_Prototype.Services.Import
                     AnalyzeRisk(ext);
                 }
 
-                return extensions.Values.ToList();
+                var result = extensions.Values.ToList();
+
+                if (range != null)
+                {
+                    result = result
+                        .Where(e =>
+                            e.InstallTime >= range.From &&
+                            e.InstallTime <= range.To)
+                        .ToList();
+                }
+
+                return result;
             });
         }
 
