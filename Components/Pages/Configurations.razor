@@ -131,7 +131,13 @@
 
 @code
 {
-    private string _selectedProfile = "30";
+    private string _selectedProfile = TimelineConstants.MaxImportDays switch
+    {
+        7 => "7",
+        14 => "14",
+        30 => "30",
+        _ => "custom"
+    };
 
     private string SelectedProfile
     {
@@ -142,6 +148,19 @@
             _selectedProfile = value;
             ApplyProfile();
         }
+    }
+
+    protected override void OnInitialized()
+    {
+        _selectedProfile = TimelineConstants.MaxImportDays switch
+        {
+            7 => "7",
+            14 => "14",
+            30 => "30",
+            _ => "custom"
+        };
+
+        ApplyProfile();
     }
 
     private void ApplyProfile()

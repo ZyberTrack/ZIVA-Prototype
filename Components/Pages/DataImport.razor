@@ -21,9 +21,19 @@
 
     bool IsImporting = false;
 
-    private string _selectedProfile = "30";
+    private int SliderDay;
+    private int SliderMaximum;
 
-    private int SelectedImportDays = TimelineConstants.MaxImportDays;
+
+    private string _selectedProfile = TimelineConstants.MaxImportDays switch
+    {
+        7 => "7",
+        14 => "14",
+        30 => "30",
+        _ => "custom"
+    };
+
+    //private int SelectedImportDays = TimelineConstants.MaxImportDays;
 
     //private const int MaxImportDays = 7;
 
@@ -38,6 +48,8 @@
 
     private async Task ImportChromeProfile()
     {
+        ApplyProfile();
+
         ErrorMessage = null;
 
         var folderPath = await SelectProfileFolderFromFile();
@@ -93,14 +105,26 @@
         MinHistory = range.Min;
         MaxHistory = range.Max;
 
-        SelectedFrom = range.Max.AddDays(-(TimelineConstants.MaxImportDays - 1));
-        SelectedTo = range.Max;
+        SliderMaximum = (MaxHistory - MinHistory).Days - TimelineConstants.MaxImportDays;
+
+        SliderDay = SliderMaximum;
+
+        UpdateSlider();
 
         ShowRangeSelection = true;
     }
 
+    private void UpdateSlider()
+    {
+        SelectedFrom = MinHistory.AddDays(SliderDay);
 
-    
+        SelectedTo = SelectedFrom
+            .AddDays(TimelineConstants.MaxImportDays - 1);
+
+        if (SelectedTo > MaxHistory)
+            SelectedTo = MaxHistory;
+    }
+   
 
     private async Task ImportSelectedRange()
     {
@@ -136,6 +160,8 @@
             await PersistService.PersistStateAsync(State);
 
             ShowRangeSelection = false;
+
+            NavigationManager.NavigateTo("/");
         }
         catch (Exception ex)
         {
@@ -164,26 +190,35 @@
         switch (SelectedProfile)
         {
             case "7":
-
                 TimelineConstants.MaxImportDays = 7;
                 TimelineConstants.HeavyClusterThreshold = 20;
                 break;
 
             case "14":
-
                 TimelineConstants.MaxImportDays = 14;
                 TimelineConstants.HeavyClusterThreshold = 30;
                 break;
 
             case "30":
-
                 TimelineConstants.MaxImportDays = 30;
                 TimelineConstants.HeavyClusterThreshold = 40;
                 break;
 
             case "custom":
-                // Werte bleiben erhalten.
                 break;
+        }
+
+        // Falls bereits ein Profil ausgewählt wurde
+        if (MaxHistory != default)
+        {
+            SliderMaximum =
+                Math.Max(0,
+                    (MaxHistory - MinHistory).Days
+                    - TimelineConstants.MaxImportDays);
+
+            SliderDay = SliderMaximum;
+
+            UpdateSlider();
         }
     }
 
@@ -206,6 +241,19 @@
     {
         State.ClearAll();
         await PersistService.PersistStateAsync(State);
+    }
+
+    protected override void OnInitialized()
+    {
+        _selectedProfile = TimelineConstants.MaxImportDays switch
+        {
+            7 => "7",
+            14 => "14",
+            30 => "30",
+            _ => "custom"
+        };
+
+        ApplyProfile();
     }
 }
 
@@ -337,33 +385,40 @@
                         von maximal <strong>@TimelineConstants.MaxImportDays Tagen</strong> aus.
                     </div>
 
-                    <div class="profile-box">
+                    <div class="range-box">
 
-                        <div>
-                            <strong>Verfügbarer Browser-Verlauf</strong>
+                        <div class="range-header">
+
+                            <span>@MinHistory.ToString("dd.MM.yyyy")</span>
+
+                            <span>@MaxHistory.ToString("dd.MM.yyyy")</span>
+
                         </div>
 
-                        <div>
-                            @MinHistory.ToString("dd.MM.yyyy")
-                            –
-                            @MaxHistory.ToString("dd.MM.yyyy")
+                        <div class="range-slider">
+
+                            <input type="range"
+                                   min="0"
+                                   max="@SliderMaximum"
+                                   step="1"
+                                   @bind="SliderDay"
+                                   @bind:after="UpdateSlider" />
+
                         </div>
 
-                        <br />
+                        <div class="range-selected">
 
-                        <div>
                             <strong>Ausgewählter Zeitraum</strong>
-                        </div>
 
-                        <div>
-                            @SelectedFrom.ToString("dd.MM.yyyy")
-                            –
-                            @SelectedTo.ToString("dd.MM.yyyy")
+                            <div>
+                                @SelectedFrom.ToString("dd.MM.yyyy")
+                                –
+                                @SelectedTo.ToString("dd.MM.yyyy")
+                            </div>
+
                         </div>
 
                     </div>
-
-                    <!-- Hier kommt später der Timeline-Slider hin -->
 
                     <button class="import-btn primary"
                             @onclick="ImportSelectedRange">

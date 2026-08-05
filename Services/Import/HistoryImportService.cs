@@ -39,10 +39,11 @@ namespace ZIVA_Prototype.Services.Import
                 {
                     command.CommandText += @"
                     WHERE v.visit_time >= @from
+                    AND v.visit_time <= @to
                     ";
 
                     command.Parameters.AddWithValue("@from", ToChromeUtc(range.From));
-                    command.Parameters.AddWithValue("@to", ToChromeUtc(range.To));
+                    command.Parameters.AddWithValue("@to",ToChromeUtc(range.To.Date.AddDays(1).AddTicks(-1)));
                 }
 
                 command.CommandText += @"
