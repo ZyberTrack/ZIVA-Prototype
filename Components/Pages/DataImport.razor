@@ -21,6 +21,10 @@
 
     bool IsImporting = false;
 
+    private string _selectedProfile = "30";
+
+    private int SelectedImportDays = TimelineConstants.MaxImportDays;
+
     //private const int MaxImportDays = 7;
 
     private string? ErrorMessage;
@@ -30,6 +34,7 @@
 
     DateTime SelectedFrom;
     DateTime SelectedTo;
+
 
     private async Task ImportChromeProfile()
     {
@@ -94,6 +99,9 @@
         ShowRangeSelection = true;
     }
 
+
+    
+
     private async Task ImportSelectedRange()
     {
         ErrorMessage = null;
@@ -137,6 +145,45 @@
         {
             IsImporting = false;
             StateHasChanged();
+        }
+    }
+
+    private string SelectedProfile
+    {
+        get => _selectedProfile;
+
+        set
+        {
+            _selectedProfile = value;
+            ApplyProfile();
+        }
+    }
+
+    private void ApplyProfile()
+    {
+        switch (SelectedProfile)
+        {
+            case "7":
+
+                TimelineConstants.MaxImportDays = 7;
+                TimelineConstants.HeavyClusterThreshold = 20;
+                break;
+
+            case "14":
+
+                TimelineConstants.MaxImportDays = 14;
+                TimelineConstants.HeavyClusterThreshold = 30;
+                break;
+
+            case "30":
+
+                TimelineConstants.MaxImportDays = 30;
+                TimelineConstants.HeavyClusterThreshold = 40;
+                break;
+
+            case "custom":
+                // Werte bleiben erhalten.
+                break;
         }
     }
 
@@ -208,6 +255,20 @@
                     Browserartefakte aus einem Chromium-Profil.
                 </div>
 
+                <div class="import-info">
+
+                    <strong>Hinweis</strong>
+
+                    <div>
+                        Die empfohlenen Analyseprofile wurden für den typischen Einsatz
+                        des Prototyps abgestimmt und liefern in den meisten Fällen die
+                        besten Ergebnisse. Änderungen an den Parametern sollten nur
+                        vorgenommen werden, wenn dies für spezielle Analysefälle
+                        erforderlich ist.
+                    </div>
+
+                </div>
+
                 @if (!string.IsNullOrWhiteSpace(ErrorMessage))
                 {
                     <div class="import-error">
@@ -220,7 +281,44 @@
                     Chromium-Profil importieren
                 </button>
 
+                <select class="import-input"
+                        @bind="SelectedProfile">
+
+                    <option value="7">7 Tage (Empfohlen)</option>
+                    <option value="14">14 Tage (Empfohlen)</option>
+                    <option value="30">30 Tage</option>
+                    <option value="custom">Benutzerdefiniert</option>
+
+                </select>
+
+                @if (SelectedProfile == "custom")
+                {
+                    <div class="import-item">
+
+                        <span>Maximale Importdauer (Tage)</span>
+
+                        <input type="number"
+                               class="import-input"
+                               min="1"
+                               max="365"
+                               @bind="TimelineConstants.MaxImportDays" />
+
+                    </div>
+                }
+
+                <div class="import-item">
+
+                    <span>Clusterbildung ab Besuchen</span>
+
+                    <input type="number"
+                           class="import-input"
+                           min="2"
+                           @bind="TimelineConstants.HeavyClusterThreshold" />
+
+                </div>
+
             </div>
+
 
             <!-- ========================================= -->
             <!-- ZEITRAUMAUSWAHL -->

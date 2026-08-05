@@ -51,8 +51,12 @@
                             7 Tage (Empfohlen)
                         </option>
 
+                        <option value="14">
+                            14 Tage (Empfohlen)
+                        </option>
+
                         <option value="30">
-                            30 Tage (Empfohlen)
+                            30 Tage
                         </option>
 
                         <option value="custom">
@@ -150,6 +154,12 @@
                 TimelineConstants.HeavyClusterThreshold = 20;
                 //TimelineConstants.DomainSummaryThreshold = 20;
 
+                break;
+
+            case "14":
+
+                TimelineConstants.MaxImportDays = 14;
+                TimelineConstants.HeavyClusterThreshold = 30;
                 break;
 
             case "30":

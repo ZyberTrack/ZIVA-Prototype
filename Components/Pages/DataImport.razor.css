@@ -206,3 +206,72 @@
         transform: scale(1);
     }
 }
+
+/* ===================================================== */
+/* CONFIGURATION / PROFILE INPUTS */
+/* ===================================================== */
+
+.import-input {
+    min-width: 190px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 6px;
+    color: #dbe7f5;
+    font-size: 14px;
+    transition: .18s;
+}
+
+    .import-input:hover {
+        border-color: rgba(255,255,255,.20);
+    }
+
+    .import-input:focus {
+        outline: none;
+        border-color: #4da3ff;
+        box-shadow: 0 0 0 3px rgba(77,163,255,.15);
+    }
+
+    .import-input option {
+        background: rgb(33,43,54);
+        color: white;
+    }
+
+/* ===================================================== */
+/* INFO BOX */
+/* ===================================================== */
+
+.import-info {
+    padding: 14px 16px;
+    background: rgba(77,163,255,.08);
+    border: 1px solid rgba(77,163,255,.22);
+    border-left: 4px solid #4da3ff;
+    border-radius: 8px;
+    color: #dbe7f5;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+    .import-info strong {
+        display: block;
+        margin-bottom: 6px;
+        color: #7fc0ff;
+        font-size: 14px;
+    }
+
+.import-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+}
+
+    .import-item span {
+        color: #dbe7f5;
+        font-size: 14px;
+        font-weight: 600;
+    }
