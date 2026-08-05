@@ -37,6 +37,8 @@
 
     const int MaxSegment = 1000000;
 
+    const int FocusOffset = 300;
+
     List<AnalysisEntry> AnalysisEntries = new(); // Liste mit erkannten Anomalien
     List<string> BlacklistDomains = new(); // Liste mit zwielichtigen Domains
     List<string> SuspiciousDomains = new(); // Liste mit verdächtigen Domains
@@ -66,6 +68,7 @@
     private bool _initialFocusDone = false;
     private bool showLegend = false;
     bool IncludeNavigationPaths = false;
+    private bool ShowFilterPanel = true;
 
     // Filter nach Analyse Kategorien
     private bool ShowInformation = false;
@@ -191,16 +194,30 @@
         set
         {
             _searchText = value;
-
-            SearchResults = string.IsNullOrWhiteSpace(value)
-                ? new()
-                : SearchService.Search(
-                    value,
-                    TimelineArtifacts);
-
-            CurrentSearchIndex =
-                SearchResults.Count > 0 ? 0 : -1;
+            AutoSelectDomain();
         }
+    }
+
+    private async void AutoSelectDomain()
+    {
+        if (string.IsNullOrWhiteSpace(_searchText))
+        {
+            SelectedDomainFilter = "";
+            return;
+        }
+
+        var match = AvailableDomains
+            .OrderBy(d => d.StartsWith(_searchText,
+                        StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(d => d.IndexOf(_searchText,
+                        StringComparison.OrdinalIgnoreCase))
+            .FirstOrDefault(d =>
+                d.Contains(_searchText,
+                    StringComparison.OrdinalIgnoreCase));
+
+        SelectedDomainFilter = match ?? "";
+
+        await ApplyDomainFilter();
     }
 
     private bool allExpanded = true; // wird nicht mehr verwendet
@@ -527,7 +544,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await UpdateViewportSizeAsync();
+        //await UpdateViewportSizeAsync();
 
         await LoadAnomalyListsAsync();
 
@@ -691,6 +708,12 @@
             await JS.InvokeVoidAsync("registerDragHandler", selfRef);
             await JS.InvokeVoidAsync("registerZoomHandler", selfRef);
             await JS.InvokeVoidAsync("registerArrowKeys", selfRef);
+
+            await UpdateViewportSizeAsync();
+
+            Refresh();
+
+            StateHasChanged();
         }
     }
 
@@ -1564,7 +1587,7 @@
         baseTime = time;
 
         // Mittelpunkt exakt auf InitialOffset
-        scrollIndex = InitialOffsetPx - viewportWidth / 2;
+        scrollIndex = InitialOffsetPx - viewportWidth / 2 + FocusOffset;
 
         // Clamp
         scrollIndex = Math.Clamp(
@@ -2348,6 +2371,13 @@
             @(showLegend ? "Legende Aus" : "Legende An")
         </button>
 
+        <button class="tool-btn"
+                @onclick="() => ShowFilterPanel = !ShowFilterPanel">
+
+            @(ShowFilterPanel ? "Filter ausblenden" : "Filter einblenden")
+
+        </button>
+
     </div>
 
 
@@ -2395,139 +2425,140 @@
             </div>
         }
 
-        <div class="timeline-search">
+        @if (ShowFilterPanel)
+        {
 
-            <div class="search-toolbar">
+            <div class="timeline-search">
 
-                <input type="text"
-                       placeholder="Suche..."
-                       @bind="SearchText"
-                       @bind:event="oninput" />
+                <div class="search-toolbar">
 
-                <button @onclick="PreviousSearchResult">
-                    ◀
-                </button>
+                    <input class="search-input"
+                    type="text"
+                    placeholder="Domäne suchen..."
+                    @bind="SearchText"
+                    @bind:event="oninput" />
 
-                <button @onclick="NextSearchResult">
-                    ▶
-                </button>
-
-                <div class="search-counter">
-                    @(SearchResults.Count == 0
-                        ? "-"
-                        : $"{CurrentSearchIndex + 1}/{SearchResults.Count}")
                 </div>
 
-            </div>
+                <div class="timeline-domain-filter">
 
-            <div class="timeline-domain-filter">
+                    <select @bind="SelectedDomainFilter">
+                        <option value="">Filter: Alle Domänen</option>
 
-                <select @bind="SelectedDomainFilter">
-                    <option value="">Filter: Alle Domänen</option>
+                        @foreach (var domain in AvailableDomains)
+                        {
+                            <option value="@domain">@domain</option>
+                        }
+                    </select>
 
-                    @foreach (var domain in AvailableDomains)
-                    {
-                        <option value="@domain">@domain</option>
-                    }
-                </select>
+                </div>
 
-                <label class="navigation-path-toggle">
-                    <input type="checkbox"
-                       @bind="IncludeNavigationPaths"
-                       @bind:after="ApplyDomainFilter" />
+                <div class="navigation-path-option">
 
-                    Inkl. Navigationsverlauf
-                </label>
+                    <label class="navigation-path-toggle">
+                        <input type="checkbox"
+                        @bind="IncludeNavigationPaths"
+                        @bind:after="ApplyDomainFilter" />
 
-            </div>
+                        Navigationsverlauf miteinbeziehen
+                    </label>
 
-            <div class="artifact-filter">
+                    <span class="info-icon"
+                    title="Bezieht beim Filtern einer Domäne auch alle Webseiten ein, die unmittelbar vor oder nach dem ausgewählten Seitenaufruf besucht wurden."> 
+                        ⓘ
+                    </span>
 
-                <label>
-                    <input type="checkbox"
-                           @bind="ShowHistory"
-                           @bind:after="ApplyDomainFilter" />
-                    Verlauf
-                </label>
+                </div>
 
-                <label>
-                    <input type="checkbox"
-                           @bind="ShowCookies"
-                           @bind:after="ApplyDomainFilter" />
-                    Cookies
-                </label>
+                <div class="artifact-filter">
 
-                <label>
-                    <input type="checkbox"
-                           @bind="ShowInputs"
-                           @bind:after="ApplyDomainFilter" />
-                    Eingaben
-                </label>
+                    <label>
+                        <input type="checkbox"
+                        @bind="ShowHistory"
+                        @bind:after="ApplyDomainFilter" />
+                        Verlauf
+                    </label>
 
-                <label>
-                    <input type="checkbox"
-                           @bind="ShowStorage"
-                           @bind:after="ApplyDomainFilter" />
-                    Storage
-                </label>
+                    <label>
+                        <input type="checkbox"
+                        @bind="ShowCookies"
+                        @bind:after="ApplyDomainFilter" />
+                        Cookies
+                    </label>
 
-                <label>
-                    <input type="checkbox"
-                           @bind="ShowExtensions"
-                           @bind:after="ApplyDomainFilter" />
-                    Erweiterungen
-                </label>
+                    <label>
+                        <input type="checkbox"
+                        @bind="ShowInputs"
+                        @bind:after="ApplyDomainFilter" />
+                        Eingaben
+                    </label>
 
-            </div>
+                    <label>
+                        <input type="checkbox"
+                        @bind="ShowStorage"
+                        @bind:after="ApplyDomainFilter" />
+                        Storage
+                    </label>
 
-            <div class="analysis-filter">
+                    <label>
+                        <input type="checkbox"
+                        @bind="ShowExtensions"
+                        @bind:after="ApplyDomainFilter" />
+                        Erweiterungen
+                    </label>
 
-                <label>
-                    <input type="checkbox"
-                           @bind="ShowInformation"
-                           @bind:after="ApplyDomainFilter" />
-                    Infos
-                </label>
+                </div>
 
-                <label>
-                    <input type="checkbox"
-                           @bind="ShowWarnings"
-                           @bind:after="ApplyDomainFilter" />
-                    Warnungen
-                </label>
+                <div class="analysis-filter">
 
-                <label>
-                    <input type="checkbox"
-                           @bind="ShowAnomalies"
-                           @bind:after="ApplyDomainFilter" />
-                    Anomalien
-                </label>
+                    <label>
+                        <input type="checkbox"
+                        @bind="ShowInformation"
+                        @bind:after="ApplyDomainFilter" />
+                        Infos
+                    </label>
 
-            </div>
+                    <label>
+                        <input type="checkbox"
+                        @bind="ShowWarnings"
+                        @bind:after="ApplyDomainFilter" />
+                        Warnungen
+                    </label>
 
-            @if (SearchResults.Any())
-            {
-                <div class="search-results-list">
+                    <label>
+                        <input type="checkbox"
+                        @bind="ShowAnomalies"
+                        @bind:after="ApplyDomainFilter" />
+                        Anomalien
+                    </label>
 
-                    @for (int i = 0; i < SearchResults.Count; i++)
-                    {
-                        var index = i;
-                        var result = SearchResults[index];
+                </div>
 
-                        <div class="search-result-item
+                @if (SearchResults.Any())
+                {
+                    <div class="search-results-list">
+
+                        @for (int i = 0; i < SearchResults.Count; i++)
+                        {
+                            var index = i;
+                            var result = SearchResults[index];
+
+                            <div class="search-result-item
                             @(i == CurrentSearchIndex ? "active" : "")"
-                             @onclick="() => SelectSearchResult(index)">
+                            @onclick="() => SelectSearchResult(index)">
 
-                            @result.DisplayText
+                                @result.DisplayText
 
-                        </div>
-                    }
+                            </div>
+                        }
 
-                </div>
-            }
+                    </div>
+                }
 
 
-        </div>
+            </div>
+
+        }
 
         
 
