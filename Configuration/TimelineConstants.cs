@@ -8,10 +8,10 @@ namespace ZIVA_Prototype.Configuration
 {
     public static class TimelineConstants
     {
-        public const int HeavyClusterThreshold = 20;
+        public static int HeavyClusterThreshold { get; set; } = 20;
 
-        public const int DomainSummaryThreshold = 5;
+        public static int DomainSummaryThreshold { get; set; } = 5;
 
-        public const int MaxImportDays = 30;
+        public static int MaxImportDays { get; set; } = 7;
     }
 }

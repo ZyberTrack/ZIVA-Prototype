@@ -1,0 +1,170 @@
+﻿@page "/Configuration"
+@using ZIVA_Prototype.Configuration
+
+<div class="config-page">
+
+    <div class="config-panel">
+
+        <div class="config-header">
+            KONFIGURATION
+        </div>
+
+        <div class="config-content">
+
+            <!-- ===================================================== -->
+            <!-- EMPFOHLENE PROFILE -->
+            <!-- ===================================================== -->
+
+            <div class="config-section">
+
+                <div class="config-title">
+                    Empfohlene Analyseprofile
+                </div>
+
+                <div class="config-description">
+                    Wählen Sie ein empfohlenes Analyseprofil aus. Die
+                    Parameter werden automatisch übernommen und können
+                    anschließend bei Bedarf individuell angepasst werden.
+                </div>
+
+                <div class="config-info">
+
+                    <strong>Hinweis</strong>
+
+                    <div>
+                        Die empfohlenen Analyseprofile wurden für den typischen Einsatz
+                        des Prototyps abgestimmt und liefern in den meisten Fällen die
+                        besten Ergebnisse. Änderungen an den Parametern sollten nur
+                        vorgenommen werden, wenn dies für spezielle Analysefälle
+                        erforderlich ist.
+                    </div>
+
+                </div>
+
+                <div class="config-item">
+                    <span>Profil</span>
+
+                    <select class="config-input"
+                            @bind="SelectedProfile">
+
+                        <option value="7">
+                            7 Tage (Empfohlen)
+                        </option>
+
+                        <option value="30">
+                            30 Tage (Empfohlen)
+                        </option>
+
+                        <option value="custom">
+                            Benutzerdefiniert
+                        </option>
+
+                    </select>
+                </div>
+
+                <!-- ===================================================== -->
+                <!-- IMPORT -->
+                <!-- ===================================================== -->
+                @if (SelectedProfile == "custom")
+                {
+                    <div class="config-section">
+
+                        <div class="config-title">
+                            Benutzerdefinierte Importeinstellungen
+                        </div>
+
+                        <div class="config-description">
+                            Legen Sie den maximal zulässigen Analysezeitraum fest. Browserprofile,
+                            deren Verlauf diesen Zeitraum überschreitet, erfordern vor dem Import
+                            eine manuelle Zeitraumsauswahl.
+                        </div>
+
+                        <div class="config-item">
+                            <span>Maximale Importdauer (Tage)</span>
+
+                            <input type="number"
+                                   class="config-input"
+                                   min="1"
+                                   max="365"
+                                   @bind="TimelineConstants.MaxImportDays" />
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+            <!-- ===================================================== -->
+            <!-- TIMELINE -->
+            <!-- ===================================================== -->
+
+            <div class="config-section">
+
+                <div class="config-title">
+                    Benutzerdefinierte Timeline-Einstellungen
+                </div>
+
+                <div class="config-description">
+                    Legen Sie fest, ab welcher Anzahl von Webseitenbesuchen ein Domain-Cluster erzeugt wird.
+                </div>
+
+                <div class="config-item">
+                    <span>Clusterbildung ab Besuchen</span>
+
+                    <input type="number"
+                           class="config-input"
+                           min="2"
+                           @bind="TimelineConstants.HeavyClusterThreshold" />
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@code
+{
+    private string _selectedProfile = "30";
+
+    private string SelectedProfile
+    {
+        get => _selectedProfile;
+
+        set
+        {
+            _selectedProfile = value;
+            ApplyProfile();
+        }
+    }
+
+    private void ApplyProfile()
+    {
+        switch (SelectedProfile)
+        {
+            case "7":
+
+                TimelineConstants.MaxImportDays = 7;
+                TimelineConstants.HeavyClusterThreshold = 20;
+                //TimelineConstants.DomainSummaryThreshold = 20;
+
+                break;
+
+            case "30":
+
+                TimelineConstants.MaxImportDays = 30;
+                TimelineConstants.HeavyClusterThreshold = 40;
+                //TimelineConstants.DomainSummaryThreshold = 40;
+
+                break;
+
+            case "custom":
+
+                // Werte bleiben unverändert.
+
+                break;
+        }
+    }
+}

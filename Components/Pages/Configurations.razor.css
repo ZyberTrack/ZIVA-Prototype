@@ -1,0 +1,142 @@
+.config-page {
+    width: 100%;
+    min-height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 60px;
+    background: linear-gradient(180deg, rgb(27,36,48) 0%, rgb(20,28,38) 100%);
+}
+
+.config-panel {
+    width: 760px;
+    background: rgba(33,43,54,.98);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 12px 35px rgba(0,0,0,.45);
+    backdrop-filter: blur(10px);
+}
+
+.config-header {
+    padding: 18px 24px;
+    background: rgba(255,255,255,.03);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    color: #dbe7f5;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.config-content {
+    padding: 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.config-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.config-title {
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.config-description {
+    color: #b7c4d6;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* ===================================================== */
+/* CONFIG ITEMS */
+/* ===================================================== */
+
+.config-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 8px;
+    transition: .18s;
+}
+
+    .config-item:hover {
+        background: rgba(255,255,255,.06);
+        border-color: rgba(255,255,255,.10);
+    }
+
+    .config-item span:first-child {
+        color: #dbe7f5;
+        font-weight: 600;
+    }
+
+/* ===================================================== */
+/* SECTION DIVIDER */
+/* ===================================================== */
+
+.config-section + .config-section {
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,.08);
+}
+
+
+/* ===================================================== */
+/* INPUTS */
+/* ===================================================== */
+
+.config-input {
+    min-width: 170px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 6px;
+    color: #dbe7f5;
+    font-size: 14px;
+    transition: .18s;
+}
+
+    .config-input:focus {
+        outline: none;
+        border-color: #4da3ff;
+        box-shadow: 0 0 0 3px rgba(77,163,255,.15);
+    }
+
+    .config-input:disabled {
+        opacity: .45;
+        cursor: not-allowed;
+    }
+
+    .config-input option {
+        background: rgb(33,43,54);
+        color: white;
+    }
+
+/* ===================================================== */
+/* INFO BOX */
+/* ===================================================== */
+
+.config-info {
+    padding: 14px 16px;
+    background: rgba(77,163,255,.08);
+    border: 1px solid rgba(77,163,255,.22);
+    border-left: 4px solid #4da3ff;
+    border-radius: 8px;
+    color: #dbe7f5;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+    .config-info strong {
+        display: block;
+        margin-bottom: 6px;
+        color: #7fc0ff;
+        font-size: 14px;
+    }
